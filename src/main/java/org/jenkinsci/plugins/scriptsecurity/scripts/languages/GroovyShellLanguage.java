@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * Language for Groovy Template scripts generating Bourne Shell script.
  */
-@Extension public class GroovyShellLanguage extends Language {
+@Extension public final class GroovyShellLanguage extends Language {
 
     public static Language get() {
         return Jenkins.getInstance().getExtensionList(Language.class).get(GroovyShellLanguage.class);

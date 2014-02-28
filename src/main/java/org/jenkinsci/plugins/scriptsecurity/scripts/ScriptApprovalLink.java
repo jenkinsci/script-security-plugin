@@ -28,8 +28,11 @@ import hudson.Extension;
 import hudson.model.ManagementLink;
 import hudson.security.Permission;
 import jenkins.model.Jenkins;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
-@Extension public class ScriptApprovalLink extends ManagementLink {
+@Restricted(NoExternalUse.class) // implementation
+@Extension public final class ScriptApprovalLink extends ManagementLink {
 
     @Override public String getIconFileName() {
         return "notepad.png";

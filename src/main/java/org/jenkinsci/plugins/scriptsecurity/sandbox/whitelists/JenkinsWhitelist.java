@@ -26,11 +26,14 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import hudson.Extension;
 import java.io.IOException;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * Includes entries useful for scripts accessing the Jenkins API, such as model objects.
  */
-@Extension public class JenkinsWhitelist extends ProxyWhitelist {
+@Restricted(NoExternalUse.class)
+@Extension public final class JenkinsWhitelist extends ProxyWhitelist {
 
     public JenkinsWhitelist() throws IOException {
         super(StaticWhitelist.from(JenkinsWhitelist.class.getResource("jenkins-whitelist")));

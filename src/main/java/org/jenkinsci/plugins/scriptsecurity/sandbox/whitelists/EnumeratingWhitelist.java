@@ -149,18 +149,18 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return s;
     }
 
-    public static final class MethodSignature {
+    static final class MethodSignature {
         private final String receiverType, method;
         private final String[] argumentTypes;
-        public MethodSignature(String receiverType, String method, String[] argumentTypes) {
+        MethodSignature(String receiverType, String method, String[] argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
             this.argumentTypes = argumentTypes.clone();
         }
-        public MethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
+        MethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
             this(getName(receiverType), method, argumentTypes(argumentTypes));
         }
-        public boolean is(Object receiver, String method, Object[] args) {
+        boolean is(Object receiver, String method, Object[] args) {
             return EnumeratingWhitelist.is(this.method, method) && EnumeratingWhitelist.is(receiverType, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
         }
         @Override public String toString() {
@@ -169,47 +169,47 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    public static final class NewSignature {
+    static final class NewSignature {
         private final String type;
         private final String[] argumentTypes;
-        public NewSignature(String type, String[] argumentTypes) {
+        NewSignature(String type, String[] argumentTypes) {
             this.type = type;
             this.argumentTypes = argumentTypes.clone();
         }
-        public NewSignature(Class<?> type, Class<?>... argumentTypes) {
+        NewSignature(Class<?> type, Class<?>... argumentTypes) {
             this(getName(type), argumentTypes(argumentTypes));
         }
-        public boolean is(Class<?> receiver, Object[] args) {
+        boolean is(Class<?> receiver, Object[] args) {
             return EnumeratingWhitelist.is(type, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
         }
     }
 
-    public static final class StaticMethodSignature {
+    static final class StaticMethodSignature {
         private final String receiverType, method;
         private final String[] argumentTypes;
-        public StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
+        StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
             this.argumentTypes = argumentTypes.clone();
         }
-        public StaticMethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
+        StaticMethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
             this(getName(receiverType), method, argumentTypes(argumentTypes));
         }
-        public boolean is(Class<?> receiver, String method, Object[] args) {
+        boolean is(Class<?> receiver, String method, Object[] args) {
             return EnumeratingWhitelist.is(this.method, method) && EnumeratingWhitelist.is(receiverType, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
         }
     }
 
-    public static final class FieldSignature {
+    static final class FieldSignature {
         private final String type, field;
-        public FieldSignature(String type, String field) {
+        FieldSignature(String type, String field) {
             this.type = type;
             this.field = field;
         }
-        public FieldSignature(Class<?> type, String field) {
+        FieldSignature(Class<?> type, String field) {
             this(getName(type), field);
         }
-        public boolean is(Object receiver, String field) {
+        boolean is(Object receiver, String field) {
             return EnumeratingWhitelist.is(this.field, field) && EnumeratingWhitelist.is(type, receiver);
         }
     }

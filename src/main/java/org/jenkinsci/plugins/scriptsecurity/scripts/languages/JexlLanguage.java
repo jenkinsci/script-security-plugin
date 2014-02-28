@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * Language for JEXL scripts.
  */
-@Extension public class JexlLanguage extends Language {
+@Extension public final class JexlLanguage extends Language {
 
     public static Language get() {
         return Jenkins.getInstance().getExtensionList(Language.class).get(JexlLanguage.class);

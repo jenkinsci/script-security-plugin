@@ -27,7 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 /**
  * Exception thrown by {@link ScriptApproval#using}.
  */
-public class UnapprovedUsageException extends SecurityException {
+public final class UnapprovedUsageException extends SecurityException {
 
     private final String hash;
 

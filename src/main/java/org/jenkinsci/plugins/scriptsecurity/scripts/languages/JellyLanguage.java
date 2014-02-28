@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * Language for Jelly scripts.
  */
-@Extension public class JellyLanguage extends Language {
+@Extension public final class JellyLanguage extends Language {
 
     public static Language get() {
         return Jenkins.getInstance().getExtensionList(Language.class).get(JellyLanguage.class);

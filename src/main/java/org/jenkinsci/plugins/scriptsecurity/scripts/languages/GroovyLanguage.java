@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * Language for Groovy scripts.
  */
-@Extension public class GroovyLanguage extends Language {
+@Extension public final class GroovyLanguage extends Language {
 
     public static Language get() {
         return Jenkins.getInstance().getExtensionList(Language.class).get(GroovyLanguage.class);

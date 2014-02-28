@@ -31,7 +31,7 @@ import jenkins.model.Jenkins;
 /**
  * Language for Groovy Template scripts generating XML.
  */
-@Extension public class GroovyXmlLanguage extends Language {
+@Extension public final class GroovyXmlLanguage extends Language {
 
     public static Language get() {
         return Jenkins.getInstance().getExtensionList(Language.class).get(GroovyXmlLanguage.class);
