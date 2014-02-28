@@ -1,0 +1,14 @@
+# Needed for Groovy Templates to emit output:
+method java.io.PrintWriter print java.lang.Object
+
+# Useful general stuff:
+method java.lang.CharSequence length
+method java.lang.Comparable compareTo java.lang.Object
+method java.lang.Object equals java.lang.Object
+method java.util.Collection add java.lang.Object
+method java.util.Map put java.lang.Object java.lang.Object
+new java.net.URL java.lang.String
+method java.lang.String split java.lang.String
+
+# Synthetic, apparently Groovy operator:
+method java.lang.Integer plus java.lang.Integer

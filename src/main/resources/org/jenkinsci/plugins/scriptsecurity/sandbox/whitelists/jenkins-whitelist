@@ -1,0 +1,8 @@
+# Useful Jenkins API methods:
+method hudson.model.AbstractItem getDisplayName
+method hudson.model.Run getFullDisplayName
+method hudson.model.AbstractBuild getEnvironments
+field hudson.tools.ToolInstallation home
+field hudson.tools.ToolInstallation name
+new hudson.EnvVars
+staticMethod hudson.model.Environment create hudson.EnvVars
