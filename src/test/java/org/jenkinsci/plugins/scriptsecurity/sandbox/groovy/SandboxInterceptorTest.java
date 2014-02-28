@@ -24,9 +24,12 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.GString;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import groovy.lang.GroovyShell;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -35,6 +38,16 @@ public class SandboxInterceptorTest {
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
         assertEvaluate(new GenericWhitelist(), false, "def x = null; x != null");
+    }
+
+    /** Checks that {@link GString} is handled sanely. */
+    @Test public void testGString() throws Exception {
+        assertEvaluate(new AnnotatedWhitelist(), "-foo1", "def x = 1; new " + Clazz.class.getName() + "().method(\"foo${x}\")");
+    }
+
+    public static final class Clazz {
+        @Whitelisted public Clazz() {}
+        @Whitelisted public String method(String x) {return "-" + x;}
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {

@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.GString;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -40,6 +41,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
+        args = fixGStrings(args);
         if (whitelist.permitsMethod(receiver, method, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else {
@@ -53,6 +55,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onNewInstance(GroovyInterceptor.Invoker invoker, Class receiver, Object... args) throws Throwable {
+        args = fixGStrings(args);
         if (whitelist.permitsNew(receiver, args)) {
             return super.onNewInstance(invoker, receiver, args);
         } else {
@@ -66,6 +69,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
+        args = fixGStrings(args);
         if (whitelist.permitsStaticMethod(receiver, method, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {
@@ -79,6 +83,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onSetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property, Object value) throws Throwable {
+        value = fixGString(value);
         // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
         if (whitelist.permitsFieldGet(receiver, property) || whitelist.permitsMethod(receiver, "set" + Functions.capitalize(property), new Object[] {value})) {
             return super.onSetProperty(invoker, receiver, property, value);
@@ -126,6 +131,22 @@ final class SandboxInterceptor extends GroovyInterceptor {
             b.append(arg == null ? "null" : arg.getClass().getName());
         }
         return b.toString();
+    }
+
+    // TODO this is probably a bug in groovy-sandbox
+    private static Object fixGString(Object o) {
+        if (o instanceof GString) {
+            return o.toString();
+        } else {
+            return o;
+        }
+    }
+    private static Object[] fixGStrings(Object[] os) {
+        Object[] r = new Object[os.length];
+        for (int i = 0; i < os.length; i++) {
+            r[i] = fixGString(os[i]);
+        }
+        return r;
     }
 
 }
