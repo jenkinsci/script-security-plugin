@@ -36,7 +36,7 @@ import jenkins.model.Jenkins;
  * Restricted methods should be limited to those which actually perform a permissions check, typically using {@link ACL#checkPermission}.
  * Allowing the system pseudo-user to run these would be dangerous, since we do not know “on whose behalf” a script is running, and this “user” is permitted to do anything.
  */
-public final class AclAwareWhitelist extends Whitelist {
+public class AclAwareWhitelist extends Whitelist {
 
     private final Whitelist unrestricted, restricted;
 

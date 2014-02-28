@@ -150,6 +150,14 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @return a definition in the format {@code receiver.class.Name methodName parameter1.Type parameter2.Type}, or null if not found
      */
     public static @CheckForNull String methodDefinition(Object receiver, String method, Object[] args) {
+        Method m = method(receiver, method, args);
+        if (m != null) {
+            return getName(m.getDeclaringClass()) + " " + method + printArgumentTypes(m.getParameterTypes());
+        }
+        return null;
+    }
+
+    public static @CheckForNull Method method(Object receiver, String method, Object[] args) {
         for (Class<?> c : types(receiver)) {
             for (Method m : c.getDeclaredMethods()) {
                 if (!m.getName().equals(method)) {
@@ -157,7 +165,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 }
                 Class<?>[] parameterTypes = m.getParameterTypes();
                 if (matches(parameterTypes, args)) {
-                    return getName(c) + " " + method + printArgumentTypes(parameterTypes);
+                    return m;
                 }
             }
         }
@@ -165,10 +173,18 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     public static @CheckForNull String newDefinition(Class<?> receiver, Object[] args) {
+        Constructor<?> c = constructor(receiver, args);
+        if (c != null) {
+            return c.getDeclaringClass().getName() + printArgumentTypes(c.getParameterTypes());
+        }
+        return null;
+    }
+
+    public static @CheckForNull Constructor<?> constructor(Class<?> receiver, Object[] args) {
         for (Constructor<?> c : receiver.getDeclaredConstructors()) {
             Class<?>[] parameterTypes = c.getParameterTypes();
             if (matches(parameterTypes, args)) {
-                return c.getName() + printArgumentTypes(parameterTypes);
+                return c;
             }
         }
         return null;
@@ -182,6 +198,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             }
             Class<?>[] parameterTypes = m.getParameterTypes();
             if (matches(parameterTypes, args)) {
+                // TODO factor out method: staticMethod
                 return getName(receiver) + " " + method + printArgumentTypes(parameterTypes);
             }
         }
@@ -194,6 +211,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 if (!f.getName().equals(field)) {
                     continue;
                 }
+                // TODO factor out method: field
                 return getName(c) + " " + field;
             }
         }
