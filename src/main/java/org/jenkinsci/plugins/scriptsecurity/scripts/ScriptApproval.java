@@ -176,18 +176,14 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
 
-    private Object readResolve() {
-        if (aclApprovedSignatures == null) {
-            aclApprovedSignatures = new TreeSet<String>();
-        }
-        return this;
-    }
-
     public ScriptApproval() {
         try {
             load();
         } catch (IOException x) {
             LOG.log(Level.WARNING, null, x);
+        }
+        if (aclApprovedSignatures == null) {
+            aclApprovedSignatures = new TreeSet<String>();
         }
     }
 
