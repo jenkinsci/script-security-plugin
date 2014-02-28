@@ -6,17 +6,22 @@
         <version>1.509.4</version>
     </parent>
     <artifactId>script-security</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-beta-1-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>Script Security Plugin</name>
-    <description>TODO</description>
-    <url>TODO</url>
+    <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url>
     <licenses>
         <license>
             <name>MIT License</name>
             <url>http://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    </scm>
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
