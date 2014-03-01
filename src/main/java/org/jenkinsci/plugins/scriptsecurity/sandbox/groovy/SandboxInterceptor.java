@@ -24,7 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import groovy.lang.GString;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -135,18 +134,24 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     // TODO this is probably a bug in groovy-sandbox
     private static Object fixGString(Object o) {
+        return o;
+        /* TODO
         if (o instanceof GString) {
             return o.toString();
         } else {
             return o;
         }
+        */
     }
     private static Object[] fixGStrings(Object[] os) {
+        return os;
+        /* TODO
         Object[] r = new Object[os.length];
         for (int i = 0; i < os.length; i++) {
             r[i] = fixGString(os[i]);
         }
         return r;
+        */
     }
 
 }
