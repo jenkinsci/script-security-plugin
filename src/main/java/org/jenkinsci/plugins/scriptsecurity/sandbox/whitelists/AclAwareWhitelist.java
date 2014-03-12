@@ -24,9 +24,12 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.security.ACL;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * Delegating whitelist which allows certain calls to be made only when a non-{@link ACL#SYSTEM} user is making them.
@@ -54,24 +57,24 @@ public class AclAwareWhitelist extends Whitelist {
         return !ACL.SYSTEM.equals(Jenkins.getAuthentication());
     }
 
-    @Override public boolean permitsMethod(Object receiver, String method, Object[] args) {
-        return unrestricted.permitsMethod(receiver, method, args) || authenticated() && restricted.permitsMethod(receiver, method, args);
+    @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+        return unrestricted.permitsMethod(method, receiver, args) || authenticated() && restricted.permitsMethod(method, receiver, args);
     }
 
-    @Override public boolean permitsNew(Class<?> receiver, Object[] args) {
-        return unrestricted.permitsNew(receiver, args) || authenticated() && restricted.permitsNew(receiver, args);
+    @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+        return unrestricted.permitsConstructor(constructor, args) || authenticated() && restricted.permitsConstructor(constructor, args);
     }
 
-    @Override public boolean permitsStaticMethod(Class<?> receiver, String method, Object[] args) {
-        return unrestricted.permitsStaticMethod(receiver, method, args) || authenticated() && restricted.permitsStaticMethod(receiver, method, args);
+    @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+        return unrestricted.permitsStaticMethod(method, args) || authenticated() && restricted.permitsStaticMethod(method, args);
     }
 
-    @Override public boolean permitsFieldGet(Object receiver, String field) {
-        return unrestricted.permitsFieldGet(receiver, field);
+    @Override public boolean permitsFieldGet(Field field, Object receiver) {
+        return unrestricted.permitsFieldGet(field, receiver);
     }
 
-    @Override public boolean permitsFieldSet(Object receiver, String field, Object value) {
-        return unrestricted.permitsFieldSet(receiver, field, value);
+    @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+        return unrestricted.permitsFieldSet(field, receiver, value);
     }
 
 }

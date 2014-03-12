@@ -24,7 +24,9 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import groovy.lang.GString;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -38,107 +40,58 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<NewSignature> newSignatures();
 
-    protected abstract List<StaticMethodSignature> staticMethodSignatures();
+    protected abstract List<MethodSignature> staticMethodSignatures();
 
     protected abstract List<FieldSignature> fieldSignatures();
 
-    // TODO should cache hits based on concrete types
+    // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
 
-    @Override public final boolean permitsMethod(Object receiver, String method, Object[] args) {
+    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
         for (MethodSignature s : methodSignatures()) {
-            if (s.is(receiver, method, args)) {
+            if (s.matches(method)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsNew(Class<?> receiver, Object[] args) {
+    @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
         for (NewSignature s : newSignatures()) {
-            if (s.is(receiver, args)) {
+            if (s.matches(constructor)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsStaticMethod(Class<?> receiver, String method, Object[] args) {
-        for (StaticMethodSignature s : staticMethodSignatures()) {
-            if (s.is(receiver, method, args)) {
+    @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+        for (MethodSignature s : staticMethodSignatures()) {
+            if (s.matches(method)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsFieldGet(Object receiver, String field) {
+    @Override public final boolean permitsFieldGet(Field field, Object receiver) {
         for (FieldSignature s : fieldSignatures()) {
-            if (s.is(receiver, field)) {
+            if (s.matches(field)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsFieldSet(Object receiver, String field, Object value) {
+    @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
         for (FieldSignature s : fieldSignatures()) {
-            if (s.is(receiver, field)) {
+            if (s.matches(field)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean is(String type, Object arg) {
-        if (arg == null) {
-            // TODO handle primitives
-            return true;
-        } else {
-            return is(type, arg.getClass());
-        }
-    }
-
-    private static boolean is(String type, Class<?> c) {
-        // TODO cf. StaticWhitelist.matches
-        if (type.equals("java.lang.String") && GString.class.isAssignableFrom(c)) {
-            return true;
-        }
-        if (getName(c).equals(type)) {
-            return true;
-        }
-        Class<?> supe = c.getSuperclass();
-        if (supe != null && is(type, supe)) {
-            return true;
-        }
-        for (Class<?> xface : c.getInterfaces()) {
-            if (is(type, xface)) {
-                return true;
-            }
-        }
-        Class<?> componentType = c.getComponentType();
-        if (componentType != null && type.endsWith("[]") && is(type.substring(0, type.length() - 2), componentType)) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean is(String[] types, Object[] args) {
-        if (args.length != types.length) {
-            return false;
-        }
-        for (int i = 0; i < types.length; i++) {
-            if (!is(types[i], args[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean is(String thisIdentifier, String identifier) {
-        return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
-    }
-
-    static String getName(Class<?> c) {
+    public static String getName(Class<?> c) {
         Class<?> e = c.getComponentType();
         if (e == null) {
             return c.getName();
@@ -155,68 +108,55 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return s;
     }
 
-    static final class MethodSignature {
+    private static boolean is(String thisIdentifier, String identifier) {
+        return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
+    }
+
+    public static final class MethodSignature {
         private final String receiverType, method;
         private final String[] argumentTypes;
-        MethodSignature(String receiverType, String method, String[] argumentTypes) {
+        public MethodSignature(String receiverType, String method, String[] argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
             this.argumentTypes = argumentTypes.clone();
         }
-        MethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
+        public MethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
             this(getName(receiverType), method, argumentTypes(argumentTypes));
         }
-        boolean is(Object receiver, String method, Object[] args) {
-            return EnumeratingWhitelist.is(this.method, method) && EnumeratingWhitelist.is(receiverType, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
-        }
         @Override public String toString() {
-            // TODO should perhaps use this from StaticWhitelist.methodDefinition (or even return a MethodSignature directly?):
             return receiverType + "." + method + Arrays.toString(argumentTypes);
+        }
+        boolean matches(Method m) {
+            return is(method, m.getName()) && getName(m.getDeclaringClass()).equals(receiverType) && Arrays.equals(argumentTypes(m.getParameterTypes()), argumentTypes);
         }
     }
 
-    static final class NewSignature {
+    public static final class NewSignature {
         private final String type;
         private final String[] argumentTypes;
-        NewSignature(String type, String[] argumentTypes) {
+        public NewSignature(String type, String[] argumentTypes) {
             this.type = type;
             this.argumentTypes = argumentTypes.clone();
         }
-        NewSignature(Class<?> type, Class<?>... argumentTypes) {
+        public NewSignature(Class<?> type, Class<?>... argumentTypes) {
             this(getName(type), argumentTypes(argumentTypes));
         }
-        boolean is(Class<?> receiver, Object[] args) {
-            return EnumeratingWhitelist.is(type, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
+        boolean matches(Constructor c) {
+            return getName(c.getDeclaringClass()).equals(type) && Arrays.equals(argumentTypes(c.getParameterTypes()), argumentTypes);
         }
     }
 
-    static final class StaticMethodSignature {
-        private final String receiverType, method;
-        private final String[] argumentTypes;
-        StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
-            this.receiverType = receiverType;
-            this.method = method;
-            this.argumentTypes = argumentTypes.clone();
-        }
-        StaticMethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
-            this(getName(receiverType), method, argumentTypes(argumentTypes));
-        }
-        boolean is(Class<?> receiver, String method, Object[] args) {
-            return EnumeratingWhitelist.is(this.method, method) && EnumeratingWhitelist.is(receiverType, receiver) && EnumeratingWhitelist.is(argumentTypes, args);
-        }
-    }
-
-    static final class FieldSignature {
+    public static final class FieldSignature {
         private final String type, field;
-        FieldSignature(String type, String field) {
+        public FieldSignature(String type, String field) {
             this.type = type;
             this.field = field;
         }
-        FieldSignature(Class<?> type, String field) {
+        public FieldSignature(Class<?> type, String field) {
             this(getName(type), field);
         }
-        boolean is(Object receiver, String field) {
-            return EnumeratingWhitelist.is(this.field, field) && EnumeratingWhitelist.is(type, receiver);
+        boolean matches(Field f) {
+            return is(field, f.getName()) && getName(f.getDeclaringClass()).equals(type);
         }
     }
 

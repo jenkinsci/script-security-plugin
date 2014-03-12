@@ -24,10 +24,14 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.Functions;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 
 @SuppressWarnings("rawtypes")
@@ -40,80 +44,77 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
-        if (whitelist.permitsMethod(receiver, method, args)) {
+        Method m = GroovyCallSiteSelector.method(receiver, method, args);
+        if (m == null) {
+            throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+        } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else {
-            String def = StaticWhitelist.methodDefinition(receiver, method, args);
-            if (def != null) {
-                throw new RejectedAccessException("method", def);
-            } else {
-                throw new RejectedAccessException("unclassified method " + receiver.getClass().getName() + " " + method + printArgumentTypes(args));
-            }
+            throw StaticWhitelist.rejectMethod(m);
         }
     }
 
     @Override public Object onNewInstance(GroovyInterceptor.Invoker invoker, Class receiver, Object... args) throws Throwable {
-        if (whitelist.permitsNew(receiver, args)) {
+        Constructor<?> c = GroovyCallSiteSelector.constructor(receiver, args);
+        if (c == null) {
+            throw new RejectedAccessException("unclassified new " + EnumeratingWhitelist.getName(receiver) + printArgumentTypes(args));
+        } else if (whitelist.permitsConstructor(c, args)) {
             return super.onNewInstance(invoker, receiver, args);
         } else {
-            String def = StaticWhitelist.newDefinition(receiver, args);
-            if (def != null) {
-                throw new RejectedAccessException("new", def);
-            } else {
-                throw new RejectedAccessException("unclassified new " + receiver.getName() + printArgumentTypes(args));
-            }
+            throw StaticWhitelist.rejectNew(c);
         }
     }
 
     @Override public Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
-        if (whitelist.permitsStaticMethod(receiver, method, args)) {
+        Method m = GroovyCallSiteSelector.staticMethod(receiver, method, args);
+        if (m == null) {
+            throw new RejectedAccessException("unclassified staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
+        } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {
-            String def = StaticWhitelist.staticMethodDefinition(receiver, method, args);
-            if (def != null) {
-                throw new RejectedAccessException("staticMethod", def);
-            } else {
-                throw new RejectedAccessException("unclassified staticMethod " + receiver.getName() + " " + method + printArgumentTypes(args));
-            }
+            throw StaticWhitelist.rejectStaticMethod(m);
         }
     }
 
     @Override public Object onSetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property, Object value) throws Throwable {
-        // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
-        if (whitelist.permitsFieldGet(receiver, property) || whitelist.permitsMethod(receiver, "set" + Functions.capitalize(property), new Object[] {value})) {
+        Field f = GroovyCallSiteSelector.field(receiver, property);
+        if (f == null) {
+            Object[] args = new Object[] {value};
+            // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
+            Method m = GroovyCallSiteSelector.method(receiver, "set" + Functions.capitalize(property), args);
+            if (m == null) {
+                throw new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+            } else if (whitelist.permitsMethod(m, receiver, args)) {
+                return super.onSetProperty(invoker, receiver, property, value);
+            } else {
+                throw StaticWhitelist.rejectMethod(m);
+            }
+        } else if (whitelist.permitsFieldSet(f, receiver, value)) {
             return super.onSetProperty(invoker, receiver, property, value);
         } else {
-            String field = StaticWhitelist.fieldDefinition(receiver, property);
-            if (field == null) {
-                String method = StaticWhitelist.methodDefinition(receiver, "set" + Functions.capitalize(property), new Object[] {value});
-                if (method == null) {
-                    throw new RejectedAccessException("unclassified field " + receiver.getClass().getName() + " " + property);
-                } else {
-                    throw new RejectedAccessException("method", method);
-                }
-            } else {
-                throw new RejectedAccessException("field", field);
-            }
+            throw StaticWhitelist.rejectField(f);
         }
     }
 
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
-        if (property.equals("length") && receiver.getClass().isArray() ||
-                whitelist.permitsFieldGet(receiver, property) ||
-                whitelist.permitsMethod(receiver, "get" + Functions.capitalize(property), new Object[0])) {
+        if (property.equals("length") && receiver.getClass().isArray()) {
+            return super.onGetProperty(invoker, receiver, property);
+        }
+        Field f = GroovyCallSiteSelector.field(receiver, property);
+        if (f == null) {
+            Object[] args = new Object[] {};
+            Method m = GroovyCallSiteSelector.method(receiver, "get" + Functions.capitalize(property), args);
+            if (m == null) {
+                throw new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+            } else if (whitelist.permitsMethod(m, receiver, args)) {
+                return super.onGetProperty(invoker, receiver, property);
+            } else {
+                throw StaticWhitelist.rejectMethod(m);
+            }
+        } else if (whitelist.permitsFieldGet(f, receiver)) {
             return super.onGetProperty(invoker, receiver, property);
         } else {
-            String field = StaticWhitelist.fieldDefinition(receiver, property);
-            if (field == null) {
-                String method = StaticWhitelist.methodDefinition(receiver, "get" + Functions.capitalize(property), new Object[0]);
-                if (method == null) {
-                    throw new RejectedAccessException("unclassified field " + receiver.getClass().getName() + " " + property);
-                } else {
-                    throw new RejectedAccessException("method", method);
-                }
-            } else {
-                throw new RejectedAccessException("field", field);
-            }
+            throw StaticWhitelist.rejectField(f);
         }
     }
 
@@ -123,7 +124,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         StringBuilder b = new StringBuilder();
         for (Object arg : args) {
             b.append(' ');
-            b.append(arg == null ? "null" : arg.getClass().getName());
+            b.append(arg == null ? "null" : EnumeratingWhitelist.getName(arg.getClass()));
         }
         return b.toString();
     }

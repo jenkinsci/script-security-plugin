@@ -62,7 +62,7 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
     }
 
-    @Ignore("TODO org.codehaus.groovy.vmplugin.v7.TypeTransformers (Groovy 2) suggests that there are various unhandled cases, such as Closure → SAM, or numeric conversions.")
+    @Ignore("TODO there are various unhandled cases, such as Closure → SAM, or numeric conversions.")
     @Test public void testNumbers() throws Exception {
         String clazz = Clazz.class.getName();
         String script = "int x = 1; " + clazz + ".incr(x)";
@@ -73,7 +73,15 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Long")), expected, script);
     }
 
+    @Ignore("TODO not yet implemented")
+    @Test public void staticFields() throws Exception {
+        String clazz = Clazz.class.getName();
+        assertEvaluate(new StaticWhitelist(Arrays.asList("field " + clazz + " flag")), true, clazz + ".flag=true");
+        assertTrue(Clazz.flag);
+    }
+
     public static final class Clazz {
+        static boolean flag;
         @Whitelisted public Clazz() {}
         @Whitelisted public String method(String x) {return "-" + x;}
         @Whitelisted Special specialize(Object o) {

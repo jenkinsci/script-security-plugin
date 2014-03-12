@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox;
 
 import javax.annotation.CheckForNull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 
 /**
  * Thrown when access to a language element was not permitted.
@@ -37,6 +38,7 @@ public final class RejectedAccessException extends SecurityException {
 
     /**
      * Rejects access to a well-described script element.
+     * Normally called from {@link StaticWhitelist#rejectMethod} or similar.
      * @param type e.g. {@code field}
      * @param details e.g. {@code some.Class fieldName}
      */

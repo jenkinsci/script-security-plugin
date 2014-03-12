@@ -24,8 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import groovy.lang.GString;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,10 +35,9 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import javax.annotation.CheckForNull;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * Whitelist based on a static file.
@@ -49,7 +46,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
-    final List<StaticMethodSignature> staticMethodSignatures = new ArrayList<StaticMethodSignature>();
+    final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
 
     public StaticWhitelist(Reader definition) throws IOException {
@@ -86,7 +83,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             if (toks.length < 3) {
                 throw new IOException(line);
             }
-            staticMethodSignatures.add(new StaticMethodSignature(toks[1], toks[2], slice(toks, 3)));
+            staticMethodSignatures.add(new MethodSignature(toks[1], toks[2], slice(toks, 3)));
         } else if (toks[0].equals("field")) {
             if (toks.length != 3) {
                 throw new IOException(line);
@@ -121,7 +118,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return newSignatures;
     }
 
-    @Override protected List<StaticMethodSignature> staticMethodSignatures() {
+    @Override protected List<MethodSignature> staticMethodSignatures() {
         return staticMethodSignatures;
     }
 
@@ -129,135 +126,27 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return fieldSignatures;
     }
 
-    private static boolean matches(Class<?>[] parameterTypes, Object[] parameters) {
-        if (parameters.length != parameterTypes.length) {
-            return false;
-        }
-        for (int i = 0; i < parameterTypes.length; i++) {
-            if (parameters[i] == null) {
-                if (parameterTypes[i].isPrimitive()) {
-                    return false;
-                } else {
-                    // A null argument is assignable to any reference-typed parameter.
-                    continue;
-                }
-            }
-            if (parameterTypes[i].isInstance(parameters[i])) {
-                // OK, this parameter matches.
-                continue;
-            }
-            // TODO what about a primitive parameter type and a wrapped parameter?
-            if (parameterTypes[i] == String.class && parameters[i] instanceof GString) {
-                // Hack for Groovy; cf. SandboxInterceptorTest. TODO this should be extensible (along with EnumeratingWhitelist.is)
-                continue;
-            }
-            // Mismatch.
-            return false;
-        }
-        return true;
+    public static RejectedAccessException rejectMethod(Method m) {
+        return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
-    /**
-     * Looks up the most general possible definition of a given method call.
-     * Preferentially searches for compatible definitions in supertypes.
-     * The result (if not null) may be added to a static whitelist after the keyword {@code method}.
-     * @param receiver an actual receiver object
-     * @param method the method name
-     * @param args a set of actual arguments
-     * @return a definition in the format {@code receiver.class.Name methodName parameter1.Type parameter2.Type}, or null if not found
-     */
-    public static @CheckForNull String methodDefinition(Object receiver, String method, Object[] args) {
-        Method m = method(receiver, method, args);
-        if (m != null) {
-            return getName(m.getDeclaringClass()) + " " + method + printArgumentTypes(m.getParameterTypes());
-        }
-        return null;
+    public static RejectedAccessException rejectNew(Constructor<?> c) {
+        return new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes()));
     }
 
-    public static @CheckForNull Method method(Object receiver, String method, Object[] args) {
-        for (Class<?> c : types(receiver)) {
-            for (Method m : c.getDeclaredMethods()) {
-                if (!m.getName().equals(method)) {
-                    continue;
-                }
-                Class<?>[] parameterTypes = m.getParameterTypes();
-                if (matches(parameterTypes, args)) {
-                    return m;
-                }
-            }
-        }
-        return null;
+    public static RejectedAccessException rejectStaticMethod(Method m) {
+        return new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
-    public static @CheckForNull String newDefinition(Class<?> receiver, Object[] args) {
-        Constructor<?> c = constructor(receiver, args);
-        if (c != null) {
-            return c.getDeclaringClass().getName() + printArgumentTypes(c.getParameterTypes());
-        }
-        return null;
-    }
-
-    public static @CheckForNull Constructor<?> constructor(Class<?> receiver, Object[] args) {
-        for (Constructor<?> c : receiver.getDeclaredConstructors()) {
-            Class<?>[] parameterTypes = c.getParameterTypes();
-            if (matches(parameterTypes, args)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    public static @CheckForNull String staticMethodDefinition(Class<?> receiver, String method, Object[] args) {
-        // TODO should we check for inherited static calls?
-        for (Method m : receiver.getDeclaredMethods()) {
-            if (!m.getName().equals(method)) {
-                continue;
-            }
-            Class<?>[] parameterTypes = m.getParameterTypes();
-            // TODO should we issue an error if multiple overloads match? or try to find the “most specific”?
-            if (matches(parameterTypes, args)) {
-                // TODO factor out method: staticMethod
-                return getName(receiver) + " " + method + printArgumentTypes(parameterTypes);
-            }
-        }
-        return null;
-    }
-
-    public static @CheckForNull String fieldDefinition(Object receiver, String field) {
-        for (Class<?> c : types(receiver)) {
-            for (Field f : c.getDeclaredFields()) {
-                if (!f.getName().equals(field)) {
-                    continue;
-                }
-                // TODO factor out method: field
-                return getName(c) + " " + field;
-            }
-        }
-        return null;
-    }
-
-    private static Iterable<Class<?>> types(Object o) {
-        Set<Class<?>> types = new LinkedHashSet<Class<?>>();
-        visitTypes(types, o.getClass());
-        return types;
-    }
-    private static void visitTypes(Set<Class<?>> types, Class<?> c) {
-        Class<?> s = c.getSuperclass();
-        if (s != null) {
-            visitTypes(types, s);
-        }
-        for (Class<?> i : c.getInterfaces()) {
-            visitTypes(types, i);
-        }
-        // Visit supertypes first.
-        types.add(c);
+    public static RejectedAccessException rejectField(Field f) {
+        return new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
     }
 
     private static String printArgumentTypes(Class<?>[] parameterTypes) {
         StringBuilder b = new StringBuilder();
         for (Class<?> c : parameterTypes) {
             b.append(' ');
-            b.append(getName(c));
+            b.append(EnumeratingWhitelist.getName(c));
         }
         return b.toString();
     }

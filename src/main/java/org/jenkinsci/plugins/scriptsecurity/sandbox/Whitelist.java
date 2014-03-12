@@ -26,7 +26,11 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox;
 
 import hudson.Extension;
 import hudson.ExtensionPoint;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 
 /**
@@ -34,15 +38,27 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
  */
 public abstract class Whitelist implements ExtensionPoint {
 
-    public abstract boolean permitsMethod(Object receiver, String method, Object[] args);
+    /**
+     * Checks whether a given virtual method may be invoked.
+     * <p>Note that {@code method} should not be implementing or overriding a method in a supertype;
+     * in such a case the caller must pass that supertype method instead.
+     * In other words, call site selection is the responsibility of the caller (such as {@link GroovySandbox}), not the whitelist.
+     * @param method a method defined in the JVM
+     * @param receiver {@code this}, the receiver of the method call
+     * @param args zero or more arguments
+     * @return true to allow the method to be called, false to reject it
+     */
+    public abstract boolean permitsMethod(Method method, Object receiver, Object[] args);
 
-    public abstract boolean permitsNew(Class<?> receiver, Object[] args);
+    public abstract boolean permitsConstructor(Constructor<?> constructor, Object[] args);
 
-    public abstract boolean permitsStaticMethod(Class<?> receiver, String method, Object[] args);
+    public abstract boolean permitsStaticMethod(Method method, Object[] args);
 
-    public abstract boolean permitsFieldGet(Object receiver, String field);
+    public abstract boolean permitsFieldGet(Field field, Object receiver);
 
-    public abstract boolean permitsFieldSet(Object receiver, String field, Object value);
+    public abstract boolean permitsFieldSet(Field field, Object receiver, Object value);
+
+    // TODO add methods for static field get/set
 
     /**
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.

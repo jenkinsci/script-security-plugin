@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import org.junit.Test;
@@ -33,17 +32,17 @@ import static org.junit.Assert.*;
 
 public class ProxyWhitelistTest {
 
-    @Test public void reset() throws IOException {
+    @Test public void reset() throws Exception {
         ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("method java.lang.String length")));
         ProxyWhitelist pw2 = new ProxyWhitelist(pw1);
-        assertTrue(pw2.permitsMethod("x", "length", new Object[0]));
-        assertFalse(pw2.permitsMethod("x", "hashCode", new Object[0]));
-        pw1.reset(Collections.singleton(new StaticWhitelist(new StringReader("method java.lang.String length\nmethod java.lang.String hashCode"))));
-        assertTrue(pw2.permitsMethod("x", "length", new Object[0]));
-        assertTrue(pw2.permitsMethod("x", "hashCode", new Object[0]));
+        assertTrue(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
+        assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
+        pw1.reset(Collections.singleton(new StaticWhitelist(new StringReader("method java.lang.String length\nmethod java.lang.Object hashCode"))));
+        assertTrue(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
+        assertTrue(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
         pw1.reset(Collections.<Whitelist>emptySet());
-        assertFalse(pw2.permitsMethod("x", "length", new Object[0]));
-        assertFalse(pw2.permitsMethod("x", "hashCode", new Object[0]));
+        assertFalse(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
+        assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
     }
 
 }

@@ -24,6 +24,9 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +44,7 @@ public class ProxyWhitelist extends Whitelist {
     private final List<Whitelist> delegates = new ArrayList<Whitelist>();
     private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
     private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
-    private final List<EnumeratingWhitelist.StaticMethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.StaticMethodSignature>();
+    private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
     private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
@@ -68,7 +71,7 @@ public class ProxyWhitelist extends Whitelist {
             @Override protected List<EnumeratingWhitelist.NewSignature> newSignatures() {
                 return newSignatures;
             }
-            @Override protected List<EnumeratingWhitelist.StaticMethodSignature> staticMethodSignatures() {
+            @Override protected List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures() {
                 return staticMethodSignatures;
             }
             @Override protected List<EnumeratingWhitelist.FieldSignature> fieldSignatures() {
@@ -108,45 +111,45 @@ public class ProxyWhitelist extends Whitelist {
         this(Arrays.asList(delegates));
     }
 
-    @Override public final boolean permitsMethod(Object receiver, String method, Object[] args) {
+    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
         for (Whitelist delegate : delegates) {
-            if (delegate.permitsMethod(receiver, method, args)) {
+            if (delegate.permitsMethod(method, receiver, args)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsNew(Class<?> receiver, Object[] args) {
+    @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
         for (Whitelist delegate : delegates) {
-            if (delegate.permitsNew(receiver, args)) {
+            if (delegate.permitsConstructor(constructor, args)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsStaticMethod(Class<?> receiver, String method, Object[] args) {
+    @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
         for (Whitelist delegate : delegates) {
-            if (delegate.permitsStaticMethod(receiver, method, args)) {
+            if (delegate.permitsStaticMethod(method, args)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsFieldGet(Object receiver, String field) {
+    @Override public final boolean permitsFieldGet(Field field, Object receiver) {
         for (Whitelist delegate : delegates) {
-            if (delegate.permitsFieldGet(receiver, field)) {
+            if (delegate.permitsFieldGet(field, receiver)) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override public final boolean permitsFieldSet(Object receiver, String field, Object value) {
+    @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
         for (Whitelist delegate : delegates) {
-            if (delegate.permitsFieldSet(receiver, field, value)) {
+            if (delegate.permitsFieldSet(field, receiver, value)) {
                 return true;
             }
         }

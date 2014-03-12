@@ -22,31 +22,20 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
+package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import java.lang.reflect.Method;
-import org.junit.Test;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
-public class EnumeratingWhitelistTest {
+public class GroovyCallSiteSelectorTest {
 
-    public static class C {
-        public void m(Object[] args) {}
-    }
-
-    @Test public void matches() throws Exception {
-        Method m = C.class.getMethod("m", Object[].class);
-        assertTrue(new EnumeratingWhitelist.MethodSignature(C.class, "m", Object[].class).matches(m));
-        assertTrue(new EnumeratingWhitelist.MethodSignature(C.class, "*", Object[].class).matches(m));
-        assertFalse(new EnumeratingWhitelist.MethodSignature(C.class, "other", Object[].class).matches(m));
-        assertFalse(new EnumeratingWhitelist.MethodSignature(C.class, "m", String[].class).matches(m));
-    }
-
-    @Test public void getName() {
-        assertEquals("java.lang.Object", EnumeratingWhitelist.getName(Object.class));
-        assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
-        assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
-        assertEquals(EnumeratingWhitelistTest.class.getName() + "$C", EnumeratingWhitelist.getName(C.class));
+    @Test public void arrays() throws Exception {
+        Method m = EnumeratingWhitelistTest.C.class.getDeclaredMethod("m", Object[].class);
+        assertEquals("literal call", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new Object[] {"a", "b"}}));
+        assertEquals("we assume the interceptor has dealt with varargs", null, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {"a", "b"}));
+        assertEquals("array cast", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new String[] {"a", "b"}}));
     }
 
 }

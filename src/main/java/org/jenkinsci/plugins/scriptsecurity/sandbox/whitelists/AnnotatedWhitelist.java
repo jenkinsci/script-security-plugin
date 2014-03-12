@@ -26,7 +26,10 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import hudson.Extension;
 import java.lang.reflect.AccessibleObject;
-import javax.annotation.CheckForNull;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -49,12 +52,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             this.restricted = restricted;
         }
 
-        // TODO would be more efficient to preindex annotations
-
-        private boolean allowed(@CheckForNull AccessibleObject o) {
-            if (o == null) {
-                return false;
-            }
+        private boolean allowed(@Nonnull AccessibleObject o) {
             Whitelisted ann = o.getAnnotation(Whitelisted.class);
             if (ann == null) {
                 return false;
@@ -62,24 +60,24 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             return ann.restricted() == restricted;
         }
 
-        @Override public boolean permitsMethod(Object receiver, String method, Object[] args) {
-            return allowed(StaticWhitelist.method(receiver, method, args));
+        @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+            return allowed(method);
         }
 
-        @Override public boolean permitsNew(Class<?> receiver, Object[] args) {
-            return allowed(StaticWhitelist.constructor(receiver, args));
+        @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+            return allowed(constructor);
         }
 
-        @Override public boolean permitsStaticMethod(Class<?> receiver, String method, Object[] args) {
-            return false; // TODO implement
+        @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+            return allowed(method);
         }
 
-        @Override public boolean permitsFieldGet(Object receiver, String field) {
-            return false; // TODO implement
+        @Override public boolean permitsFieldGet(Field field, Object receiver) {
+            return allowed(field);
         }
 
-        @Override public boolean permitsFieldSet(Object receiver, String field, Object value) {
-            return false; // TODO implement
+        @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+            return allowed(field);
         }
 
     }
