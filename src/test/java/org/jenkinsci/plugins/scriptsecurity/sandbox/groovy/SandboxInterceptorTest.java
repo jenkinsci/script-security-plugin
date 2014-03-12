@@ -25,15 +25,16 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.GString;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import groovy.lang.GroovyShell;
+import java.util.Arrays;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
-import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
+import org.junit.Test;
 
 public class SandboxInterceptorTest {
 
@@ -43,14 +44,21 @@ public class SandboxInterceptorTest {
     }
 
     /** Checks that {@link GString} is handled sanely. */
-    @Ignore // TODO have not yet figured out how to make this work without breaking testGString2; need to patch StaticWhitelist.methodDefinition and friends to consider GString a subtype of String perhaps?
     @Test public void testGString() throws Exception {
-        assertEvaluate(new AnnotatedWhitelist(), "-foo1", "def x = 1; new " + Clazz.class.getName() + "().method(\"foo${x}\")");
+        String clazz = Clazz.class.getName();
+        String script = "def x = 1; new " + clazz + "().method(\"foo${x}\")";
+        String expected = "-foo1";
+        assertEvaluate(new AnnotatedWhitelist(), expected, script);
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " method java.lang.String")), expected, script);
     }
 
     /** Checks that methods specifically expecting {@link GString} also work. */
     @Test public void testGString2() throws Exception {
-        assertEvaluate(new AnnotatedWhitelist(), "-1-'1'-", "def x = 1; def c = new " + Clazz.class.getName() + "(); c.quote(\"-${c.specialize(x)}-${x}-\")");
+        String clazz = Clazz.class.getName();
+        String script = "def x = 1; def c = new " + clazz + "(); c.quote(\"-${c.specialize(x)}-${x}-\")";
+        String expected = "-1-'1'-";
+        assertEvaluate(new AnnotatedWhitelist(), expected, script);
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
     }
 
     public static final class Clazz {

@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import groovy.lang.GString;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -133,9 +134,24 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             return false;
         }
         for (int i = 0; i < parameterTypes.length; i++) {
-            if (parameters[i] != null && !parameterTypes[i].isInstance(parameters[i])) {
-                return false;
+            if (parameters[i] == null) {
+                if (parameterTypes[i].isPrimitive()) {
+                    return false;
+                } else {
+                    // A null argument is assignable to any reference-typed parameter.
+                    continue;
+                }
             }
+            if (parameterTypes[i].isInstance(parameters[i])) {
+                // OK, this parameter matches.
+                continue;
+            }
+            if (parameterTypes[i] == String.class && parameters[i] instanceof GString) {
+                // Hack for Groovy. TODO this needs to be an extension point
+                continue;
+            }
+            // Mismatch.
+            return false;
         }
         return true;
     }
@@ -197,6 +213,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 continue;
             }
             Class<?>[] parameterTypes = m.getParameterTypes();
+            // TODO should we issue an error if multiple overloads match? or try to find the “most specific”?
             if (matches(parameterTypes, args)) {
                 // TODO factor out method: staticMethod
                 return getName(receiver) + " " + method + printArgumentTypes(parameterTypes);

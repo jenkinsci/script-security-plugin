@@ -24,9 +24,10 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import groovy.lang.GString;
 import java.util.Arrays;
 import java.util.List;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * A whitelist based on listing signatures and searching them.
@@ -90,6 +91,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     private static boolean is(String type, Object arg) {
         if (arg == null) {
+            // TODO handle primitives
             return true;
         } else {
             return is(type, arg.getClass());
@@ -97,6 +99,10 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     private static boolean is(String type, Class<?> c) {
+        // TODO use extension point to handle GString
+        if (type.equals("java.lang.String") && GString.class.isAssignableFrom(c)) {
+            return true;
+        }
         if (getName(c).equals(type)) {
             return true;
         }
