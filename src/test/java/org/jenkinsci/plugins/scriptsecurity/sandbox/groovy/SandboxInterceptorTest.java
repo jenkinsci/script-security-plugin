@@ -34,6 +34,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SandboxInterceptorTest {
@@ -61,6 +62,17 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
     }
 
+    @Ignore("TODO org.codehaus.groovy.vmplugin.v7.TypeTransformers (Groovy 2) suggests that there are various unhandled cases, such as Closure → SAM, or numeric conversions.")
+    @Test public void testNumbers() throws Exception {
+        String clazz = Clazz.class.getName();
+        String script = "int x = 1; " + clazz + ".incr(x)";
+        Long expected = 2L;
+        // works but is undesirable: assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Integer")), expected, script);
+        assertEvaluate(new AnnotatedWhitelist(), expected, script);
+        // wrapper types must be declared for primitives:
+        assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Long")), expected, script);
+    }
+
     public static final class Clazz {
         @Whitelisted public Clazz() {}
         @Whitelisted public String method(String x) {return "-" + x;}
@@ -85,6 +97,9 @@ public class SandboxInterceptorTest {
         }
         private String quoteSingle(Object o) {
             return "'" + String.valueOf(o) + "'";
+        }
+        @Whitelisted static long incr(long x) {
+            return x + 1;
         }
     }
 

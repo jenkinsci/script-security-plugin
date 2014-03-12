@@ -99,7 +99,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     private static boolean is(String type, Class<?> c) {
-        // TODO use extension point to handle GString
+        // TODO cf. StaticWhitelist.matches
         if (type.equals("java.lang.String") && GString.class.isAssignableFrom(c)) {
             return true;
         }

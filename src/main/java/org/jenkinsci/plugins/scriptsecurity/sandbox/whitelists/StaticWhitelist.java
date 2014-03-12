@@ -146,8 +146,9 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 // OK, this parameter matches.
                 continue;
             }
+            // TODO what about a primitive parameter type and a wrapped parameter?
             if (parameterTypes[i] == String.class && parameters[i] instanceof GString) {
-                // Hack for Groovy. TODO this needs to be an extension point
+                // Hack for Groovy; cf. SandboxInterceptorTest. TODO this should be extensible (along with EnumeratingWhitelist.is)
                 continue;
             }
             // Mismatch.
