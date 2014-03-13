@@ -36,6 +36,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
@@ -126,19 +127,19 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return fieldSignatures;
     }
 
-    public static RejectedAccessException rejectMethod(Method m) {
+    public static RejectedAccessException rejectMethod(@Nonnull Method m) {
         return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
-    public static RejectedAccessException rejectNew(Constructor<?> c) {
+    public static RejectedAccessException rejectNew(@Nonnull Constructor<?> c) {
         return new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes()));
     }
 
-    public static RejectedAccessException rejectStaticMethod(Method m) {
+    public static RejectedAccessException rejectStaticMethod(@Nonnull Method m) {
         return new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
-    public static RejectedAccessException rejectField(Field f) {
+    public static RejectedAccessException rejectField(@Nonnull Field f) {
         return new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
     }
 

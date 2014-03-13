@@ -78,22 +78,16 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     @Override public Object onSetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property, Object value) throws Throwable {
         Field f = GroovyCallSiteSelector.field(receiver, property);
-        if (f == null) {
-            Object[] args = new Object[] {value};
-            // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
-            Method m = GroovyCallSiteSelector.method(receiver, "set" + Functions.capitalize(property), args);
-            if (m == null) {
-                throw new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
-            } else if (whitelist.permitsMethod(m, receiver, args)) {
-                return super.onSetProperty(invoker, receiver, property, value);
-            } else {
-                throw StaticWhitelist.rejectMethod(m);
-            }
-        } else if (whitelist.permitsFieldSet(f, receiver, value)) {
+        if (f != null && whitelist.permitsFieldSet(f, receiver, value)) {
             return super.onSetProperty(invoker, receiver, property, value);
-        } else {
-            throw StaticWhitelist.rejectField(f);
         }
+        // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
+        Object[] args = new Object[] {value};
+        Method m = GroovyCallSiteSelector.method(receiver, "set" + Functions.capitalize(property), args);
+        if (m != null && whitelist.permitsMethod(m, receiver, args)) {
+            return super.onSetProperty(invoker, receiver, property, value);
+        }
+        throw rejectField(f, m, receiver, property);
     }
 
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
@@ -101,20 +95,26 @@ final class SandboxInterceptor extends GroovyInterceptor {
             return super.onGetProperty(invoker, receiver, property);
         }
         Field f = GroovyCallSiteSelector.field(receiver, property);
-        if (f == null) {
-            Object[] args = new Object[] {};
-            Method m = GroovyCallSiteSelector.method(receiver, "get" + Functions.capitalize(property), args);
-            if (m == null) {
-                throw new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
-            } else if (whitelist.permitsMethod(m, receiver, args)) {
-                return super.onGetProperty(invoker, receiver, property);
-            } else {
-                throw StaticWhitelist.rejectMethod(m);
-            }
-        } else if (whitelist.permitsFieldGet(f, receiver)) {
+        if (f != null && whitelist.permitsFieldGet(f, receiver)) {
             return super.onGetProperty(invoker, receiver, property);
+        }
+        Object[] args = new Object[] {};
+        Method m = GroovyCallSiteSelector.method(receiver, "get" + Functions.capitalize(property), args);
+        if (m != null && whitelist.permitsMethod(m, receiver, args)) {
+            return super.onGetProperty(invoker, receiver, property);
+        }
+        throw rejectField(f, m, receiver, property);
+    }
+
+    private static RejectedAccessException rejectField(Field f, Method m, Object receiver, String property) {
+        if (f == null) {
+            if (m == null) {
+                return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+            } else {
+                return StaticWhitelist.rejectMethod(m);
+            }
         } else {
-            throw StaticWhitelist.rejectField(f);
+            return StaticWhitelist.rejectField(f);
         }
     }
 

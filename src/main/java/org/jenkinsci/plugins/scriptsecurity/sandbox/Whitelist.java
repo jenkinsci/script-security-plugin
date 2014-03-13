@@ -29,6 +29,8 @@ import hudson.ExtensionPoint;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -48,15 +50,15 @@ public abstract class Whitelist implements ExtensionPoint {
      * @param args zero or more arguments
      * @return true to allow the method to be called, false to reject it
      */
-    public abstract boolean permitsMethod(Method method, Object receiver, Object[] args);
+    public abstract boolean permitsMethod(@Nonnull Method method, @Nonnull Object receiver, @Nonnull Object[] args);
 
-    public abstract boolean permitsConstructor(Constructor<?> constructor, Object[] args);
+    public abstract boolean permitsConstructor(@Nonnull Constructor<?> constructor, @Nonnull Object[] args);
 
-    public abstract boolean permitsStaticMethod(Method method, Object[] args);
+    public abstract boolean permitsStaticMethod(@Nonnull Method method, @Nonnull Object[] args);
 
-    public abstract boolean permitsFieldGet(Field field, Object receiver);
+    public abstract boolean permitsFieldGet(@Nonnull Field field, @Nonnull Object receiver);
 
-    public abstract boolean permitsFieldSet(Field field, Object receiver, Object value);
+    public abstract boolean permitsFieldSet(@Nonnull Field field, @Nonnull Object receiver, @CheckForNull Object value);
 
     // TODO add methods for static field get/set
 
@@ -64,7 +66,7 @@ public abstract class Whitelist implements ExtensionPoint {
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.
      * @return an aggregated default list
      */
-    public static synchronized Whitelist all() {
+    public static synchronized @Nonnull Whitelist all() {
         if (all == null) {
             // TODO should check for dynamic changes in this list, e.g. from dynamically loaded plugins, and return a fresh aggregate
             all = new ProxyWhitelist(Jenkins.getInstance().getExtensionList(Whitelist.class));

@@ -28,6 +28,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyShell;
 import java.util.Arrays;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
@@ -80,6 +81,50 @@ public class SandboxInterceptorTest {
         assertTrue(Clazz.flag);
     }
 
+    @Test public void propertiesAndGettersAndSetters() throws Exception {
+        String clazz = Clazz.class.getName();
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "field " + clazz + " prop")), "default", "new " + clazz + "().prop");
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp")), "default", "new " + clazz + "().prop");
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "field " + clazz + " prop", "method " + clazz + " getProp")), "default", "new " + clazz + "().prop");
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().prop");
+        } catch (RejectedAccessException x) {
+            assertEquals("field " + clazz + " prop", x.getSignature());
+        }
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "method " + clazz + " setProp java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop", "method " + clazz + " setProp java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp")), "should be rejected", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        } catch (RejectedAccessException x) {
+            assertEquals("field " + clazz + " prop", x.getSignature());
+        }
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2")), "default", "new " + clazz + "().prop2");
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().prop2");
+        } catch (RejectedAccessException x) {
+            assertEquals("method " + clazz + " getProp2", x.getSignature());
+        }
+        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2", "method " + clazz + " setProp2 java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2")), "should be rejected", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
+        } catch (RejectedAccessException x) {
+            assertEquals("method " + clazz + " setProp2 java.lang.String", x.getSignature());
+        }
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().nonexistent");
+        } catch (RejectedAccessException x) {
+            assertEquals(null, x.getSignature());
+            assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
+        }
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().nonexistent = 'edited'");
+        } catch (RejectedAccessException x) {
+            assertEquals(null, x.getSignature());
+            assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
+        }
+    }
+
     public static final class Clazz {
         static boolean flag;
         @Whitelisted public Clazz() {}
@@ -108,6 +153,20 @@ public class SandboxInterceptorTest {
         }
         @Whitelisted static long incr(long x) {
             return x + 1;
+        }
+        private String prop = "default";
+        public String getProp() {
+            return prop;
+        }
+        public void setProp(String prop) {
+            this.prop = prop;
+        }
+        private String _prop2 = "default";
+        public String getProp2() {
+            return _prop2;
+        }
+        public void setProp2(String prop2) {
+            this._prop2 = prop2;
         }
     }
 
