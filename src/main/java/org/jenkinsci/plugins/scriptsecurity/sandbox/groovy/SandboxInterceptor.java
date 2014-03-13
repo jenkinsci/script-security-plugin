@@ -114,6 +114,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return StaticWhitelist.rejectMethod(m);
             }
         } else {
+            // TODO consider using rejectMethod (for non-null m), especially if the field is not public
             return StaticWhitelist.rejectField(f);
         }
     }

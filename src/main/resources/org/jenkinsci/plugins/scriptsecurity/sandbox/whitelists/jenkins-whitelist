@@ -2,7 +2,7 @@
 method hudson.model.ModelObject getDisplayName
 method hudson.model.Run getFullDisplayName
 method hudson.model.AbstractBuild getEnvironments
-field hudson.tools.ToolInstallation home
-field hudson.tools.ToolInstallation name
+method hudson.tools.ToolInstallation getHome
+method hudson.tools.ToolInstallation getName
 new hudson.EnvVars
 staticMethod hudson.model.Environment create hudson.EnvVars
