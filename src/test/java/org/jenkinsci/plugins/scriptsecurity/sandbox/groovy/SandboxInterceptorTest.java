@@ -25,8 +25,11 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.GString;
+import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -171,6 +174,35 @@ public class SandboxInterceptorTest {
         }
         public void setProp2(String prop2) {
             this._prop2 = prop2;
+        }
+    }
+    
+    @Test public void dynamicProperties() throws Exception {
+        String dynamic = Dynamic.class.getName();
+        String ctor = "new " + dynamic;
+        String getProperty = "method groovy.lang.GroovyObject getProperty java.lang.String";
+        String setProperty = "method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object";
+        String script = "def d = new " + dynamic + "(); d.prop = 'val'; d.prop";
+        assertEvaluate(new StaticWhitelist(Arrays.asList(ctor, getProperty, setProperty)), "val", script);
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList(ctor, setProperty)), "should be rejected", script);
+        } catch (RejectedAccessException x) {
+            assertEquals(getProperty, x.getSignature());
+        }
+        try {
+            assertEvaluate(new StaticWhitelist(Arrays.asList(ctor)), "should be rejected", script);
+        } catch (RejectedAccessException x) {
+            assertEquals(setProperty, x.getSignature());
+        }
+    }
+
+    public static final class Dynamic extends GroovyObjectSupport {
+        private final Map<String,Object> values = new HashMap<String,Object>();
+        @Override public Object getProperty(String n) {
+            return values.get(n);
+        }
+        @Override public void setProperty(String n, Object v) {
+            values.put(n, v);
         }
     }
 

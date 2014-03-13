@@ -92,7 +92,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m != null && whitelist.permitsMethod(m, receiver, args)) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
-        throw rejectField(f, m, receiver, property);
+        args = new Object[] {property, value};
+        Method m2 = GroovyCallSiteSelector.method(receiver, "setProperty", args);
+        if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
+            return super.onSetProperty(invoker, receiver, property, value);
+        }
+        throw rejectField(f, m, m2, receiver, property);
     }
 
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
@@ -108,13 +113,22 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m != null && whitelist.permitsMethod(m, receiver, args)) {
             return super.onGetProperty(invoker, receiver, property);
         }
-        throw rejectField(f, m, receiver, property);
+        args = new Object[] {property};
+        Method m2 = GroovyCallSiteSelector.method(receiver, "getProperty", args);
+        if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
+            return super.onGetProperty(invoker, receiver, property);
+        }
+        throw rejectField(f, m, m2, receiver, property);
     }
 
-    private static RejectedAccessException rejectField(Field f, Method m, Object receiver, String property) {
+    private static RejectedAccessException rejectField(Field f, Method m, Method m2, Object receiver, String property) {
         if (f == null) {
             if (m == null) {
-                return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                if (m2 == null) {
+                    return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                } else {
+                    return StaticWhitelist.rejectMethod(m2);
+                }
             } else {
                 return StaticWhitelist.rejectMethod(m);
             }
