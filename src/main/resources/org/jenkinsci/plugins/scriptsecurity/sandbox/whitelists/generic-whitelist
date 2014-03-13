@@ -9,6 +9,3 @@ method java.util.Collection add java.lang.Object
 method java.util.Map put java.lang.Object java.lang.Object
 new java.net.URL java.lang.String
 method java.lang.String split java.lang.String
-
-# Synthetic, apparently Groovy operator:
-method java.lang.Integer plus java.lang.Integer

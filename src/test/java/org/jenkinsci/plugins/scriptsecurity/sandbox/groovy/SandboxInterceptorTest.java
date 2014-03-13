@@ -125,6 +125,10 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test public void syntheticMethods() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 4, "2 + 2");
+    }
+
     public static final class Clazz {
         static boolean flag;
         @Whitelisted public Clazz() {}

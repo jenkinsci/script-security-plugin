@@ -46,7 +46,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
-            throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+            if (receiver instanceof Number) {
+                // Synthetic methods like Integer.plus(Integer).
+                return super.onMethodCall(invoker, receiver, method, args);
+            } else {
+                throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+            }
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else {
