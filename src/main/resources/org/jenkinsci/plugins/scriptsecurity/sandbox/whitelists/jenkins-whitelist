@@ -1,5 +1,5 @@
 # Useful Jenkins API methods:
-method hudson.model.AbstractItem getDisplayName
+method hudson.model.ModelObject getDisplayName
 method hudson.model.Run getFullDisplayName
 method hudson.model.AbstractBuild getEnvironments
 field hudson.tools.ToolInstallation home
