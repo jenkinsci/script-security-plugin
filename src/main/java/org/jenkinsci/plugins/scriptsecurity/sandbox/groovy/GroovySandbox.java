@@ -24,12 +24,13 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
 
@@ -60,6 +61,25 @@ public class GroovySandbox {
         sandbox.register();
         try {
             r.run();
+        } finally {
+            sandbox.unregister();
+        }
+    }
+
+    /**
+     * Runs a function such as {@link GroovyShell#evaluate(String)} in the sandbox.
+     * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
+     * @param r a block of code during whose execution all calls are intercepted
+     * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
+     * @return the return value of the block
+     * @throws RejectedAccessException in case an attempted call was not whitelisted
+     * @throws Exception in case the block threw some other exception
+     */
+    public static <V> V runInSandbox(@Nonnull Callable<V> c, @Nonnull Whitelist whitelist) throws Exception {
+        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist);
+        sandbox.register();
+        try {
+            return c.call();
         } finally {
             sandbox.unregister();
         }
