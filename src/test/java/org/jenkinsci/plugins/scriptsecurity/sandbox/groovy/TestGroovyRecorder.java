@@ -35,6 +35,7 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import java.io.IOException;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -58,7 +59,7 @@ public final class TestGroovyRecorder extends Recorder {
         try {
             Binding binding = new Binding();
             binding.setVariable("build", build);
-            build.setDescription(script.evaluate(binding).toString());
+            build.setDescription(script.evaluate(Jenkins.getInstance().getPluginManager().uberClassLoader, binding).toString());
         } catch (Exception x) {
             throw new IOException(x);
         }

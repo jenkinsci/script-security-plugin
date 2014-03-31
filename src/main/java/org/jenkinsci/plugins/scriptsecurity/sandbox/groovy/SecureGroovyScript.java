@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import hudson.Extension;
+import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -41,8 +42,6 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
@@ -117,19 +116,19 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     /**
      * Runs the Groovy script, using the sandbox if so configured.
+     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader}
      * @param binding Groovy variable bindings
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
      * @throws UnapprovedUsageException in case of a non-sandbox issue
      */
-    public Object evaluate(Binding binding) throws Exception {
+    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
-        ClassLoader cl = Jenkins.getInstance().getPluginManager().uberClassLoader;
         if (sandbox) {
-            final GroovyShell shell = new GroovyShell(cl, binding, GroovySandbox.createSecureCompilerConfiguration());
+            final GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
             try {
                 return GroovySandbox.runInSandbox(new Callable<Object>() {
                     @Override public Object call() {
@@ -140,7 +139,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
             }
         } else {
-            return new GroovyShell(cl, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+            return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
         }
     }
 
