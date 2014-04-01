@@ -46,7 +46,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
-            if (receiver instanceof Number) {
+            if (receiver instanceof Number || (receiver instanceof String && method.equals("plus"))) {
                 // Synthetic methods like Integer.plus(Integer).
                 return super.onMethodCall(invoker, receiver, method, args);
             } else {

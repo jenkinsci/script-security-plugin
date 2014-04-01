@@ -66,7 +66,7 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
     }
 
-    @Ignore("TODO there are various unhandled cases, such as Closure → SAM, or numeric conversions.")
+    @Ignore("TODO there are various unhandled cases, such as Closure → SAM, or numeric conversions, or number → String, or boxing/unboxing.")
     @Test public void testNumbers() throws Exception {
         String clazz = Clazz.class.getName();
         String script = "int x = 1; " + clazz + ".incr(x)";
@@ -130,6 +130,7 @@ public class SandboxInterceptorTest {
 
     @Test public void syntheticMethods() throws Exception {
         assertEvaluate(new GenericWhitelist(), 4, "2 + 2");
+        assertEvaluate(new GenericWhitelist(), "17", "'' + 17");
     }
 
     public static final class Clazz {
