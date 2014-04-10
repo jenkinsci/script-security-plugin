@@ -214,6 +214,11 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Ignore("TODO not yet implemented")
+    @Test public void defaultGroovyMethods() throws Exception {
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         GroovySandbox.runInSandbox(new Runnable() {
