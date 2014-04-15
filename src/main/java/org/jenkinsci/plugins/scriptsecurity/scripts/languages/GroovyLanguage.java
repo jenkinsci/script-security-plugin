@@ -46,7 +46,7 @@ import jenkins.model.Jenkins;
     }
 
     @Override public String getCodeMirrorMode() {
-        return "clike"; // TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1
+        return "clike"; // TODO 1.560: "groovy"
     }
 
 }
