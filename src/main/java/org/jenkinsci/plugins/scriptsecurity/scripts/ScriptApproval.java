@@ -248,6 +248,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
     public synchronized String using(@Nonnull String script, @Nonnull Language language) throws UnapprovedUsageException {
+        if (script.isEmpty()) {
+            // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
+            // and in many cases there is some sensible behavior for an emoty script which we want to permit.
+            return script;
+        }
         String hash = hash(script, language.getName());
         if (!approvedScriptHashes.contains(hash)) {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
