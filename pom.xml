@@ -6,7 +6,7 @@
         <version>1.509.4</version>
     </parent>
     <artifactId>script-security</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>hpi</packaging>
     <name>Script Security Plugin</name>
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
