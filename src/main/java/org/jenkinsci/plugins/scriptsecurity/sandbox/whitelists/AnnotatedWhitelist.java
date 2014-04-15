@@ -80,6 +80,14 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             return allowed(field);
         }
 
+        @Override public boolean permitsStaticFieldGet(Field field) {
+            return allowed(field);
+        }
+
+        @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+            return allowed(field);
+        }
+
     }
 
 }

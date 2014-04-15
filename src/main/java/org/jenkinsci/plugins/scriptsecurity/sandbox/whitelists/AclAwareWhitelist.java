@@ -77,4 +77,12 @@ public class AclAwareWhitelist extends Whitelist {
         return unrestricted.permitsFieldSet(field, receiver, value);
     }
 
+    @Override public boolean permitsStaticFieldGet(Field field) {
+        return unrestricted.permitsStaticFieldGet(field);
+    }
+
+    @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+        return unrestricted.permitsStaticFieldSet(field, value);
+    }
+
 }

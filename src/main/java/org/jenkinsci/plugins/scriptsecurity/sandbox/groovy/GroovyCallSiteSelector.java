@@ -117,6 +117,15 @@ class GroovyCallSiteSelector {
         return null;
     }
 
+    public static @CheckForNull Field staticField(Class<?> receiver, String field) {
+        for (Field f : receiver.getDeclaredFields()) {
+            if (f.getName().equals(field)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
     private static Iterable<Class<?>> types(Object o) {
         Set<Class<?>> types = new LinkedHashSet<Class<?>>();
         visitTypes(types, o.getClass());

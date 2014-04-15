@@ -46,6 +46,7 @@ public class ProxyWhitelist extends Whitelist {
     private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
     private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
     private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+    private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
@@ -77,6 +78,9 @@ public class ProxyWhitelist extends Whitelist {
             @Override protected List<EnumeratingWhitelist.FieldSignature> fieldSignatures() {
                 return fieldSignatures;
             }
+            @Override protected List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures() {
+                return staticFieldSignatures;
+            }
         });
         for (Whitelist delegate : delegates) {
             if (delegate instanceof EnumeratingWhitelist) {
@@ -85,6 +89,7 @@ public class ProxyWhitelist extends Whitelist {
                 newSignatures.addAll(ew.newSignatures());
                 staticMethodSignatures.addAll(ew.staticMethodSignatures());
                 fieldSignatures.addAll(ew.fieldSignatures());
+                staticFieldSignatures.addAll(ew.staticFieldSignatures());
             } else if (delegate instanceof ProxyWhitelist) {
                 ProxyWhitelist pw = (ProxyWhitelist) delegate;
                 pw.wrappers.put(this, null);
@@ -98,6 +103,7 @@ public class ProxyWhitelist extends Whitelist {
                 newSignatures.addAll(pw.newSignatures);
                 staticMethodSignatures.addAll(pw.staticMethodSignatures);
                 fieldSignatures.addAll(pw.fieldSignatures);
+                staticFieldSignatures.addAll(pw.staticFieldSignatures);
             } else {
                 this.delegates.add(delegate);
             }
@@ -150,6 +156,24 @@ public class ProxyWhitelist extends Whitelist {
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
         for (Whitelist delegate : delegates) {
             if (delegate.permitsFieldSet(field, receiver, value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override public final boolean permitsStaticFieldGet(Field field) {
+        for (Whitelist delegate : delegates) {
+            if (delegate.permitsStaticFieldGet(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
+        for (Whitelist delegate : delegates) {
+            if (delegate.permitsStaticFieldSet(field, value)) {
                 return true;
             }
         }

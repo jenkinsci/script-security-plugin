@@ -44,6 +44,8 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> fieldSignatures();
 
+    protected abstract List<FieldSignature> staticFieldSignatures();
+
     // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
@@ -84,6 +86,24 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
         for (FieldSignature s : fieldSignatures()) {
+            if (s.matches(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override public final boolean permitsStaticFieldGet(Field field) {
+        for (FieldSignature s : staticFieldSignatures()) {
+            if (s.matches(field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
+        for (FieldSignature s : staticFieldSignatures()) {
             if (s.matches(field)) {
                 return true;
             }

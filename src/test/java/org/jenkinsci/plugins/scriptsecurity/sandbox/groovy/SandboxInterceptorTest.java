@@ -77,10 +77,9 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Long")), expected, script);
     }
 
-    @Ignore("TODO not yet implemented")
     @Test public void staticFields() throws Exception {
         String clazz = Clazz.class.getName();
-        assertEvaluate(new StaticWhitelist(Arrays.asList("field " + clazz + " flag")), true, clazz + ".flag=true");
+        assertEvaluate(new StaticWhitelist(Arrays.asList("staticField " + clazz + " flag")), true, clazz + ".flag=true");
         assertTrue(Clazz.flag);
     }
 

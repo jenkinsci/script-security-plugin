@@ -60,7 +60,9 @@ public abstract class Whitelist implements ExtensionPoint {
 
     public abstract boolean permitsFieldSet(@Nonnull Field field, @Nonnull Object receiver, @CheckForNull Object value);
 
-    // TODO add methods for static field get/set
+    public abstract boolean permitsStaticFieldGet(@Nonnull Field field);
+
+    public abstract boolean permitsStaticFieldSet(@Nonnull Field field, @CheckForNull Object value);
 
     /**
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.

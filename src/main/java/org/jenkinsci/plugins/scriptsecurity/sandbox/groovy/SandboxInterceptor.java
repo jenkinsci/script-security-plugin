@@ -97,7 +97,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
-        throw rejectField(f, m, m2, receiver, property);
+        Field f2 = null;
+        if (receiver instanceof Class) {
+            f2 = GroovyCallSiteSelector.staticField((Class) receiver, property);
+            if (f2 != null && whitelist.permitsStaticFieldSet(f2, value)) {
+                return super.onSetProperty(invoker, receiver, property, value);
+            }
+        }
+        throw rejectField(f, m, m2, f2, receiver, property);
     }
 
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
@@ -118,14 +125,25 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
             return super.onGetProperty(invoker, receiver, property);
         }
-        throw rejectField(f, m, m2, receiver, property);
+        Field f2 = null;
+        if (receiver instanceof Class) {
+            f2 = GroovyCallSiteSelector.staticField((Class) receiver, property);
+            if (f2 != null && whitelist.permitsStaticFieldGet(f2)) {
+                return super.onGetProperty(invoker, receiver, property);
+            }
+        }
+        throw rejectField(f, m, m2, f2, receiver, property);
     }
 
-    private static RejectedAccessException rejectField(Field f, Method m, Method m2, Object receiver, String property) {
+    private static RejectedAccessException rejectField(Field f, Method m, Method m2, Field f2, Object receiver, String property) {
         if (f == null) {
             if (m == null) {
                 if (m2 == null) {
-                    return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                    if (f2 == null) {
+                        return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                    } else {
+                        return StaticWhitelist.rejectStaticField(f2);
+                    }
                 } else {
                     return StaticWhitelist.rejectMethod(m2);
                 }

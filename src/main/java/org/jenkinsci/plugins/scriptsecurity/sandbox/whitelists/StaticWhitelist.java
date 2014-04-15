@@ -32,6 +32,7 @@ import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +50,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
     final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
+    final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
 
     public StaticWhitelist(Reader definition) throws IOException {
         BufferedReader br = new BufferedReader(definition);
@@ -90,6 +92,11 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 throw new IOException(line);
             }
             fieldSignatures.add(new FieldSignature(toks[1], toks[2]));
+        } else if (toks[0].equals("staticField")) {
+            if (toks.length != 3) {
+                throw new IOException(line);
+            }
+            staticFieldSignatures.add(new FieldSignature(toks[1], toks[2]));
         } else {
             throw new IOException(line);
         }
@@ -127,7 +134,12 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return fieldSignatures;
     }
 
+    @Override protected List<FieldSignature> staticFieldSignatures() {
+        return staticFieldSignatures;
+    }
+
     public static RejectedAccessException rejectMethod(@Nonnull Method m) {
+        assert (m.getModifiers() & Modifier.STATIC) == 0;
         return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
@@ -136,11 +148,18 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     public static RejectedAccessException rejectStaticMethod(@Nonnull Method m) {
+        assert (m.getModifiers() & Modifier.STATIC) != 0;
         return new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
     public static RejectedAccessException rejectField(@Nonnull Field f) {
+        assert (f.getModifiers() & Modifier.STATIC) == 0;
         return new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
+    }
+
+    public static RejectedAccessException rejectStaticField(@Nonnull Field f) {
+        assert (f.getModifiers() & Modifier.STATIC) != 0;
+        return new RejectedAccessException("staticField", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
     }
 
     private static String printArgumentTypes(Class<?>[] parameterTypes) {

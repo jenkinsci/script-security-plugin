@@ -55,4 +55,12 @@ public abstract class AbstractWhitelist extends Whitelist {
         return false;
     }
 
+    @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+        return false;
+    }
+
+    @Override public boolean permitsStaticFieldGet(Field field) {
+        return false;
+    }
+
 }
