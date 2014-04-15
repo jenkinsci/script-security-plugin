@@ -22,11 +22,12 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.scriptsecurity.sandbox;
+package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * Convenience whitelist base class that denies everything by default.
