@@ -239,12 +239,16 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Ignore("TODO fails with: unclassified staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCall java.lang.Class java.lang.Boolean java.lang.Boolean java.lang.String java.lang.Object[]")
     @Test public void defSyntax() throws Exception {
         String clazz = Unsafe.class.getName();
         Whitelist w = new ProxyWhitelist(new AnnotatedWhitelist(), /* for some reason def syntax triggers this */new StaticWhitelist(Collections.singleton("method java.util.Collection toArray")));
         assertEvaluate(w, "ok", "m(); def m() {" + clazz + ".ok()}");
         assertEvaluate(w, "ok", "m(); def static m() {" + clazz + ".ok()}");
+        try {
+            assertEvaluate(w, "should be rejected", "m(); def m() {" + clazz + ".explode()}");
+        } catch (RejectedAccessException x) {
+            assertEquals("staticMethod " + clazz + " explode", x.getSignature());
+        }
     }
 
     public static final class Unsafe {

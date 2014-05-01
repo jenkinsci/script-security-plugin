@@ -33,6 +33,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
+import org.kohsuke.groovy.sandbox.impl.Checker;
 
 @SuppressWarnings("rawtypes")
 final class SandboxInterceptor extends GroovyInterceptor {
@@ -73,6 +74,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.staticMethod(receiver, method, args);
         if (m == null) {
+            if (receiver == Checker.class && method.startsWith("checked")) {
+                // TODO cf. defSyntax; this seems like a bug in the sandbox
+                return super.onStaticCall(invoker, receiver, method, args);
+            }
             throw new RejectedAccessException("unclassified staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
