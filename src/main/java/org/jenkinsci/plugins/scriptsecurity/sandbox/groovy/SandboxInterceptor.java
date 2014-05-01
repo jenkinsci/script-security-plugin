@@ -75,7 +75,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Method m = GroovyCallSiteSelector.staticMethod(receiver, method, args);
         if (m == null) {
             if (receiver == Checker.class && method.startsWith("checked")) {
-                // TODO cf. defSyntax; this seems like a bug in the sandbox
+                // TODO cf. defSyntax: https://github.com/kohsuke/groovy-sandbox/issues/14
                 return super.onStaticCall(invoker, receiver, method, args);
             }
             throw new RejectedAccessException("unclassified staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
