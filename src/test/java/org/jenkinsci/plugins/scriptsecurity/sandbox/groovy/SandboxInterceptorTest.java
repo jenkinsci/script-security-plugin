@@ -28,6 +28,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.codehaus.groovy.runtime.GStringImpl;
@@ -35,6 +36,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.*;
@@ -221,13 +223,30 @@ public class SandboxInterceptorTest {
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
         String clazz = Unsafe.class.getName();
         String wl = Whitelisted.class.getName();
+        // @Whitelisted does not grant us access to anything new:
         assertEvaluate(new AnnotatedWhitelist(), "ok", " C.m(); class C {@" + wl + " static String m() {return " + clazz + ".ok();}}");
         try {
             assertEvaluate(new AnnotatedWhitelist(), "should be rejected", "C.m(); class C {@" + wl + " static void m() {" + clazz + ".explode();}}");
         } catch (RejectedAccessException x) {
             assertEquals("staticMethod " + clazz + " explode", x.getSignature());
         }
+        // but do not need @Whitelisted on ourselves:
+        assertEvaluate(new AnnotatedWhitelist(), "ok", "C.m(); class C {static String m() {return " + clazz + ".ok();}}");
+        try {
+            assertEvaluate(new AnnotatedWhitelist(), "should be rejected", "C.m(); class C {static void m() {" + clazz + ".explode();}}");
+        } catch (RejectedAccessException x) {
+            assertEquals("staticMethod " + clazz + " explode", x.getSignature());
+        }
     }
+
+    @Ignore("TODO fails with: unclassified staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCall java.lang.Class java.lang.Boolean java.lang.Boolean java.lang.String java.lang.Object[]")
+    @Test public void defSyntax() throws Exception {
+        String clazz = Unsafe.class.getName();
+        Whitelist w = new ProxyWhitelist(new AnnotatedWhitelist(), /* for some reason def syntax triggers this */new StaticWhitelist(Collections.singleton("method java.util.Collection toArray")));
+        assertEvaluate(w, "ok", "m(); def m() {" + clazz + ".ok()}");
+        assertEvaluate(w, "ok", "m(); def static m() {" + clazz + ".ok()}");
+    }
+
     public static final class Unsafe {
         @Whitelisted public static String ok() {return "ok";}
         public static void explode() {}
@@ -236,11 +255,7 @@ public class SandboxInterceptorTest {
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        GroovySandbox.runInSandbox(new Runnable() {
-            @Override public void run() {
-                assertEquals(expected, shell.evaluate(script));
-            }
-        }, whitelist);
+        assertEquals(expected, GroovySandbox.run(shell.parse(script), whitelist));
     }
 
 }

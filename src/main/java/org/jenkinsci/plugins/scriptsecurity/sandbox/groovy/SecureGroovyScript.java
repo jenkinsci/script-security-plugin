@@ -129,13 +129,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
         if (sandbox) {
-            final GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
+            GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
             try {
-                return GroovySandbox.runInSandbox(new Callable<Object>() {
-                    @Override public Object call() {
-                        return shell.evaluate(script);
-                    }
-                }, Whitelist.all());
+                return GroovySandbox.run(shell.parse(script), Whitelist.all());
             } catch (RejectedAccessException x) {
                 throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
             }
