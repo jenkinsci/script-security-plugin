@@ -218,6 +218,22 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
     }
 
+    @Test public void whitelistedIrrelevantInsideScript() throws Exception {
+        String clazz = Unsafe.class.getName();
+        String wl = Whitelisted.class.getName();
+        assertEvaluate(new AnnotatedWhitelist(), "ok", " C.m(); class C {@" + wl + " static String m() {return " + clazz + ".ok();}}");
+        try {
+            assertEvaluate(new AnnotatedWhitelist(), "should be rejected", "C.m(); class C {@" + wl + " static void m() {" + clazz + ".explode();}}");
+        } catch (RejectedAccessException x) {
+            assertEquals("staticMethod " + clazz + " explode", x.getSignature());
+        }
+    }
+    public static final class Unsafe {
+        @Whitelisted public static String ok() {return "ok";}
+        public static void explode() {}
+        private Unsafe() {}
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         GroovySandbox.runInSandbox(new Runnable() {
