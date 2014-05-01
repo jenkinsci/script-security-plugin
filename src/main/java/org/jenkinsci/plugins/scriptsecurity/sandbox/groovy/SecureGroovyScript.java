@@ -116,7 +116,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     /**
      * Runs the Groovy script, using the sandbox if so configured.
-     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader}
+     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader};
+     *               <strong>do not allow a user-customized classpath</strong>
      * @param binding Groovy variable bindings
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
