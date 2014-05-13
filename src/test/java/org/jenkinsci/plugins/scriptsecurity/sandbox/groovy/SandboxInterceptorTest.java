@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
+import groovy.lang.MissingPropertyException;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
@@ -263,6 +264,14 @@ public class SandboxInterceptorTest {
     
     @Test public void selfProperties() throws Exception {
         assertEvaluate(new ProxyWhitelist(), true, "BOOL=true; BOOL");
+    }
+
+    @Test public void missingPropertyException() throws Exception {
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should fail", "GOOP");
+        } catch (MissingPropertyException x) {
+            assertEquals("GOOP", x.getProperty());
+        }
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
