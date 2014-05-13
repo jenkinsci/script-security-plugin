@@ -241,6 +241,13 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test public void closures() throws Exception {
+        // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
+        assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), "method groovy.lang.GroovyObject getProperty java.lang.String", "{-> delegate = new Exception('oops'); message}()");
+        // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
+        assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), /* unclassified method Script1$_run_closure1 printStackTrace */ null, "{-> delegate = new Exception('oops'); printStackTrace()}()");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         assertEquals(expected, GroovySandbox.run(shell.parse(script), whitelist));
@@ -250,7 +257,7 @@ public class SandboxInterceptorTest {
         try {
             assertEvaluate(whitelist, "should be rejected", script);
         } catch (RejectedAccessException x) {
-            assertEquals(expectedSignature, x.getSignature());
+            assertEquals(x.getMessage(), expectedSignature, x.getSignature());
         }
     }
 
