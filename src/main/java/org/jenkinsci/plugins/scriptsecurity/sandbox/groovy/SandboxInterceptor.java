@@ -119,7 +119,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
             // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
             return super.onGetProperty(invoker, receiver, property);
         }
-        if (receiver instanceof Script && property.equals("out")) { // cf. SimpleTemplateEngine
+        if (receiver instanceof Script && ((Script) receiver).getBinding().getVariables().containsKey(property)) { // SimpleTemplateEngine "out" variable, and anything else added in a binding
             return super.onGetProperty(invoker, receiver, property);
         }
         if (property.equals("length") && receiver.getClass().isArray()) {

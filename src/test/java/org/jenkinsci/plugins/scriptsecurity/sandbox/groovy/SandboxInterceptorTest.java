@@ -253,10 +253,10 @@ public class SandboxInterceptorTest {
 
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        final Template t = new SimpleTemplateEngine(shell).createTemplate("hello <%= 'CRUEL'.toLowerCase() %> world");
-        assertEquals("hello cruel world", GroovySandbox.runInSandbox(new Callable<String>() {
+        final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
+        assertEquals("goodbye cruel world", GroovySandbox.runInSandbox(new Callable<String>() {
             @Override public String call() throws Exception {
-                return t.make().toString();
+                return t.make(new HashMap<String,Object>(Collections.singletonMap("aspect", "CRUEL"))).toString();
             }
         }, new StaticWhitelist(Arrays.asList("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object"))));
     }
