@@ -88,6 +88,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
             // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
             return super.onSetProperty(invoker, receiver, property, value);
         }
+        if (receiver instanceof Script && !property.equals("binding") && !property.equals("metaClass")) {
+            return super.onSetProperty(invoker, receiver, property, value);
+        }
         Field f = GroovyCallSiteSelector.field(receiver, property);
         if (f != null && whitelist.permitsFieldSet(f, receiver, value)) {
             return super.onSetProperty(invoker, receiver, property, value);

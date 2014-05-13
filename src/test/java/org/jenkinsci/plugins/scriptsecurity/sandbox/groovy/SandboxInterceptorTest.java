@@ -260,6 +260,10 @@ public class SandboxInterceptorTest {
             }
         }, new StaticWhitelist(Arrays.asList("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object"))));
     }
+    
+    @Test public void selfProperties() throws Exception {
+        assertEvaluate(new ProxyWhitelist(), true, "BOOL=true; BOOL");
+    }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
