@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.Script;
 import hudson.Functions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,7 +34,6 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
-import org.kohsuke.groovy.sandbox.impl.Checker;
 
 @SuppressWarnings("rawtypes")
 final class SandboxInterceptor extends GroovyInterceptor {
@@ -117,6 +117,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
         if (receiver == null) {
             // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
+            return super.onGetProperty(invoker, receiver, property);
+        }
+        if (receiver instanceof Script && property.equals("out")) { // cf. SimpleTemplateEngine
             return super.onGetProperty(invoker, receiver, property);
         }
         if (property.equals("length") && receiver.getClass().isArray()) {

@@ -27,11 +27,14 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
+import groovy.text.SimpleTemplateEngine;
+import groovy.text.Template;
 import hudson.Functions;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -246,6 +249,16 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), "method groovy.lang.GroovyObject getProperty java.lang.String", "{-> delegate = new Exception('oops'); message}()");
         // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
         assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), /* unclassified method Script1$_run_closure1 printStackTrace */ null, "{-> delegate = new Exception('oops'); printStackTrace()}()");
+    }
+
+    @Test public void templates() throws Exception {
+        final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        final Template t = new SimpleTemplateEngine(shell).createTemplate("hello <%= 'CRUEL'.toLowerCase() %> world");
+        assertEquals("hello cruel world", GroovySandbox.runInSandbox(new Callable<String>() {
+            @Override public String call() throws Exception {
+                return t.make().toString();
+            }
+        }, new StaticWhitelist(Arrays.asList("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object"))));
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
