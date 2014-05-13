@@ -86,7 +86,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     @Override public Object onSetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property, Object value) throws Throwable {
+        if (receiver == null) {
+            // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
+            return super.onSetProperty(invoker, receiver, property, value);
+        }
         Field f = GroovyCallSiteSelector.field(receiver, property);
         if (f != null && whitelist.permitsFieldSet(f, receiver, value)) {
             return super.onSetProperty(invoker, receiver, property, value);
@@ -112,7 +117,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
         throw rejectField(f, m, m2, f2, receiver, property);
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
+        if (receiver == null) {
+            // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
+            return super.onGetProperty(invoker, receiver, property);
+        }
         if (property.equals("length") && receiver.getClass().isArray()) {
             return super.onGetProperty(invoker, receiver, property);
         }

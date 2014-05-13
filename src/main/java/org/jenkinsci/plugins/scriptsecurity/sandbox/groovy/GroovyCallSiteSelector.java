@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 
 /**
  * Assists in determination of which method or other JVM element is actually about to be called by Groovy.
@@ -40,7 +41,7 @@ import javax.annotation.CheckForNull;
  */
 class GroovyCallSiteSelector {
 
-    private static boolean matches(Class<?>[] parameterTypes, Object[] parameters) {
+    private static boolean matches(@Nonnull Class<?>[] parameterTypes, @Nonnull Object[] parameters) {
         if (parameters.length != parameterTypes.length) {
             return false;
         }
@@ -75,7 +76,7 @@ class GroovyCallSiteSelector {
      * @param method the method name
      * @param args a set of actual arguments
      */
-    public static @CheckForNull Method method(Object receiver, String method, Object[] args) {
+    public static @CheckForNull Method method(@Nonnull Object receiver, @Nonnull String method, @Nonnull Object[] args) {
         for (Class<?> c : types(receiver)) {
             for (Method m : c.getDeclaredMethods()) {
                 if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
@@ -86,7 +87,7 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    public static @CheckForNull Constructor<?> constructor(Class<?> receiver, Object[] args) {
+    public static @CheckForNull Constructor<?> constructor(@Nonnull Class<?> receiver, @Nonnull Object[] args) {
         for (Constructor<?> c : receiver.getDeclaredConstructors()) {
             if (matches(c.getParameterTypes(), args)) {
                 return c;
@@ -95,7 +96,7 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    public static @CheckForNull Method staticMethod(Class<?> receiver, String method, Object[] args) {
+    public static @CheckForNull Method staticMethod(@Nonnull Class<?> receiver, @Nonnull String method, @Nonnull Object[] args) {
         // TODO should we check for inherited static calls?
         for (Method m : receiver.getDeclaredMethods()) {
             if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
@@ -106,7 +107,7 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    public static @CheckForNull Field field(Object receiver, String field) {
+    public static @CheckForNull Field field(@Nonnull Object receiver, @Nonnull String field) {
         for (Class<?> c : types(receiver)) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.getName().equals(field)) {
@@ -117,7 +118,7 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    public static @CheckForNull Field staticField(Class<?> receiver, String field) {
+    public static @CheckForNull Field staticField(@Nonnull Class<?> receiver, @Nonnull String field) {
         for (Field f : receiver.getDeclaredFields()) {
             if (f.getName().equals(field)) {
                 return f;
@@ -126,12 +127,12 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    private static Iterable<Class<?>> types(Object o) {
+    private static Iterable<Class<?>> types(@Nonnull Object o) {
         Set<Class<?>> types = new LinkedHashSet<Class<?>>();
         visitTypes(types, o.getClass());
         return types;
     }
-    private static void visitTypes(Set<Class<?>> types, Class<?> c) {
+    private static void visitTypes(@Nonnull Set<Class<?>> types, @Nonnull Class<?> c) {
         Class<?> s = c.getSuperclass();
         if (s != null) {
             visitTypes(types, s);

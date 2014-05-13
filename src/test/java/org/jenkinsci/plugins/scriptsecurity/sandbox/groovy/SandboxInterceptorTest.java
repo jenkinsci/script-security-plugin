@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
+import hudson.Functions;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -219,6 +220,25 @@ public class SandboxInterceptorTest {
         @Whitelisted public static String ok() {return "ok";}
         public static void explode() {}
         private Unsafe() {}
+    }
+
+    /** Expect errors from {@link org.codehaus.groovy.runtime.NullObject}. */
+    @Test public void nullPointerException() throws Exception {
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member");
+        } catch (NullPointerException x) {
+            assertEquals(Functions.printThrowable(x), "Cannot get property 'member' on null object", x.getMessage());
+        }
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member = 42");
+        } catch (NullPointerException x) {
+            assertEquals(Functions.printThrowable(x), "Cannot set property 'member' on null object", x.getMessage());
+        }
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member()");
+        } catch (NullPointerException x) {
+            assertEquals(Functions.printThrowable(x), "Cannot invoke method member() on null object", x.getMessage());
+        }
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
