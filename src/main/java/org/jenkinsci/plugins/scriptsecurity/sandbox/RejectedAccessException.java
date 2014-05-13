@@ -48,6 +48,18 @@ public final class RejectedAccessException extends SecurityException {
     }
 
     /**
+     * Rejects access to a well-described script element.
+     * Normally called from {@link StaticWhitelist#rejectMethod} or similar.
+     * @param type e.g. {@code field}
+     * @param details e.g. {@code some.Class fieldName}
+     * @param info some additional information if appropriate
+     */
+    public RejectedAccessException(String type, String details, String info) {
+        super("Scripts not permitted to use " + type + ": " + details + " (" + info + ")");
+        signature = type + " " + details;
+    }
+
+    /**
      * Rejects access to something which the current {@link StaticWhitelist} format could not describe.
      * @param message a descriptive message in no particular format
      */

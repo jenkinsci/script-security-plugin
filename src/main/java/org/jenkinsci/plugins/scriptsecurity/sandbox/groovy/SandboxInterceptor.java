@@ -159,7 +159,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
                         return StaticWhitelist.rejectStaticField(f2);
                     }
                 } else {
-                    return StaticWhitelist.rejectMethod(m2);
+                    // GroovyObject property access
+                    return StaticWhitelist.rejectMethod(m2, receiver.getClass().getName() + "." + property);
                 }
             } else {
                 return StaticWhitelist.rejectMethod(m);

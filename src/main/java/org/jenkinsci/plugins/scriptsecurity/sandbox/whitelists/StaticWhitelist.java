@@ -143,6 +143,11 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
     }
 
+    public static RejectedAccessException rejectMethod(@Nonnull Method m, String info) {
+        assert (m.getModifiers() & Modifier.STATIC) == 0;
+        return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()), info);
+    }
+
     public static RejectedAccessException rejectNew(@Nonnull Constructor<?> c) {
         return new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes()));
     }
