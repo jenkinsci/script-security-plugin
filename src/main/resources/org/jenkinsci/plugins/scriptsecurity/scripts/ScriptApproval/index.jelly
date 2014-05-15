@@ -78,8 +78,8 @@ THE SOFTWARE.
                 </j:when>
                 <j:otherwise>
                     <j:forEach var="ps" items="${it.pendingScripts}">
-                        <div id="ps-${ps.hash}">
-                            <p>
+                        <div id="ps-${ps.hash}" class="pending-script">
+                            <p class="ps-context">
                                 <button onclick="approveScript('${ps.hash}')">Approve</button> / <button onclick="denyScript('${ps.hash}')">Deny</button> ${ps.language.displayName} script
                                 <st:include it="${ps.context}" page="index.jelly"/>:
                             </p>
