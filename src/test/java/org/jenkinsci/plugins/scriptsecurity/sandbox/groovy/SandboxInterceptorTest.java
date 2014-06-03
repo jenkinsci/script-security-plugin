@@ -40,6 +40,7 @@ import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.BlanketWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
@@ -272,6 +273,10 @@ public class SandboxInterceptorTest {
         } catch (MissingPropertyException x) {
             assertEquals("GOOP", x.getProperty());
         }
+    }
+
+    @Test public void infiniteLoop() throws Exception {
+        assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (int i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
