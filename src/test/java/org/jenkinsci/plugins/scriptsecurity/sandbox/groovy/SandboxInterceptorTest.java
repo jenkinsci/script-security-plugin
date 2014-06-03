@@ -275,8 +275,9 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Ignore("https://github.com/kohsuke/groovy-sandbox/issues/16")
     @Test public void infiniteLoop() throws Exception {
-        assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (int i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
+        assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
