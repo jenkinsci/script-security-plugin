@@ -43,7 +43,7 @@ public final class RejectedAccessException extends SecurityException {
      * @param details e.g. {@code some.Class fieldName}
      */
     public RejectedAccessException(String type, String details) {
-        super("Scripts not permitted to use " + type + ": " + details);
+        super("Scripts not permitted to use " + type + " " + details);
         signature = type + " " + details;
     }
 
@@ -55,7 +55,7 @@ public final class RejectedAccessException extends SecurityException {
      * @param info some additional information if appropriate
      */
     public RejectedAccessException(String type, String details, String info) {
-        super("Scripts not permitted to use " + type + ": " + details + " (" + info + ")");
+        super("Scripts not permitted to use " + type + " " + details + " (" + info + ")");
         signature = type + " " + details;
     }
 
