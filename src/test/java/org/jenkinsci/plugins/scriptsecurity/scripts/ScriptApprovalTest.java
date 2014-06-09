@@ -35,7 +35,22 @@ public class ScriptApprovalTest {
     @Rule public JenkinsRule r = new JenkinsRule();
 
     @Test public void emptyScript() throws Exception {
-        assertEquals("", ScriptApproval.get().using("", GroovyLanguage.get()));
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        configureAndUse("");
+    }
+
+    @Test public void noSecurity() throws Exception {
+        configureAndUse("whatever");
+    }
+
+    @Test(expected=UnapprovedUsageException.class) public void withSecurity() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        configureAndUse("whatever");
+    }
+
+    private void configureAndUse(String groovy) {
+        ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ApprovalContext.create());
+        assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
     }
 
 }
