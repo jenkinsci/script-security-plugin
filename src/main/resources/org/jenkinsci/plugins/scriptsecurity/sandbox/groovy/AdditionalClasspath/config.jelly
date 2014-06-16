@@ -2,7 +2,7 @@
 <!--
 The MIT License
 
-Copyright 2014 Jesse Glick.
+Copyright (c) 2014 IKEDA Yasuyuki
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,21 +25,12 @@ THE SOFTWARE.
 
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <f:entry field="script" title="${%Groovy Script}">
-        <!-- TODO <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.JENKINS-15604"/> -->
-        <!-- TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1 means no true Groovy support -->
-        <f:textarea checkMethod="post"/> <!-- TODO codemirror-mode="clike" codemirror-config="'onBlur': cmChange" -->
+    <f:entry field="path" title="${%Path to Jarfile}">
+        <f:textbox />
     </f:entry>
-    <f:entry field="sandbox" title="${%Use Groovy Sandbox}">
-        <f:checkbox/>
+    <f:entry title="">
+      <div align="right">
+        <f:repeatableDeleteButton />
+      </div>
     </f:entry>
-    <f:advanced>
-        <f:entry title="${%Additional classpath}" field="additionalClasspathList">
-          <f:repeatableProperty
-            field="additionalClasspathList"
-            add="${%Add classpath}"
-            header="${%Classpath}"
-          />
-        </f:entry>
-    </f:advanced>
 </j:jelly>

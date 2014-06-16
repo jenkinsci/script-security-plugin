@@ -28,15 +28,21 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
+import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
 import hudson.model.Result;
 import hudson.security.GlobalMatrixAuthorizationStrategy;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
+import org.apache.tools.ant.DirectoryScanner;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import static org.junit.Assert.*;
@@ -98,4 +104,106 @@ public class SecureGroovyScriptTest {
         assertEquals("P#3", r.assertBuildStatusSuccess(p.scheduleBuild2(0)).getDescription());
     }
 
+    private List<File> getAllJarFiles() throws URISyntaxException {
+        String testClassPath = String.format(StringUtils.join(getClass().getName().split("\\."), "/"));
+        File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
+        
+        DirectoryScanner ds = new DirectoryScanner();
+        ds.setBasedir(testClassDir);
+        ds.setIncludes(new String[]{ "**/*.jar" });
+        ds.scan();
+        
+        List<File> ret = new ArrayList<File>();
+        
+        for (String relpath: ds.getIncludedFiles()) {
+            ret.add(new File(testClassDir, relpath));
+        }
+        
+        return ret;
+    }
+
+    @Test public void testClasspathConfiguration() throws Exception {
+        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        for (File jarfile: getAllJarFiles()) {
+            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+        }
+        
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "whatever",
+                true,
+                classpathList
+        )));
+        
+        JenkinsRule.WebClient wc = r.createWebClient();
+        r.submit(wc.getPage(p, "configure").getFormByName("config"));
+        
+        p = r.jenkins.getItemByFullName(p.getFullName(), FreeStyleProject.class);
+        TestGroovyRecorder recorder = (TestGroovyRecorder)p.getPublishersList().get(0);
+        assertEquals(classpathList, recorder.getScript().getAdditionalClasspathList());
+    }
+
+    @Test public void testClasspathInSandbox() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
+        gmas.add(Jenkins.READ, "devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            gmas.add(p, "devel");
+        }
+        r.jenkins.setAuthorizationStrategy(gmas);
+        
+        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        for (File jarfile: getAllJarFiles()) {
+            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+        }
+        
+        final String testingDisplayName = "TESTDISPLAYNAME";
+        
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                    String.format("build.setDisplayName(\"%s\"); \"\";", testingDisplayName),
+                    true,
+                    classpathList
+            )));
+            
+            FreeStyleBuild b = p.scheduleBuild2(0).get();
+            // fails for accessing non-whitelisted method.
+            r.assertBuildStatus(Result.FAILURE, b);
+            assertNotEquals(testingDisplayName, b.getDisplayName());
+        }
+        
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                    String.format(
+                            "import org.jenkinsci.plugins.scriptsecurity.testjar.BuildUtil;"
+                            + "BuildUtil.setDisplayName(build, \"%s\")"
+                            + "\"\"", testingDisplayName),
+                    true,
+                    classpathList
+            )));
+            
+            FreeStyleBuild b = p.scheduleBuild2(0).get();
+            // fails for accessing non-whitelisted method.
+            r.assertBuildStatus(Result.FAILURE, b);
+            assertNotEquals(testingDisplayName, b.getDisplayName());
+        }
+        
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                    String.format(
+                            "import org.jenkinsci.plugins.scriptsecurity.testjar.BuildUtil;"
+                            + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
+                            + "\"\"", testingDisplayName),
+                    true,
+                    classpathList
+            )));
+            
+            FreeStyleBuild b = p.scheduleBuild2(0).get();
+            r.assertBuildStatusSuccess(b);
+            assertEquals(testingDisplayName, b.getDisplayName());
+        }
+    }
 }
