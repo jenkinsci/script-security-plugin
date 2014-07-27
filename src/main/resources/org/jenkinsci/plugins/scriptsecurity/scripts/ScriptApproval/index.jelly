@@ -127,6 +127,33 @@ THE SOFTWARE.
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
             </p>
+            <hr/>
+            <j:choose>
+                <j:when test="${it.pendingClasspaths.isEmpty()}">
+                    <p>
+                        No pending classpath approvals.
+                    </p>
+                </j:when>
+                <j:otherwise>
+                    <j:forEach var="s" items="${it.pendingClasspaths}">
+                        <div id="s-${s.hash}">
+                            <p>
+                                <button onclick="approveClasspath('${s.path}', '${s.hash}')">Approve</button> /
+                                <button onclick="denyClasspath('${s.path}', '${s.hash}')">Deny</button> 
+                                ${s.path} (${s.hash})
+                            </p>
+                        </div>
+                    </j:forEach>
+                </j:otherwise>
+            </j:choose>
+            <p>Classpaths already approved:</p>
+            <textarea readonly="readonly" id="approvedClasspaths" rows="10" cols="80">
+                <j:forEach var="s" items="${it.approvedClasspaths.entrySet}">${s.value} (${s.key})<st:out value="&#10;"/></j:forEach>
+            </textarea>
+            <p>
+                You can also remove all previous classpaths approvals:
+                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and classpaths reapproved.')) {clearApprovedClasspaths()}">Clear Classpaths</button>
+            </p>
         </l:main-panel>
     </l:layout>
 </j:jelly>

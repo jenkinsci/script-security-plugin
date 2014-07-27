@@ -32,19 +32,31 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.Extension;
 import hudson.Util;
 import hudson.XmlFile;
+import hudson.model.Item;
 import hudson.model.RootAction;
 import hudson.model.Saveable;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Executor;
+import hudson.model.Queue;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -53,6 +65,8 @@ import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.types.FileSet;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -75,6 +89,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         XSTREAM2.alias("scriptApproval", ScriptApproval.class);
         XSTREAM2.alias("pendingScript", PendingScript.class);
         XSTREAM2.alias("pendingSignature", PendingSignature.class);
+        XSTREAM2.alias("pendingClasspath", PendingClasspath.class);
     }
 
     /** Gets the singleton instance. */
@@ -90,6 +105,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
     private /*final*/ Set<String> aclApprovedSignatures;
+
+    /** All external classpaths allowed used for scripts. Keys are hash, values are path (used only for displaying convenience).*/
+    private /*final*/ Map<String, String> approvedClasspaths /*= new HashMap<String, String>()*/;
 
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static abstract class PendingThing {
@@ -172,9 +190,44 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
     }
 
+    /**
+     * A classpath requiring approval by an administrator.
+     */
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public static final class PendingClasspath extends PendingThing {
+        private final String path;
+        private final String hash;
+        
+        PendingClasspath(@Nonnull String path, @Nonnull String hash, @Nonnull ApprovalContext context) {
+            super(context);
+            /**
+             * hash should be stored as files located at the classpath can be modified.
+             */
+            this.hash = hash;
+            this.path = path;
+        }
+        
+        public String getHash() {
+            return hash;
+        }
+        
+        public String getPath() {
+            return path;
+        }
+        @Override public int hashCode() {
+            // classpaths are distinguished only with its hash.
+            return getHash().hashCode();
+        }
+        @Override public boolean equals(Object obj) {
+            return obj instanceof PendingClasspath && ((PendingClasspath) obj).getHash().equals(getHash());
+        }
+    }
+
     private final Set<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
 
     private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+
+    private /*final*/ Set<PendingClasspath> pendingClasspaths /*= new LinkedHashSet<PendingClasspath>()*/;
 
     public ScriptApproval() {
         try {
@@ -182,8 +235,15 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         } catch (IOException x) {
             LOG.log(Level.WARNING, null, x);
         }
+        /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
+        }
+        if (approvedClasspaths == null) {
+            approvedClasspaths = new HashMap<String, String>();
+        }
+        if (pendingClasspaths == null) {
+            pendingClasspaths = new LinkedHashSet<PendingClasspath>();
         }
     }
 
@@ -195,6 +255,56 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             digest.update(script.getBytes("UTF-8"));
             return Util.toHexString(digest.digest());
         } catch (NoSuchAlgorithmException x) {
+            throw new AssertionError(x);
+        } catch (UnsupportedEncodingException x) {
+            throw new AssertionError(x);
+        }
+    }
+
+    private static String hashClasspath(String classpath) throws IOException{
+        File file = new File(classpath);
+        if (!file.exists()) {
+            throw new FileNotFoundException(String.format("Not found: %s", file.getAbsolutePath()));
+        }
+        if (!file.isDirectory()) {
+            // for a jar file.
+            // simply use the digest of the file.
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-1");
+                DigestInputStream input = new DigestInputStream(new FileInputStream(file), digest);
+                while(input.read() != -1) {}
+                input.close();
+                return Util.toHexString(digest.digest());
+            } catch(NoSuchAlgorithmException x) {
+                throw new AssertionError(x);
+            }
+        }
+        
+        // for a class directory.
+        // digest of "\0filename1\0filesize1\0filecontents1\0filename2\0filesize2\0filecontents2..."
+        // order all files in the alphabetical order.
+        FileSet fs = Util.createFileSet(file, "**");
+        fs.setDefaultexcludes(false);
+        DirectoryScanner ds = fs.getDirectoryScanner();
+        String[] files = ds.getIncludedFiles();
+        Arrays.sort(files);
+        
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            for (String targetPath: files) {
+                File targetFile = new File(file, targetPath);
+                
+                digest.update((byte)0);
+                digest.update(targetPath.getBytes("UTF-8"));
+                digest.update((byte)0);
+                digest.update(ByteBuffer.allocate(8).putLong(targetFile.length()).array());
+                digest.update((byte)0);
+                DigestInputStream input = new DigestInputStream(new FileInputStream(targetFile), digest);
+                while(input.read() != -1) {}
+                input.close();
+            }
+            return Util.toHexString(digest.digest());
+        } catch(NoSuchAlgorithmException x) {
             throw new AssertionError(x);
         } catch (UnsupportedEncodingException x) {
             throw new AssertionError(x);
@@ -259,6 +369,102 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new UnapprovedUsageException(hash);
         }
         return script;
+    }
+
+    /**
+     * Check whether classpath is approved. if not, add it as pending.
+     * 
+     * @param path
+     * @param context
+     */
+    public synchronized void configureingClasspath(@Nonnull String path, @Nonnull ApprovalContext context) {
+        String hash;
+        try {
+            hash = hashClasspath(path);
+        } catch (IOException x) {
+            // This is a case the path doesn't really exist
+            LOG.log(Level.WARNING, null, x);
+            return;
+        }
+        
+        if (!approvedClasspaths.containsKey(hash)) {
+            boolean shouldSave = false;
+            if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
+                LOG.info(String.format("Classpath %s (%s) is approved as configured with RUN_SCRIPTS permission.", path, hash));
+                approvedClasspaths.put(hash,  path);
+                shouldSave = true;
+            } else {
+                if (pendingClasspaths.add(new PendingClasspath(path, hash, context))) {
+                    LOG.info(String.format("%s (%s) is pended.", path, hash));
+                    shouldSave = true;
+                }
+            }
+            if (shouldSave) {
+                try {
+                    save();
+                } catch (IOException x) {
+                    LOG.log(Level.WARNING, null, x);
+                }
+            }
+        }
+        return;
+    }
+    
+    /**
+     * @param path
+     * @return whether a classpath is approved.
+     * @throws IOException when failed to access classpath.
+     */
+    public synchronized boolean isClasspathApproved(@Nonnull String path) throws IOException {
+        String hash = hashClasspath(path);
+        
+        String approvedPath = approvedClasspaths.get(hash);
+        if (approvedPath != null) {
+            LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedPath));
+        }
+        
+        return (approvedPath != null);
+    }
+    
+    private static Item currentExecutingItem() {
+        if (Executor.currentExecutor() == null) {
+            return null;
+        }
+        Queue.Executable exe = Executor.currentExecutor().getCurrentExecutable();
+        if (exe == null || !(exe instanceof AbstractBuild)) {
+            return null;
+        }
+        AbstractBuild<?,?> build = (AbstractBuild<?,?>)exe;
+        AbstractProject<?,?> project = build.getParent();
+        return project.getRootProject();
+    }
+    
+    /**
+     * Asserts a classpath is approved. Also records it as a pending classpath if not approved.
+     * 
+     * @param path classpath
+     * @throws IOException when failed to access classpath.
+     * @throws UnapprovedClasspathException when the classpath is not approved.
+     */
+    public synchronized void checkClasspathApproved(@Nonnull String path) throws IOException, UnapprovedClasspathException {
+        String hash = hashClasspath(path);
+        
+        if (!approvedClasspaths.containsKey(hash)) {
+            // Never approve classpath here.
+            ApprovalContext context = ApprovalContext.create();
+            context = context.withCurrentUser().withItemAsKey(currentExecutingItem());
+            if(pendingClasspaths.add(new PendingClasspath(path, hash, context))) {
+                LOG.info(String.format("%s (%s) is pended.", path, hash));
+                try {
+                    save();
+                } catch (IOException x) {
+                    LOG.log(Level.WARNING, null, x);
+                }
+            }
+            throw new UnapprovedClasspathException(path, hash);
+        }
+        
+        LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedClasspaths.get(hash)));
     }
 
     /**
@@ -460,4 +666,13 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return Jenkins.getInstance().getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
     }
 
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public Map<String, String> getApprovedClasspaths() {
+        return approvedClasspaths;
+    }
+
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public Set<PendingClasspath> getPendingClasspaths() {
+        return pendingClasspaths;
+    }
 }

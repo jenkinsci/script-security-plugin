@@ -108,6 +108,11 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!sandbox) {
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
         }
+        if (getAdditionalClasspathList() != null && !getAdditionalClasspathList().isEmpty()) {
+            for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
+                ScriptApproval.get().configureingClasspath(classpath.getPath(), context);
+            }
+        }
         return this;
     }
 
@@ -119,18 +124,14 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     /** Convenience form of {@link #configuring} that calls {@link ApprovalContext#withCurrentUser} and {@link ApprovalContext#withItemAsKey}. */
     public SecureGroovyScript configuringWithKeyItem() {
         ApprovalContext context = ApprovalContext.create();
-        if (!sandbox) {
-            context = context.withCurrentUser().withItemAsKey(currentItem());
-        }
+        context = context.withCurrentUser().withItemAsKey(currentItem());
         return configuring(context);
     }
 
     /** Convenience form of {@link #configuring} that calls {@link ApprovalContext#withCurrentUser} and {@link ApprovalContext#withItem}. */
     public SecureGroovyScript configuringWithNonKeyItem() {
         ApprovalContext context = ApprovalContext.create();
-        if (!sandbox) {
-            context = context.withCurrentUser().withItem(currentItem());
-        }
+        context = context.withCurrentUser().withItem(currentItem());
         return configuring(context);
     }
 
@@ -143,17 +144,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
      * @throws UnapprovedUsageException in case of a non-sandbox issue
+     * @throws UnapprovedClasspathException in case requiring classpath approving
      */
     public Object evaluate(BuildListener listener, ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
         if (getAdditionalClasspathList() != null && !getAdditionalClasspathList().isEmpty()) {
-            // TODO check approval of classpath
             List<URL> urlList = new ArrayList<URL>(getAdditionalClasspathList().size());
             
             for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
-                File file = classpath.getClasspath();
+                File file = new File(classpath.getPath());
                 if (!file.isAbsolute()) {
                     listener.getLogger().println(String.format("%s: classpath should be absolute. Not added to class loader", file));
                     continue;
@@ -162,6 +163,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     listener.getLogger().println(String.format("%s: Does not exist. Not added to class loader", file));
                     continue;
                 }
+                ScriptApproval.get().checkClasspathApproved(classpath.getPath());
                 try {
                     urlList.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
