@@ -157,6 +157,18 @@ public class SecureGroovyScriptTest {
             classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
         }
         
+        // Approve classpath.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpathList)));
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertNotEquals(0, pcps.size());
+            for(ScriptApproval.PendingClasspath pcp: pcps) {
+                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+            }
+        }
+        
         final String testingDisplayName = "TESTDISPLAYNAME";
         
         {
@@ -204,6 +216,91 @@ public class SecureGroovyScriptTest {
             FreeStyleBuild b = p.scheduleBuild2(0).get();
             r.assertBuildStatusSuccess(b);
             assertEquals(testingDisplayName, b.getDisplayName());
+        }
+    }
+    
+    @Test public void testNonapprovedClasspathInSandbox() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
+        gmas.add(Jenkins.READ, "devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            gmas.add(p, "devel");
+        }
+        r.jenkins.setAuthorizationStrategy(gmas);
+        
+        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        for (File jarfile: getAllJarFiles()) {
+            String path = jarfile.getAbsolutePath();
+            classpathList.add(new AdditionalClasspath(path));
+            
+            // String hash = ScriptApproval.hashClasspath(path);
+            // ScriptApproval.get().addApprovedClasspath(new ScriptApproval.ApprovedClasspath(hash, path));
+        }
+        
+        String SCRIPT_TO_RUN = "\"Script is run\";";
+        
+        // approve script
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false)));
+            
+            Set<ScriptApproval.PendingScript> pss = ScriptApproval.get().getPendingScripts();
+            assertNotEquals(0, pss.size());
+            for(ScriptApproval.PendingScript ps: pss) {
+                ScriptApproval.get().approveScript(ps.getHash());
+            }
+        }
+        
+        // Success without classpaths
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false)));
+            
+            r.assertBuildStatusSuccess(p.scheduleBuild2(0).get());
+        }
+        
+        // Fail as the classpath is not approved.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpathList)));
+            
+            r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+        }
+        
+        // Fail even in sandbox.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpathList)));
+            
+            r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+        }
+        
+        // Approve classpath.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpathList)));
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertNotEquals(0, pcps.size());
+            for(ScriptApproval.PendingClasspath pcp: pcps) {
+                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+            }
+        }
+        
+        // Success without sandbox.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpathList)));
+            
+            r.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        }
+        
+        // Success also in  sandbox.
+        {
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpathList)));
+            
+            r.assertBuildStatusSuccess(p.scheduleBuild2(0));
         }
     }
 }
