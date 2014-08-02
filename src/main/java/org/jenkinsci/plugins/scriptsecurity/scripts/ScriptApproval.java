@@ -51,11 +51,13 @@ import java.nio.ByteBuffer;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -87,6 +89,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         XSTREAM2.alias("com.cloudbees.hudson.plugins.modeling.scripts.ScriptApproval$PendingSignature", PendingSignature.class);
         // Current:
         XSTREAM2.alias("scriptApproval", ScriptApproval.class);
+        XSTREAM2.alias("approvedClasspath", ApprovedClasspath.class);
         XSTREAM2.alias("pendingScript", PendingScript.class);
         XSTREAM2.alias("pendingSignature", PendingSignature.class);
         XSTREAM2.alias("pendingClasspath", PendingClasspath.class);
@@ -97,6 +100,31 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return Jenkins.getInstance().getExtensionList(RootAction.class).get(ScriptApproval.class);
     }
 
+    /**
+     * Approved classpath
+     * 
+     * It is treated only with the hash,
+     * but additional information is provided for convenience.
+     */
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public static class ApprovedClasspath {
+        private final String hash;
+        private final String path;
+        
+        public ApprovedClasspath(String hash, String path) {
+            this.hash = hash;
+            this.path = path;
+        }
+        
+        public String getHash() {
+            return hash;
+        }
+        
+        public String getPath() {
+            return path;
+        }
+    }
+    
     /** All scripts which are already approved, via {@link #hash}. */
     private final Set<String> approvedScriptHashes = new TreeSet<String>();
 
@@ -106,8 +134,36 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
     private /*final*/ Set<String> aclApprovedSignatures;
 
-    /** All external classpaths allowed used for scripts. Keys are hash, values are path (used only for displaying convenience).*/
-    private /*final*/ Map<String, String> approvedClasspaths /*= new HashMap<String, String>()*/;
+    /** All external classpaths allowed used for scripts. Keys are hashes.*/
+    private /*final*/ Map<String, ApprovedClasspath> approvedClasspathMap /*= new LinkedHashMap<String, ApprovedClasspath>()*/;
+
+    protected Map<String, ApprovedClasspath> getApprovedClasspathMap() {
+        return approvedClasspathMap;
+    }
+
+    protected boolean hasApprovedClasspath(String hash) {
+        return getApprovedClasspathMap().containsKey(hash);
+    }
+
+    protected ApprovedClasspath getApprovedClasspath(String hash) {
+        return getApprovedClasspathMap().get(hash);
+    }
+
+    /**
+     * @param acp
+     * @return true if added
+     */
+    protected boolean addApprovedClasspath(ApprovedClasspath acp) {
+        if (hasApprovedClasspath(acp.getHash())) {
+            return false;
+        }
+        getApprovedClasspathMap().put(acp.getHash(), acp);
+        return true;
+    }
+
+    protected void removeAllApprovedClasspath() {
+        getApprovedClasspathMap().clear();
+    }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static abstract class PendingThing {
@@ -192,6 +248,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     /**
      * A classpath requiring approval by an administrator.
+     * 
+     * They are distinguished only with hashes,
+     * but other additional information is provided for users.
      */
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static final class PendingClasspath extends PendingThing {
@@ -227,7 +286,39 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
 
-    private /*final*/ Set<PendingClasspath> pendingClasspaths /*= new LinkedHashSet<PendingClasspath>()*/;
+    private /*final*/ Map<String, PendingClasspath> pendingClasspathMap /*= new LinkedHashMap<String, PendingClasspath>()*/;
+
+    protected Map<String, PendingClasspath> getPendingClasspathMap() {
+        return pendingClasspathMap;
+    }
+
+    protected boolean hasPendingClasspath(String hash) {
+        return getPendingClasspathMap().containsKey(hash);
+    }
+
+    protected PendingClasspath getPendingClasspath(String hash) {
+        return getPendingClasspathMap().get(hash);
+    }
+
+    /**
+     * @param pcp
+     * @return true if added
+     */
+    protected boolean addPendingClasspath(PendingClasspath pcp) {
+        if (hasPendingClasspath(pcp.getHash())) {
+            return false;
+        }
+        getPendingClasspathMap().put(pcp.getHash(), pcp);
+        return true;
+    }
+
+    /**
+     * @param hash
+     * @return true if removed
+     */
+    protected boolean removePendingClasspath(String hash) {
+        return getPendingClasspathMap().remove(hash) != null;
+    }
 
     public ScriptApproval() {
         try {
@@ -239,11 +330,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
         }
-        if (approvedClasspaths == null) {
-            approvedClasspaths = new HashMap<String, String>();
+        if (approvedClasspathMap == null) {
+            approvedClasspathMap = new LinkedHashMap<String, ApprovedClasspath>();
         }
-        if (pendingClasspaths == null) {
-            pendingClasspaths = new LinkedHashSet<PendingClasspath>();
+        if (pendingClasspathMap == null) {
+            pendingClasspathMap = new LinkedHashMap<String, PendingClasspath>();
         }
     }
 
@@ -387,14 +478,14 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             return;
         }
         
-        if (!approvedClasspaths.containsKey(hash)) {
+        if (!hasApprovedClasspath(hash)) {
             boolean shouldSave = false;
             if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
                 LOG.info(String.format("Classpath %s (%s) is approved as configured with RUN_SCRIPTS permission.", path, hash));
-                approvedClasspaths.put(hash,  path);
+                addApprovedClasspath(new ApprovedClasspath(hash, path));
                 shouldSave = true;
             } else {
-                if (pendingClasspaths.add(new PendingClasspath(path, hash, context))) {
+                if (addPendingClasspath(new PendingClasspath(path, hash, context))) {
                     LOG.info(String.format("%s (%s) is pended.", path, hash));
                     shouldSave = true;
                 }
@@ -418,9 +509,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized boolean isClasspathApproved(@Nonnull String path) throws IOException {
         String hash = hashClasspath(path);
         
-        String approvedPath = approvedClasspaths.get(hash);
+        ApprovedClasspath approvedPath = getApprovedClasspath(hash);
         if (approvedPath != null) {
-            LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedPath));
+            LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedPath.getPath()));
         }
         
         return (approvedPath != null);
@@ -449,11 +540,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized void checkClasspathApproved(@Nonnull String path) throws IOException, UnapprovedClasspathException {
         String hash = hashClasspath(path);
         
-        if (!approvedClasspaths.containsKey(hash)) {
+        if (!hasApprovedClasspath(hash)) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
             context = context.withCurrentUser().withItemAsKey(currentExecutingItem());
-            if(pendingClasspaths.add(new PendingClasspath(path, hash, context))) {
+            if (addPendingClasspath(new PendingClasspath(path, hash, context))) {
                 LOG.info(String.format("%s (%s) is pended.", path, hash));
                 try {
                     save();
@@ -464,7 +555,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new UnapprovedClasspathException(path, hash);
         }
         
-        LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedClasspaths.get(hash)));
+        LOG.fine(String.format("%s (%s) had been approved as %s.", path, hash, getApprovedClasspath(hash).getPath()));
     }
 
     /**
@@ -667,12 +758,45 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
-    public Map<String, String> getApprovedClasspaths() {
-        return approvedClasspaths;
+    public List<ApprovedClasspath> getApprovedClasspaths() {
+        return new ArrayList<ApprovedClasspath>(getApprovedClasspathMap().values());
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
-    public Set<PendingClasspath> getPendingClasspaths() {
-        return pendingClasspaths;
+    public List<PendingClasspath> getPendingClasspaths() {
+        return new ArrayList<PendingClasspath>(getPendingClasspathMap().values());
     }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public List<ApprovedClasspath> approveClasspath(String hash, String classpath) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        PendingClasspath cp = getPendingClasspath(hash);
+        if (cp != null && cp.getPath().equals(classpath)) {
+            removePendingClasspath(hash);
+            addApprovedClasspath(new ApprovedClasspath(cp.getHash(), cp.getPath()));
+            save();
+        }
+        return getApprovedClasspaths();
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public List<ApprovedClasspath> denyClasspath(String hash, String classpath) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        PendingClasspath cp = getPendingClasspath(hash);
+        if (cp != null && cp.getPath().equals(classpath)) {
+            removePendingClasspath(hash);
+            save();
+        }
+        return getApprovedClasspaths();
+    }
+
+    // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized List<ApprovedClasspath> clearApprovedClasspaths() throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        removeAllApprovedClasspath();
+        save();
+        return getApprovedClasspaths();
+    }
+
 }

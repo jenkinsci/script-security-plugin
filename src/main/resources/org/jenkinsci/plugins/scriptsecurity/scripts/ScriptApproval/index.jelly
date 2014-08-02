@@ -69,6 +69,29 @@ THE SOFTWARE.
                         updateApprovedSignatures(r);
                     });
                 }
+                function hideClasspath(hash) {
+                    $('pcp-' + hash).style.display = 'none';
+                }
+                function updateApprovedClasspaths(r) {
+                    $('approvedClasspaths').value = r.responseObject().map(function(e){return e.hash + "(" + e.path + ")";}).join('\n');
+                }
+                function approveClasspath(hash, path) {
+                    mgr.approveClasspath(hash, path, function(r) {
+                        updateApprovedClasspaths(r);
+                        hideClasspath(hash);
+                    });
+                }
+                function denyClasspath(hash, path) {
+                    mgr.denyClasspath(hash, path, function(r) {
+                        updateApprovedClasspaths(r);
+                        hideClasspath(hash);
+                    });
+                }
+                function clearApprovedClasspaths() {
+                    mgr.clearApprovedClasspaths(function(r) {
+                        updateApprovedClasspaths(r);
+                    });
+                }
             </script>
             <j:choose>
                 <j:when test="${it.pendingScripts.isEmpty()}">
@@ -135,12 +158,12 @@ THE SOFTWARE.
                     </p>
                 </j:when>
                 <j:otherwise>
-                    <j:forEach var="s" items="${it.pendingClasspaths}">
-                        <div id="s-${s.hash}">
+                    <j:forEach var="pcp" items="${it.pendingClasspaths}">
+                        <div id="pcp-${pcp.hash}">
                             <p>
-                                <button onclick="approveClasspath('${s.path}', '${s.hash}')">Approve</button> /
-                                <button onclick="denyClasspath('${s.path}', '${s.hash}')">Deny</button> 
-                                ${s.path} (${s.hash})
+                                <button onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
+                                <button onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
+                                ${pcp.hash} (${pcp.path})
                             </p>
                         </div>
                     </j:forEach>
@@ -148,7 +171,7 @@ THE SOFTWARE.
             </j:choose>
             <p>Classpaths already approved:</p>
             <textarea readonly="readonly" id="approvedClasspaths" rows="10" cols="80">
-                <j:forEach var="s" items="${it.approvedClasspaths.entrySet}">${s.value} (${s.key})<st:out value="&#10;"/></j:forEach>
+                <j:forEach var="acp" items="${it.approvedClasspaths}">${acp.hash} (${acp.path})<st:out value="&#10;"/></j:forEach>
             </textarea>
             <p>
                 You can also remove all previous classpaths approvals:
