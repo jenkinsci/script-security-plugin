@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import javax.annotation.CheckForNull;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -154,6 +155,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             List<URL> urlList = new ArrayList<URL>(getAdditionalClasspathList().size());
             
             for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
+                if (StringUtils.isBlank(classpath.getPath())) {
+                    continue;
+                }
                 File file = new File(classpath.getPath());
                 if (!file.isAbsolute()) {
                     listener.getLogger().println(String.format("%s: classpath should be absolute. Not added to class loader", file));

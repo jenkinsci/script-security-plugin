@@ -24,21 +24,30 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import java.io.File;
+import java.io.IOException;
+
+import jenkins.model.Jenkins;
+
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.util.FormValidation;
 
 /**
- *
+ * A classpath used for a groovy script.
  */
 public class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClasspath> {
     private final String path;
     
     @DataBoundConstructor
     public AdditionalClasspath(String path) {
-        this.path = path;
+        this.path = StringUtils.trim(path);
     }
     
     public String getPath() {
@@ -67,8 +76,30 @@ public class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClass
     public static class DescriptorImpl extends Descriptor<AdditionalClasspath> {
         @Override
         public String getDisplayName() {
-            // TODO
-            return "classpath";
+            return Messages.AdditionalClasspath_DisplayName();
+        }
+        
+        public FormValidation doCheckPath(@QueryParameter String path) {
+            if (StringUtils.isBlank(path)) {
+                return FormValidation.ok();
+            }
+            File file = new File(path);
+            if (!file.isAbsolute()) {
+                return FormValidation.error(Messages.AdditionalClasspath_path_notAbsolute());
+            }
+            if (!file.exists()) {
+                return FormValidation.error(Messages.AdditionalClasspath_path_notExists());
+            }
+            if (Jenkins.getInstance().isUseSecurity() && !Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+                try {
+                    if (!ScriptApproval.get().isClasspathApproved(path)) {
+                        return FormValidation.error(Messages.AdditionalClasspath_path_notApproved());
+                    }
+                } catch(IOException e) {
+                    return FormValidation.error(Messages.AdditionalClasspath_path_notApproved(), e);
+                }
+            }
+            return FormValidation.ok();
         }
     }
 }

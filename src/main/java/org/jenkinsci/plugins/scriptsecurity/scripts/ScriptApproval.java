@@ -24,6 +24,10 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+import net.sf.json.processors.JsonValueProcessor;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -106,7 +110,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * It is treated only with the hash,
      * but additional information is provided for convenience.
      */
-    @Restricted(NoExternalUse.class) // for use from Jelly
     public static class ApprovedClasspath {
         private final String hash;
         private final String path;
@@ -256,7 +259,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * They are distinguished only with hashes,
      * but other additional information is provided for users.
      */
-    @Restricted(NoExternalUse.class) // for use from Jelly
     public static final class PendingClasspath extends PendingThing {
         private final String path;
         private final String hash;
@@ -283,6 +285,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
         @Override public boolean equals(Object obj) {
             return obj instanceof PendingClasspath && ((PendingClasspath) obj).getHash().equals(getHash());
+        }
+        
+        /**
+         * Prepared as context causes cyclic reference.
+         * @return a JSON object.
+         */
+        protected JSONObject toJSON() {
+            return new JSONObject()
+                .element("hash", getHash())
+                .element("path", getPath());
         }
     }
 
@@ -513,12 +525,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized boolean isClasspathApproved(@Nonnull String path) throws IOException {
         String hash = hashClasspath(path);
         
-        ApprovedClasspath approvedPath = getApprovedClasspath(hash);
-        if (approvedPath != null) {
-            LOG.fine(String.format("%s (%s) has been approved as %s.", path, hash, approvedPath.getPath()));
-        }
-        
-        return (approvedPath != null);
+        return hasApprovedClasspath(hash);
     }
     
     private static Item currentExecutingItem() {
@@ -761,12 +768,10 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return Jenkins.getInstance().getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
     }
 
-    @Restricted(NoExternalUse.class) // for use from Jelly
     public List<ApprovedClasspath> getApprovedClasspaths() {
         return new ArrayList<ApprovedClasspath>(getApprovedClasspathMap().values());
     }
 
-    @Restricted(NoExternalUse.class) // for use from Jelly
     public List<PendingClasspath> getPendingClasspaths() {
         return new ArrayList<PendingClasspath>(getPendingClasspathMap().values());
     }
@@ -774,10 +779,22 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from Ajax
     @JavaScriptMethod
     public Object getClasspathRenderInfo() {
-        return new Object[]{
+        JsonConfig config = new JsonConfig();
+        config.registerJsonValueProcessor(PendingClasspath.class, new JsonValueProcessor() {
+            @Override
+            public Object processObjectValue(String key, Object obj, JsonConfig config) {
+                return ((PendingClasspath)obj).toJSON();
+            }
+            
+            @Override
+            public Object processArrayValue(Object obj, JsonConfig config) {
+                return ((PendingClasspath)obj).toJSON();
+            }
+        });
+        return JSONArray.fromObject(new Object[]{
                 getPendingClasspaths(),
                 getApprovedClasspaths(),
-        };
+        }, config);
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
