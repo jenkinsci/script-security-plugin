@@ -767,8 +767,18 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return new ArrayList<PendingClasspath>(getPendingClasspathMap().values());
     }
 
+    @Restricted(NoExternalUse.class) // for use from Ajax
+    @JavaScriptMethod
+    public Object getClasspathRenderInfo() {
+        return new Object[]{
+                getPendingClasspaths(),
+                getApprovedClasspaths(),
+        };
+    }
+
     @Restricted(NoExternalUse.class) // for use from AJAX
-    @JavaScriptMethod public List<ApprovedClasspath> approveClasspath(String hash, String classpath) throws IOException {
+    @JavaScriptMethod
+    public Object approveClasspath(String hash, String classpath) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         PendingClasspath cp = getPendingClasspath(hash);
         if (cp != null && cp.getPath().equals(classpath)) {
@@ -776,27 +786,29 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             addApprovedClasspath(new ApprovedClasspath(cp.getHash(), cp.getPath()));
             save();
         }
-        return getApprovedClasspaths();
+        return getClasspathRenderInfo();
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
-    @JavaScriptMethod public List<ApprovedClasspath> denyClasspath(String hash, String classpath) throws IOException {
+    @JavaScriptMethod
+    public Object denyClasspath(String hash, String classpath) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         PendingClasspath cp = getPendingClasspath(hash);
         if (cp != null && cp.getPath().equals(classpath)) {
             removePendingClasspath(hash);
             save();
         }
-        return getApprovedClasspaths();
+        return getClasspathRenderInfo();
     }
 
     // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
     @Restricted(NoExternalUse.class) // for use from AJAX
-    @JavaScriptMethod public synchronized List<ApprovedClasspath> clearApprovedClasspaths() throws IOException {
+    @JavaScriptMethod
+    public synchronized Object clearApprovedClasspaths() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         removeAllApprovedClasspath();
         save();
-        return getApprovedClasspaths();
+        return getClasspathRenderInfo();
     }
 
 }

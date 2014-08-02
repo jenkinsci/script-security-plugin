@@ -69,29 +69,68 @@ THE SOFTWARE.
                         updateApprovedSignatures(r);
                     });
                 }
-                function hideClasspath(hash) {
-                    $('pcp-' + hash).style.display = 'none';
-                }
-                function updateApprovedClasspaths(r) {
-                    $('approvedClasspaths').value = r.responseObject().map(function(e){return e.hash + "(" + e.path + ")";}).join('\n');
+                
+                function renderClasspaths(r) {
+                    var pendingClasspaths = r.responseObject()[0];
+                    var approvedClasspaths = r.responseObject()[1];
+                    if (pendingClasspaths.length == 0) {
+                        $('pendingClasspaths-none').show();
+                        $('pendingClasspaths').childElements().each(function(e){e.remove()});
+                        $('pendingClasspaths').hide();
+                    } else {
+                        $('pendingClasspaths-none').hide();
+                        $('pendingClasspaths').childElements().each(function(e){e.remove()});
+                        /*
+                           Create a list like:
+                            <p id="pcp-${pcp.hash}">
+                                <button onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
+                                <button onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
+                                ${pcp.hash} (${pcp.path})
+                            </p>
+                         */
+                        pendingClasspaths.each(function(e) {
+                            var block = new Element('p', { 'id': 'pcp-' + e.hash });
+                            var approveButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            approveButton.insert('Approve');
+                            approveButton.observe('click', function() {
+                                approveClasspath(this.readAttribute('hash'), this.readAttribute('path'));
+                            });
+                            var denyButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            denyButton.insert('Deny');
+                            denyButton.observe('click', function() {
+                                denyClasspath(this.readAttribute('hash'), this.readAttribute('path'));
+                            });
+                            block.insert(approveButton);
+                            block.insert(denyButton);
+                            block.insert(e.hash + "(" + e.path + ")");
+                            
+                            $('pendingClasspaths').insert(block);
+                        });
+                        $('pendingClasspaths').show();
+                    }
+                    $('approvedClasspaths').value = approvedClasspaths.map(function(e){return e.hash + "(" + e.path + ")";}).join('\n');
                 }
                 function approveClasspath(hash, path) {
                     mgr.approveClasspath(hash, path, function(r) {
-                        updateApprovedClasspaths(r);
-                        hideClasspath(hash);
+                        renderClasspaths(r);
                     });
                 }
                 function denyClasspath(hash, path) {
                     mgr.denyClasspath(hash, path, function(r) {
-                        updateApprovedClasspaths(r);
-                        hideClasspath(hash);
+                        renderClasspaths(r);
                     });
                 }
                 function clearApprovedClasspaths() {
                     mgr.clearApprovedClasspaths(function(r) {
-                        updateApprovedClasspaths(r);
+                        renderClasspaths(r);
                     });
                 }
+                
+                Event.observe(window, "load", function(){
+                    mgr.getClasspathRenderInfo(function(r) {
+                        renderClasspaths(r);
+                    });
+                });
             </script>
             <j:choose>
                 <j:when test="${it.pendingScripts.isEmpty()}">
@@ -151,27 +190,13 @@ THE SOFTWARE.
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
             </p>
             <hr/>
-            <j:choose>
-                <j:when test="${it.pendingClasspaths.isEmpty()}">
-                    <p>
-                        No pending classpath approvals.
-                    </p>
-                </j:when>
-                <j:otherwise>
-                    <j:forEach var="pcp" items="${it.pendingClasspaths}">
-                        <div id="pcp-${pcp.hash}">
-                            <p>
-                                <button onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
-                                <button onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
-                                ${pcp.hash} (${pcp.path})
-                            </p>
-                        </div>
-                    </j:forEach>
-                </j:otherwise>
-            </j:choose>
+            <p id="pendingClasspaths-none">
+                No pending classpath approvals.
+            </p>
+            <div id="pendingClasspaths">
+            </div>
             <p>Classpaths already approved:</p>
             <textarea readonly="readonly" id="approvedClasspaths" rows="10" cols="80">
-                <j:forEach var="acp" items="${it.approvedClasspaths}">${acp.hash} (${acp.path})<st:out value="&#10;"/></j:forEach>
             </textarea>
             <p>
                 You can also remove all previous classpaths approvals:
