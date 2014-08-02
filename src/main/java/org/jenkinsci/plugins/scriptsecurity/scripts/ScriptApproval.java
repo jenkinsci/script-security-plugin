@@ -161,6 +161,10 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return true;
     }
 
+    protected boolean removeApprovedClasspath(String hash) {
+        return getApprovedClasspathMap().remove(hash) != null;
+    }
+
     protected void removeAllApprovedClasspath() {
         getApprovedClasspathMap().clear();
     }
@@ -801,7 +805,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return getClasspathRenderInfo();
     }
 
-    // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod
+    public Object denyApprovedClasspath(String hash) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        if (removeApprovedClasspath(hash)) {
+            save();
+        }
+        return getClasspathRenderInfo();
+    }
+
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public synchronized Object clearApprovedClasspaths() throws IOException {

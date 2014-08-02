@@ -70,9 +70,7 @@ THE SOFTWARE.
                     });
                 }
                 
-                function renderClasspaths(r) {
-                    var pendingClasspaths = r.responseObject()[0];
-                    var approvedClasspaths = r.responseObject()[1];
+                function renderPendingClasspaths(pendingClasspaths) {
                     if (pendingClasspaths.length == 0) {
                         $('pendingClasspaths-none').show();
                         $('pendingClasspaths').childElements().each(function(e){e.remove()});
@@ -108,8 +106,48 @@ THE SOFTWARE.
                         });
                         $('pendingClasspaths').show();
                     }
-                    $('approvedClasspaths').value = approvedClasspaths.map(function(e){return e.hash + "(" + e.path + ")";}).join('\n');
                 }
+                
+                function renderApprovedClasspaths(approvedClasspaths) {
+                    if (approvedClasspaths.length == 0) {
+                        $('approvedClasspaths-none').show();
+                        $('approvedClasspaths').childElements().each(function(e){e.remove()});
+                        $('approvedClasspaths').hide();
+                        $('approvedClasspaths-clear').hide();
+                    } else {
+                        $('approvedClasspaths-none').hide();
+                        $('approvedClasspaths').childElements().each(function(e){e.remove()});
+                        /*
+                           Create a list like:
+                            <p id="acp-${acp.hash}">
+                                <button onclick="denyApprovedClasspath('${pcp.hash}')">Delete</button> 
+                                ${acp.hash} (${acp.path})
+                            </p>
+                         */
+                        approvedClasspaths.each(function(e) {
+                            var block = new Element('p', { 'id': 'acp-' + e.hash });
+                            var deleteButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            deleteButton.insert('Delete');
+                            deleteButton.observe('click', function() {
+                                if (confirm('Really delete this approved classpath? Any existing scripts using this classpath will need to be rerun and classpath reapproved.')) {
+                                    denyApprovedClasspath(this.readAttribute('hash'));
+                                }
+                            });
+                            block.insert(deleteButton);
+                            block.insert(e.hash + "(" + e.path + ")");
+                            
+                            $('approvedClasspaths').insert(block);
+                        });
+                        $('approvedClasspaths').show();
+                        $('approvedClasspaths-clear').show();
+                    }
+                }
+                
+                function renderClasspaths(r) {
+                    renderPendingClasspaths(r.responseObject()[0]);
+                    renderApprovedClasspaths(r.responseObject()[1]);
+                }
+                
                 function approveClasspath(hash, path) {
                     mgr.approveClasspath(hash, path, function(r) {
                         renderClasspaths(r);
@@ -117,6 +155,11 @@ THE SOFTWARE.
                 }
                 function denyClasspath(hash, path) {
                     mgr.denyClasspath(hash, path, function(r) {
+                        renderClasspaths(r);
+                    });
+                }
+                function denyApprovedClasspath(hash) {
+                    mgr.denyApprovedClasspath(hash, function(r) {
                         renderClasspaths(r);
                     });
                 }
@@ -196,11 +239,14 @@ THE SOFTWARE.
             <div id="pendingClasspaths">
             </div>
             <p>Classpaths already approved:</p>
-            <textarea readonly="readonly" id="approvedClasspaths" rows="10" cols="80">
-            </textarea>
-            <p>
+            <p id="approvedClasspaths-none">
+                No approved classpath.
+            </p>
+            <div id="approvedClasspaths">
+            </div>
+            <p id="approvedClasspaths-clear">
                 You can also remove all previous classpaths approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and classpaths reapproved.')) {clearApprovedClasspaths()}">Clear Classpaths</button>
+                <button onclick="if (confirm('Really delete all approvals? Any existing scripts using classpaths will need to be rerun and classpaths reapproved.')) {clearApprovedClasspaths()}">Clear Classpaths</button>
             </p>
         </l:main-panel>
     </l:layout>
