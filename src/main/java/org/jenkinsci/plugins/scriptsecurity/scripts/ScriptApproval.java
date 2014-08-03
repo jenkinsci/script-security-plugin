@@ -263,7 +263,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         private final String path;
         private final String hash;
         
-        PendingClasspath(@Nonnull String path, @Nonnull String hash, @Nonnull ApprovalContext context) {
+        PendingClasspath(@Nonnull String hash, @Nonnull String path, @Nonnull ApprovalContext context) {
             super(context);
             /**
              * hash should be stored as files located at the classpath can be modified.
@@ -502,7 +502,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
                 addApprovedClasspath(new ApprovedClasspath(hash, path));
                 shouldSave = true;
             } else {
-                if (addPendingClasspath(new PendingClasspath(path, hash, context))) {
+                if (addPendingClasspath(new PendingClasspath(hash, path, context))) {
                     LOG.info(String.format("%s (%s) is pended.", path, hash));
                     shouldSave = true;
                 }
@@ -556,7 +556,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
             context = context.withCurrentUser().withItemAsKey(currentExecutingItem());
-            if (addPendingClasspath(new PendingClasspath(path, hash, context))) {
+            if (addPendingClasspath(new PendingClasspath(hash, path, context))) {
                 LOG.info(String.format("%s (%s) is pended.", path, hash));
                 try {
                     save();

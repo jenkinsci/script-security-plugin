@@ -81,19 +81,19 @@ THE SOFTWARE.
                         /*
                            Create a list like:
                             <p id="pcp-${pcp.hash}">
-                                <button onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
-                                <button onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
+                                <button class="approve" onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
+                                <button class="deny"    onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
                                 ${pcp.hash} (${pcp.path})
                             </p>
                          */
                         pendingClasspaths.each(function(e) {
                             var block = new Element('p', { 'id': 'pcp-' + e.hash });
-                            var approveButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash, 'path': e.path });
                             approveButton.insert('Approve');
                             approveButton.observe('click', function() {
                                 approveClasspath(this.readAttribute('hash'), this.readAttribute('path'));
                             });
-                            var denyButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash, 'path': e.path });
                             denyButton.insert('Deny');
                             denyButton.observe('click', function() {
                                 denyClasspath(this.readAttribute('hash'), this.readAttribute('path'));
@@ -120,13 +120,13 @@ THE SOFTWARE.
                         /*
                            Create a list like:
                             <p id="acp-${acp.hash}">
-                                <button onclick="denyApprovedClasspath('${pcp.hash}')">Delete</button> 
+                                <button class="delete" onclick="denyApprovedClasspath('${pcp.hash}')">Delete</button> 
                                 ${acp.hash} (${acp.path})
                             </p>
                          */
                         approvedClasspaths.each(function(e) {
                             var block = new Element('p', { 'id': 'acp-' + e.hash });
-                            var deleteButton = new Element('button', { 'hash': e.hash, 'path': e.path });
+                            var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash, 'path': e.path });
                             deleteButton.insert('Delete');
                             deleteButton.observe('click', function() {
                                 if (confirm('Really delete this approved classpath? Any existing scripts using this classpath will need to be rerun and classpath reapproved.')) {
