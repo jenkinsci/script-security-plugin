@@ -27,7 +27,6 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
-import com.gargoylesoftware.htmlunit.html.Util;
 
 import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
@@ -603,6 +602,123 @@ public class SecureGroovyScriptTest {
             FreeStyleBuild b = p2.scheduleBuild2(0).get();
             r.assertBuildStatusSuccess(b);
             assertEquals(testingDisplayName, b.getDisplayName());
+        }
+    }
+    
+    @Test public void testClasspathAutomaticApprove() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
+        gmas.add(Jenkins.READ, "devel");
+        gmas.add(Jenkins.READ, "approver");
+        gmas.add(Jenkins.RUN_SCRIPTS, "approver");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            gmas.add(p, "devel");
+            gmas.add(p, "approver");
+        }
+        r.jenkins.setAuthorizationStrategy(gmas);
+        
+        JenkinsRule.WebClient wcDevel = r.createWebClient();
+        wcDevel.login("devel");
+        
+        JenkinsRule.WebClient wcApprover = r.createWebClient();
+        wcApprover.login("approver");
+        
+        
+        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        
+        for (File jarfile: getAllJarFiles()) {
+            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+            System.out.println(jarfile);
+        }
+        
+        final String testingDisplayName = "TESTDISPLAYNAME";
+        
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                String.format(
+                        "import org.jenkinsci.plugins.scriptsecurity.testjar.BuildUtil;"
+                        + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
+                        + "\"\"", testingDisplayName),
+                true,
+                classpathList
+        )));
+        
+        // Deny classpath.
+        {
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertNotEquals(0, pcps.size());
+            for(ScriptApproval.PendingClasspath pcp: pcps) {
+                ScriptApproval.get().denyClasspath(pcp.getHash(), pcp.getPath());
+            }
+            
+            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+        }
+        
+        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved
+        {
+            r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertEquals(0, pcps.size());
+            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            assertNotEquals(0, acps.size());
+            
+            for(ScriptApproval.ApprovedClasspath acp: acps) {
+                ScriptApproval.get().denyApprovedClasspath(acp.getHash());
+            }
+            
+            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+        }
+        
+        // If configured by a user without RUN_SCRIPTS, approval is requested
+        {
+            r.submit(wcDevel.getPage(p, "configure").getFormByName("config"));
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertNotEquals(0, pcps.size());
+            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            assertEquals(0, acps.size());
+            
+            // don't remove pending classpaths.
+        }
+        
+        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved, and removed from approval request.
+        {
+            assertNotEquals(0, ScriptApproval.get().getPendingClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            
+            r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertEquals(0, pcps.size());
+            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            assertNotEquals(0, acps.size());
+            
+            for(ScriptApproval.ApprovedClasspath acp: acps) {
+                ScriptApproval.get().denyApprovedClasspath(acp.getHash());
+            }
+            
+            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+        }
+        
+        // If run with SYSTEM user, an approval is requested.
+        {
+            r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+            
+            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            assertNotEquals(0, pcps.size());
+            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            assertEquals(0, acps.size());
+            
+            for(ScriptApproval.PendingClasspath pcp: pcps) {
+                ScriptApproval.get().denyClasspath(pcp.getHash(), pcp.getPath());
+            }
+            
+            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
         }
     }
 }

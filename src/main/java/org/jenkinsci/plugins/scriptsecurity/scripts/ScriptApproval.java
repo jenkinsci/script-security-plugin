@@ -498,6 +498,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             boolean shouldSave = false;
             if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
                 LOG.info(String.format("Classpath %s (%s) is approved as configured with RUN_SCRIPTS permission.", path, hash));
+                removePendingClasspath(hash);
                 addApprovedClasspath(new ApprovedClasspath(hash, path));
                 shouldSave = true;
             } else {
