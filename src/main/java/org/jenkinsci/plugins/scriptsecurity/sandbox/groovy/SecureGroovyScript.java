@@ -35,7 +35,6 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.util.FormValidation;
 import hudson.util.NullStream;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
