@@ -76,7 +76,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         this.classpath = classpath;
     }
 
-    public SecureGroovyScript(String script, boolean sandbox) {
+    @Deprecated public SecureGroovyScript(String script, boolean sandbox) {
         this(script, sandbox, null);
     }
 
