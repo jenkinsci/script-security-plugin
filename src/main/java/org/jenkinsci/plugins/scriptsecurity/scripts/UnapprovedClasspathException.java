@@ -46,8 +46,8 @@ public final class UnapprovedClasspathException extends SecurityException {
     }
     
     /**
-     * Gets a token which identifies the contents of classpath.
-     * @return an opaque token as in {@link ApprovalListener#onApprovedClasspath}
+     * Gets a token which identifies the contents of the unapproved classpath entry.
+     * @return the SHA-1 of the entry
      */
     public String getHash() {
         return hash;

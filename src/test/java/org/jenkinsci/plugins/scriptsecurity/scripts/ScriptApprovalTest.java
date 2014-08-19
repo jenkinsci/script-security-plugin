@@ -71,11 +71,11 @@ public class ScriptApprovalTest {
         
         ApprovalContext context = ApprovalContext.create();
         
-        ScriptApproval.get().addApprovedClasspath(new ScriptApproval.ApprovedClasspath(CLASSPATH_HASH1, CLASSPATH_PATH1));
-        ScriptApproval.get().addApprovedClasspath(new ScriptApproval.ApprovedClasspath(CLASSPATH_HASH2, CLASSPATH_PATH2));
-        ScriptApproval.get().addPendingClasspath(new ScriptApproval.PendingClasspath(CLASSPATH_HASH3, CLASSPATH_PATH3, context));
-        ScriptApproval.get().addPendingClasspath(new ScriptApproval.PendingClasspath(CLASSPATH_HASH4, CLASSPATH_PATH4, context));
-        ScriptApproval.get().addPendingClasspath(new ScriptApproval.PendingClasspath(CLASSPATH_HASH5, CLASSPATH_PATH5, context));
+        ScriptApproval.get().addApprovedClasspathEntry(new ScriptApproval.ApprovedClasspathEntry(CLASSPATH_HASH1, CLASSPATH_PATH1));
+        ScriptApproval.get().addApprovedClasspathEntry(new ScriptApproval.ApprovedClasspathEntry(CLASSPATH_HASH2, CLASSPATH_PATH2));
+        ScriptApproval.get().addPendingClasspathEntry(new ScriptApproval.PendingClasspathEntry(CLASSPATH_HASH3, CLASSPATH_PATH3, context));
+        ScriptApproval.get().addPendingClasspathEntry(new ScriptApproval.PendingClasspathEntry(CLASSPATH_HASH4, CLASSPATH_PATH4, context));
+        ScriptApproval.get().addPendingClasspathEntry(new ScriptApproval.PendingClasspathEntry(CLASSPATH_HASH5, CLASSPATH_PATH5, context));
         
         JenkinsRule.WebClient wc = r.createWebClient();
         

@@ -150,16 +150,16 @@ public class SecureGroovyScriptTest {
     }
 
     @Test public void testClasspathConfiguration() throws Exception {
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
+            classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "whatever",
                 true,
-                classpathList
+                classpath
         )));
         
         JenkinsRule.WebClient wc = r.createWebClient();
@@ -167,7 +167,7 @@ public class SecureGroovyScriptTest {
         
         p = r.jenkins.getItemByFullName(p.getFullName(), FreeStyleProject.class);
         TestGroovyRecorder recorder = (TestGroovyRecorder)p.getPublishersList().get(0);
-        assertEquals(classpathList, recorder.getScript().getClasspath());
+        assertEquals(classpath, recorder.getScript().getClasspath());
     }
 
     @Test public void testClasspathInSandbox() throws Exception {
@@ -179,20 +179,20 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(gmas);
         
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
+            classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         // Approve classpath.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpath)));
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -203,7 +203,7 @@ public class SecureGroovyScriptTest {
             p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                     String.format("build.setDisplayName(\"%s\"); \"\";", testingDisplayName),
                     true,
-                    classpathList
+                    classpath
             )));
             
             FreeStyleBuild b = p.scheduleBuild2(0).get();
@@ -220,7 +220,7 @@ public class SecureGroovyScriptTest {
                             + "BuildUtil.setDisplayName(build, \"%s\")"
                             + "\"\"", testingDisplayName),
                     true,
-                    classpathList
+                    classpath
             )));
             
             FreeStyleBuild b = p.scheduleBuild2(0).get();
@@ -237,7 +237,7 @@ public class SecureGroovyScriptTest {
                             + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                             + "\"\"", testingDisplayName),
                     true,
-                    classpathList
+                    classpath
             )));
             
             FreeStyleBuild b = p.scheduleBuild2(0).get();
@@ -255,13 +255,13 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(gmas);
         
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
             String path = jarfile.getAbsolutePath();
-            classpathList.add(new ClasspathEntry(path));
+            classpath.add(new ClasspathEntry(path));
             
             // String hash = ScriptApproval.hashClasspath(path);
-            // ScriptApproval.get().addApprovedClasspath(new ScriptApproval.ApprovedClasspath(hash, path));
+            // ScriptApproval.get().addApprovedClasspathEntry(new ScriptApproval.ApprovedClasspathEntry(hash, path));
         }
         
         String SCRIPT_TO_RUN = "\"Script is run\";";
@@ -289,7 +289,7 @@ public class SecureGroovyScriptTest {
         // Fail as the classpath is not approved.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpath)));
             
             r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
         }
@@ -297,7 +297,7 @@ public class SecureGroovyScriptTest {
         // Fail even in sandbox.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpath)));
             
             r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
         }
@@ -305,19 +305,19 @@ public class SecureGroovyScriptTest {
         // Approve classpath.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("", true, classpath)));
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
         // Success without sandbox.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpath)));
             
             r.assertBuildStatusSuccess(p.scheduleBuild2(0));
         }
@@ -325,7 +325,7 @@ public class SecureGroovyScriptTest {
         // Success also in  sandbox.
         {
             FreeStyleProject p = r.createFreeStyleProject();
-            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpathList)));
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, true, classpath)));
             
             r.assertBuildStatusSuccess(p.scheduleBuild2(0));
         }
@@ -347,9 +347,9 @@ public class SecureGroovyScriptTest {
             FileUtils.copyFileToDirectory(jarfile, tmpDir);
         }
         
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: tmpDir.listFiles()) {
-            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
+            classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         String SCRIPT_TO_RUN = "\"Script is run\";";
@@ -375,17 +375,17 @@ public class SecureGroovyScriptTest {
         }
         
         FreeStyleProject p = r.createFreeStyleProject();
-        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpathList)));
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(SCRIPT_TO_RUN, false, classpath)));
         
         // Fail as the classpath is not approved.
         r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
         
         // Approve classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -402,10 +402,10 @@ public class SecureGroovyScriptTest {
         
         // Approve classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -432,8 +432,8 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
-        classpathList.add(new ClasspathEntry(tmpDir.getAbsolutePath()));
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        classpath.add(new ClasspathEntry(tmpDir.getAbsolutePath()));
         
         final String testingDisplayName = "TESTDISPLAYNAME";
         
@@ -444,7 +444,7 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpathList
+                classpath
         )));
         
         // Fail as the classpath is not approved.
@@ -456,10 +456,10 @@ public class SecureGroovyScriptTest {
         
         // Approve classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -485,10 +485,10 @@ public class SecureGroovyScriptTest {
         
         // Approve classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -520,8 +520,8 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<ClasspathEntry> classpathList1 = new ArrayList<ClasspathEntry>();
-        classpathList1.add(new ClasspathEntry(tmpDir1.getAbsolutePath()));
+        List<ClasspathEntry> classpath1 = new ArrayList<ClasspathEntry>();
+        classpath1.add(new ClasspathEntry(tmpDir1.getAbsolutePath()));
         
         FreeStyleProject p1 = r.createFreeStyleProject();
         p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
@@ -530,7 +530,7 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpathList1
+                classpath1
         )));
         
         // Fail as the classpath is not approved.
@@ -542,10 +542,10 @@ public class SecureGroovyScriptTest {
         
         // Approve classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
             }
         }
         
@@ -579,8 +579,8 @@ public class SecureGroovyScriptTest {
             }
         }
         
-        List<ClasspathEntry> classpathList2 = new ArrayList<ClasspathEntry>();
-        classpathList2.add(new ClasspathEntry(tmpDir2.getAbsolutePath()));
+        List<ClasspathEntry> classpath2 = new ArrayList<ClasspathEntry>();
+        classpath2.add(new ClasspathEntry(tmpDir2.getAbsolutePath()));
         
         FreeStyleProject p2 = r.createFreeStyleProject();
         p2.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
@@ -589,7 +589,7 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpathList2
+                classpath2
         )));
         
         // Success as approved.
@@ -619,10 +619,10 @@ public class SecureGroovyScriptTest {
         wcApprover.login("approver");
         
         
-        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
+            classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
             System.out.println(jarfile);
         }
         
@@ -635,45 +635,45 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpathList
+                classpath
         )));
         
         // Deny classpath.
         {
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().denyClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().denyClasspathEntry(pcp.getHash());
             }
             
-            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
         // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved
         {
             r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertEquals(0, pcps.size());
-            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertNotEquals(0, acps.size());
             
-            for(ScriptApproval.ApprovedClasspath acp: acps) {
-                ScriptApproval.get().denyApprovedClasspath(acp.getHash());
+            for(ScriptApproval.ApprovedClasspathEntry acp: acps) {
+                ScriptApproval.get().denyApprovedClasspathEntry(acp.getHash());
             }
             
-            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
         // If configured by a user without RUN_SCRIPTS, approval is requested
         {
             r.submit(wcDevel.getPage(p, "configure").getFormByName("config"));
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertEquals(0, acps.size());
             
             // don't remove pending classpaths.
@@ -681,39 +681,39 @@ public class SecureGroovyScriptTest {
         
         // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved, and removed from approval request.
         {
-            assertNotEquals(0, ScriptApproval.get().getPendingClasspaths().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            assertNotEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
             
             r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertEquals(0, pcps.size());
-            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertNotEquals(0, acps.size());
             
-            for(ScriptApproval.ApprovedClasspath acp: acps) {
-                ScriptApproval.get().denyApprovedClasspath(acp.getHash());
+            for(ScriptApproval.ApprovedClasspathEntry acp: acps) {
+                ScriptApproval.get().denyApprovedClasspathEntry(acp.getHash());
             }
             
-            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
         // If run with SYSTEM user, an approval is requested.
         {
             r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
             
-            List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertNotEquals(0, pcps.size());
-            List<ScriptApproval.ApprovedClasspath> acps = ScriptApproval.get().getApprovedClasspaths();
+            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertEquals(0, acps.size());
             
-            for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().denyClasspath(pcp.getHash());
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().denyClasspathEntry(pcp.getHash());
             }
             
-            assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspaths().size());
+            assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
     }
 }
