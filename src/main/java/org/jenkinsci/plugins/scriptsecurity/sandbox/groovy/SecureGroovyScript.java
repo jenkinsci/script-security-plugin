@@ -29,12 +29,9 @@ import groovy.lang.GroovyShell;
 import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
-import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.Item;
-import hudson.model.StreamBuildListener;
 import hudson.util.FormValidation;
-import hudson.util.NullStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -142,7 +139,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedUsageException in case of a non-sandbox issue
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
-    public Object evaluate(BuildListener listener, ClassLoader loader, Binding binding) throws Exception {
+    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
@@ -168,11 +165,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         } else {
             return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
         }
-    }
-
-    @Deprecated
-    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
-        return evaluate(new StreamBuildListener(new NullStream()), loader, binding);
     }
 
     @Extension public static final class DescriptorImpl extends Descriptor<SecureGroovyScript> {
