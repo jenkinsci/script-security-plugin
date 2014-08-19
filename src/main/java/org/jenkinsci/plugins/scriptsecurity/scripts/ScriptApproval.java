@@ -713,11 +713,25 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod
     public JSON approveClasspathEntry(String hash) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
-        PendingClasspathEntry cp = getPendingClasspathEntry(hash);
-        if (cp != null) {
-            pendingClasspathEntries.remove(cp);
-            approvedClasspathEntries.add(new ApprovedClasspathEntry(cp.getHash(), cp.getURL()));
-            save();
+        URL url = null;
+        synchronized (this) {
+            PendingClasspathEntry cp = getPendingClasspathEntry(hash);
+            if (cp != null) {
+                pendingClasspathEntries.remove(cp);
+                url = cp.getURL();
+                approvedClasspathEntries.add(new ApprovedClasspathEntry(hash, url));
+                save();
+            }
+        }
+        if (url != null) {
+            SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
+            try {
+                for (ApprovalListener listener : Jenkins.getInstance().getExtensionList(ApprovalListener.class)) {
+                    listener.onApprovedClasspathEntry(hash, url);
+                }
+            } finally {
+                SecurityContextHolder.setContext(orig);
+            }
         }
         return getClasspathRenderInfo();
     }
