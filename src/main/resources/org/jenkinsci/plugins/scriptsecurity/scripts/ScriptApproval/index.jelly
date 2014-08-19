@@ -237,7 +237,7 @@ THE SOFTWARE.
                 No pending classpath entry approvals.
             </p>
             <div id="pendingClasspathEntries">
-                Classpath entries pending approval. (Beware of remote URLs.)
+                Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without your notice.)
             </div>
             <p>Classpath entries already approved:</p>
             <p id="approvedClasspathEntries-none">
