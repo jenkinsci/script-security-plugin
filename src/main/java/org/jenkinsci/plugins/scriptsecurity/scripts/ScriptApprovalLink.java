@@ -57,6 +57,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         if (outstanding > 0) {
             message += " <strong>" + outstanding + " signatures pending approval.</strong>";
         }
+        outstanding = ScriptApproval.get().getPendingClasspaths().size();
+        if (outstanding > 0) {
+            message += " <strong>" + outstanding + " classpath entries pending approval.</strong>";
+        }
         return message;
     }
 
