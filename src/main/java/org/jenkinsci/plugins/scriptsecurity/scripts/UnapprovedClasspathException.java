@@ -27,7 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import java.net.URL;
 
 /**
- * Exception thrown by {@link ScriptApproval#checkClasspathApproved(String)}.
+ * Exception thrown by {@link ScriptApproval#using(URL)}.
  */
 public final class UnapprovedClasspathException extends SecurityException {
 
@@ -36,7 +36,7 @@ public final class UnapprovedClasspathException extends SecurityException {
     private final String hash;
 
     UnapprovedClasspathException(URL url, String hash) {
-        super(String.format("classpath %s (%s) not yet approved for use", url, hash));
+        super(String.format("classpath entry %s (%s) not yet approved for use", url, hash));
         this.url = url;
         this.hash = hash;
     }

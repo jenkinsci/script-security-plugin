@@ -25,9 +25,6 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import java.io.File;
-import java.io.IOException;
-
-import jenkins.model.Jenkins;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -40,7 +37,6 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.util.FormValidation;
-import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -116,23 +112,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             } catch (MalformedURLException x) {
                 return FormValidation.error(x, "Could not parse: " + value); // TODO I18N
             }
-            try {
-                url.openStream().close();
-            } catch (FileNotFoundException x) {
-                return FormValidation.error(Messages.ClasspathEntry_path_notExists());
-            } catch (IOException x) {
-                return FormValidation.error(x, "Could not verify: " + url); // TODO I18N
-            }
-            if (Jenkins.getInstance().isUseSecurity() && !Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
-                try {
-                    if (!ScriptApproval.get().isClasspathApproved(url)) {
-                        return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
-                    }
-                } catch(IOException e) {
-                    return FormValidation.error(e, Messages.ClasspathEntry_path_notApproved());
-                }
-            }
-            return FormValidation.ok();
+            return ScriptApproval.get().checking(url);
         }
     }
 

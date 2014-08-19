@@ -99,7 +99,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     /**
      * To be called in your own {@link DataBoundConstructor} when storing the field of this type.
-     * Should always be called, though it does nothing when {@link #isSandbox}.
      * @param context an approval context
      * @return this object
      */
@@ -109,7 +108,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
         }
         for (ClasspathEntry entry : getClasspath()) {
-            ScriptApproval.get().configuringClasspath(entry.getURL(), context);
+            ScriptApproval.get().configuring(entry.getURL(), context);
         }
         return this;
     }
@@ -135,14 +134,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     /**
      * Runs the Groovy script, using the sandbox if so configured.
-     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader};
-     *               <strong>do not allow a user-customized classpath</strong>
+     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader}
      * @param binding Groovy variable bindings
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
      * @throws UnapprovedUsageException in case of a non-sandbox issue
-     * @throws UnapprovedClasspathException in case requiring classpath approving
+     * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
     public Object evaluate(BuildListener listener, ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
@@ -154,7 +152,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             
             for (ClasspathEntry entry : cp) {
                 URL url = entry.getURL();
-                ScriptApproval.get().checkClasspathApproved(url);
+                ScriptApproval.get().using(url);
                 urlList.add(url);
             }
             

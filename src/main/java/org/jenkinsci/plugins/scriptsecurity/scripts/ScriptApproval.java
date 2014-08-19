@@ -34,18 +34,14 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.Extension;
 import hudson.Util;
 import hudson.XmlFile;
-import hudson.model.Item;
 import hudson.model.RootAction;
 import hudson.model.Saveable;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Executor;
-import hudson.model.Queue;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -436,12 +432,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     /**
-     * Check whether classpath is approved. if not, add it as pending.
-     * 
-     * @param path
-     * @param context
+     * Called when configuring a classpath entry.
+     * Usage is similar to {@link #configuring(String, Language, ApprovalContext)}.
+     * @param url the location of the entry
+     * @param context any additional information
      */
-    public synchronized void configuringClasspath(@Nonnull URL url, @Nonnull ApprovalContext context) {
+    public synchronized void configuring(@Nonnull URL url, @Nonnull ApprovalContext context) {
         String hash;
         try {
             hash = hashClasspathEntry(url);
@@ -475,14 +471,23 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
     
     /**
-     * @param path
-     * @return whether a classpath is approved.
-     * @throws IOException when failed to access classpath.
+     * Like {@link #checking(String, Language)} but for classpath entries.
+     * (Easier to use {@link ClasspathEntry} as a configuration element.)
+     * @param url the classpath entry to verify
+     * @return whether it will be approved
      */
-    public synchronized boolean isClasspathApproved(@Nonnull URL url) throws IOException {
-        String hash = hashClasspathEntry(url);
-        
-        return hasApprovedClasspath(hash);
+    public synchronized FormValidation checking(@Nonnull URL url) {
+        try {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !hasApprovedClasspath(hashClasspathEntry(url))) {
+                return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
+            } else {
+                return FormValidation.ok();
+            }
+        } catch (FileNotFoundException x) {
+            return FormValidation.error(Messages.ClasspathEntry_path_notExists());
+        } catch (IOException x) {
+            return FormValidation.error(x, "Could not verify: " + url); // TODO NO18N
+        }
     }
     
     /**
@@ -492,7 +497,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @throws IOException when failed to the entry is inaccessible
      * @throws UnapprovedClasspathException when the entry is not approved
      */
-    public synchronized void checkClasspathApproved(@Nonnull URL url) throws IOException, UnapprovedClasspathException {
+    public synchronized void using(@Nonnull URL url) throws IOException, UnapprovedClasspathException {
         String hash = hashClasspathEntry(url);
         
         if (!hasApprovedClasspath(hash)) {
