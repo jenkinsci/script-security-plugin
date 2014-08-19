@@ -145,7 +145,7 @@ public class ScriptApprovalTest {
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
         
         // clear all classpaths
-        page.getElementById("approvedClasspaths-clear")
+        page.getElementById("approvedClasspathEntries-clear")
             .getElementsByTagName("button").get(0).click();
         
         assertNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
