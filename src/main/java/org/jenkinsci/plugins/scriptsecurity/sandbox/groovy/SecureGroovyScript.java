@@ -67,10 +67,10 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     private final String script;
     private final boolean sandbox;
-    private final List<ClasspathEntry> classpath;
+    private final @CheckForNull List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
 
-    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, List<ClasspathEntry> classpath) {
+    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
