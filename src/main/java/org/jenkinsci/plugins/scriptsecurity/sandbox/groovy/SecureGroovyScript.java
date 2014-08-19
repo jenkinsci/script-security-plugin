@@ -105,7 +105,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
         }
         for (ClasspathEntry entry : getClasspath()) {
-            ScriptApproval.get().configuring(entry.getURL(), context);
+            ScriptApproval.get().configuring(entry, context);
         }
         return this;
     }
@@ -148,9 +148,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             List<URL> urlList = new ArrayList<URL>(cp.size());
             
             for (ClasspathEntry entry : cp) {
-                URL url = entry.getURL();
-                ScriptApproval.get().using(url);
-                urlList.add(url);
+                ScriptApproval.get().using(entry);
+                urlList.add(entry.getURL());
             }
             
             loader = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);

@@ -106,13 +106,11 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             if (StringUtils.isBlank(value)) {
                 return FormValidation.warning("Enter a file path or URL."); // TODO I18N
             }
-            URL url;
             try {
-                url = pathToURL(value);
+                return ScriptApproval.get().checking(new ClasspathEntry(value));
             } catch (MalformedURLException x) {
                 return FormValidation.error(x, "Could not parse: " + value); // TODO I18N
             }
-            return ScriptApproval.get().checking(url);
         }
     }
 

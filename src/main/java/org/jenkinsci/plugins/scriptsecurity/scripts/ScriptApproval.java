@@ -437,7 +437,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @param url the location of the entry
      * @param context any additional information
      */
-    public synchronized void configuring(@Nonnull URL url, @Nonnull ApprovalContext context) {
+    public synchronized void configuring(@Nonnull ClasspathEntry entry, @Nonnull ApprovalContext context) {
+        URL url = entry.getURL();
         String hash;
         try {
             hash = hashClasspathEntry(url);
@@ -472,11 +473,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     
     /**
      * Like {@link #checking(String, Language)} but for classpath entries.
-     * (Easier to use {@link ClasspathEntry} as a configuration element.)
-     * @param url the classpath entry to verify
+     * (This is automatic if use {@link ClasspathEntry} as a configuration element.)
+     * @param entry the classpath entry to verify
      * @return whether it will be approved
      */
-    public synchronized FormValidation checking(@Nonnull URL url) {
+    public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
+        URL url = entry.getURL();
         try {
             if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !hasApprovedClasspathEntry(hashClasspathEntry(url))) {
                 return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
@@ -493,11 +495,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     /**
      * Asserts that a classpath entry is approved.
      * Also records it as a pending entry if not approved.
-     * @param url a classpath entry
+     * @param entry a classpath entry
      * @throws IOException when failed to the entry is inaccessible
      * @throws UnapprovedClasspathException when the entry is not approved
      */
-    public synchronized void using(@Nonnull URL url) throws IOException, UnapprovedClasspathException {
+    public synchronized void using(@Nonnull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
+        URL url = entry.getURL();
         String hash = hashClasspathEntry(url);
         
         if (!hasApprovedClasspathEntry(hash)) {
