@@ -110,7 +110,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
         if (getAdditionalClasspathList() != null && !getAdditionalClasspathList().isEmpty()) {
             for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
-                ScriptApproval.get().configureingClasspath(classpath.getPath(), context);
+                ScriptApproval.get().configuringClasspath(classpath.getPath(), context);
             }
         }
         return this;

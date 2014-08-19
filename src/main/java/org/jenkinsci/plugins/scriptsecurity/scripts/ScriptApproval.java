@@ -484,7 +484,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @param path
      * @param context
      */
-    public synchronized void configureingClasspath(@Nonnull String path, @Nonnull ApprovalContext context) {
+    public synchronized void configuringClasspath(@Nonnull String path, @Nonnull ApprovalContext context) {
         String hash;
         try {
             hash = hashClasspath(path);
