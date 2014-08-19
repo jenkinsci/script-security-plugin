@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2014 CloudBees, Inc.
+ * Copyright 2014 Jesse Glick.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,27 +24,19 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import hudson.ExtensionPoint;
 import java.net.URL;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-/**
- * Receives notifications on approval-related events.
- */
-public abstract class ApprovalListener implements ExtensionPoint {
-
-    /**
-     * Called when a script is approved.
-     * @param hash an opaque token as in {@link UnapprovedUsageException#getHash}
-     */
-    public abstract void onApproved(String hash);
-
-    /**
-     * Called when a classpath entry is approved.
-     * @param hash an opaque token as in {@link UnapprovedClasspathException#getHash}
-     * @param url its location
-     */
-    public void onApprovedClasspathEntry(String hash, URL url) {}
-
-    // TODO as needed: onDenied, onCleared
+public class ClasspathEntryTest {
+    
+    @Test public void pathURLConversion() throws Exception {
+        assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
+        assertEquals("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
+    }
+    private static void assertRoundTrip(String path, String url) throws Exception {
+        assertEquals(path, ClasspathEntry.urlToPath(new URL(url)));
+        assertEquals(url, ClasspathEntry.pathToURL(path).toString());
+    }
 
 }

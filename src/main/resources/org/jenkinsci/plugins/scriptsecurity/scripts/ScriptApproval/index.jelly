@@ -69,6 +69,111 @@ THE SOFTWARE.
                         updateApprovedSignatures(r);
                     });
                 }
+                
+                function renderPendingClasspathEntries(pendingClasspathEntries) {
+                    if (pendingClasspathEntries.length == 0) {
+                        $('pendingClasspathEntries-none').show();
+                        $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
+                        $('pendingClasspathEntries').hide();
+                    } else {
+                        $('pendingClasspathEntries-none').hide();
+                        $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
+                        /*
+                           Create a list like:
+                            <p id="pcp-${pcp.hash}">
+                                <button class="approve" onclick="approveClasspathEntry('${pcp.hash}')">Approve</button> /
+                                <button class="deny"    onclick="denyClasspathEntry('${pcp.hash}')">Deny</button> 
+                                ${pcp.hash} (${pcp.path})
+                            </p>
+                         */
+                        pendingClasspathEntries.each(function(e) {
+                            var block = new Element('p', { 'id': 'pcp-' + e.hash });
+                            var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash});
+                            approveButton.insert('Approve');
+                            approveButton.observe('click', function() {
+                                approveClasspathEntry(this.readAttribute('hash'));
+                            });
+                            var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash});
+                            denyButton.insert('Deny');
+                            denyButton.observe('click', function() {
+                                denyClasspathEntry(this.readAttribute('hash'));
+                            });
+                            block.insert(approveButton);
+                            block.insert(denyButton);
+                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
+                            
+                            $('pendingClasspathEntries').insert(block);
+                        });
+                        $('pendingClasspathEntries').show();
+                    }
+                }
+                
+                function renderApprovedClasspathEntries(approvedClasspathEntries) {
+                    if (approvedClasspathEntries.length == 0) {
+                        $('approvedClasspathEntries-none').show();
+                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                        $('approvedClasspathEntries').hide();
+                        $('approvedClasspathEntries-clear').hide();
+                    } else {
+                        $('approvedClasspathEntries-none').hide();
+                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                        /*
+                           Create a list like:
+                            <p id="acp-${acp.hash}">
+                                <button class="delete" onclick="denyApprovedClasspathEntry('${pcp.hash}')">Delete</button> 
+                                ${acp.hash} (${acp.path})
+                            </p>
+                         */
+                        approvedClasspathEntries.each(function(e) {
+                            var block = new Element('p', { 'id': 'acp-' + e.hash });
+                            var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash});
+                            deleteButton.insert('Delete');
+                            deleteButton.observe('click', function() {
+                                if (confirm('Really delete this approved classpath entry? Any existing scripts using it will need to be rerun and the entry reapproved.')) {
+                                    denyApprovedClasspathEntry(this.readAttribute('hash'));
+                                }
+                            });
+                            block.insert(deleteButton);
+                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
+                            
+                            $('approvedClasspathEntries').insert(block);
+                        });
+                        $('approvedClasspathEntries').show();
+                        $('approvedClasspathEntries-clear').show();
+                    }
+                }
+                
+                function renderClasspaths(r) {
+                    renderPendingClasspathEntries(r.responseObject()[0]);
+                    renderApprovedClasspathEntries(r.responseObject()[1]);
+                }
+                
+                function approveClasspathEntry(hash) {
+                    mgr.approveClasspathEntry(hash, function(r) {
+                        renderClasspaths(r);
+                    });
+                }
+                function denyClasspathEntry(hash) {
+                    mgr.denyClasspathEntry(hash, function(r) {
+                        renderClasspaths(r);
+                    });
+                }
+                function denyApprovedClasspathEntry(hash) {
+                    mgr.denyApprovedClasspathEntry(hash, function(r) {
+                        renderClasspaths(r);
+                    });
+                }
+                function clearApprovedClasspathEntries() {
+                    mgr.clearApprovedClasspathEntries(function(r) {
+                        renderClasspaths(r);
+                    });
+                }
+                
+                Event.observe(window, "load", function(){
+                    mgr.getClasspathRenderInfo(function(r) {
+                        renderClasspaths(r);
+                    });
+                });
             </script>
             <j:choose>
                 <j:when test="${it.pendingScripts.isEmpty()}">
@@ -126,6 +231,23 @@ THE SOFTWARE.
             <p>
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
+            </p>
+            <hr/>
+            <p id="pendingClasspathEntries-none">
+                No pending classpath entry approvals.
+            </p>
+            <div id="pendingClasspathEntries">
+                Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without your notice.)
+            </div>
+            <p>Classpath entries already approved:</p>
+            <p id="approvedClasspathEntries-none">
+                No approved classpath entries.
+            </p>
+            <div id="approvedClasspathEntries">
+            </div>
+            <p id="approvedClasspathEntries-clear">
+                You can also remove all previous classpath entry approvals:
+                <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>
             </p>
         </l:main-panel>
     </l:layout>

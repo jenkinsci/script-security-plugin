@@ -24,27 +24,33 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import hudson.ExtensionPoint;
 import java.net.URL;
 
 /**
- * Receives notifications on approval-related events.
+ * Exception thrown by {@link ScriptApproval#using(URL)}.
  */
-public abstract class ApprovalListener implements ExtensionPoint {
+public final class UnapprovedClasspathException extends SecurityException {
 
+    private static final long serialVersionUID = -4774006715053263794L;
+    private final URL url;
+    private final String hash;
+
+    UnapprovedClasspathException(URL url, String hash) {
+        super(String.format("classpath entry %s (%s) not yet approved for use", url, hash));
+        this.url = url;
+        this.hash = hash;
+    }
+
+    public URL getURL() {
+        return url;
+    }
+    
     /**
-     * Called when a script is approved.
-     * @param hash an opaque token as in {@link UnapprovedUsageException#getHash}
+     * Gets a token which identifies the contents of the unapproved classpath entry.
+     * @return the SHA-1 of the entry
      */
-    public abstract void onApproved(String hash);
-
-    /**
-     * Called when a classpath entry is approved.
-     * @param hash an opaque token as in {@link UnapprovedClasspathException#getHash}
-     * @param url its location
-     */
-    public void onApprovedClasspathEntry(String hash, URL url) {}
-
-    // TODO as needed: onDenied, onCleared
+    public String getHash() {
+        return hash;
+    }
 
 }

@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -37,20 +39,29 @@ import hudson.model.Saveable;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
+import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.kohsuke.accmod.Restricted;
@@ -73,23 +84,70 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         XSTREAM2.alias("com.cloudbees.hudson.plugins.modeling.scripts.ScriptApproval$PendingSignature", PendingSignature.class);
         // Current:
         XSTREAM2.alias("scriptApproval", ScriptApproval.class);
+        XSTREAM2.alias("approvedClasspathEntry", ApprovedClasspathEntry.class);
         XSTREAM2.alias("pendingScript", PendingScript.class);
         XSTREAM2.alias("pendingSignature", PendingSignature.class);
+        XSTREAM2.alias("pendingClasspathEntry", PendingClasspathEntry.class);
     }
 
     /** Gets the singleton instance. */
-    public static ScriptApproval get() {
-        return Jenkins.getInstance().getExtensionList(RootAction.class).get(ScriptApproval.class);
+    public static @Nonnull ScriptApproval get() {
+        ScriptApproval instance = Jenkins.getInstance().getExtensionList(RootAction.class).get(ScriptApproval.class);
+        if (instance == null) {
+            throw new IllegalStateException("maybe need to rebuild plugin?");
+        }
+        return instance;
     }
 
+    /**
+     * Approved classpath entry.
+     * 
+     * It is keyed only by the hash,
+     * but additional information is provided for convenience.
+     */
+    @Restricted(NoExternalUse.class) // for use from Jelly and tests
+    public static class ApprovedClasspathEntry implements Comparable<ApprovedClasspathEntry> {
+        private final String hash;
+        private final URL url;
+        
+        public ApprovedClasspathEntry(String hash, URL url) {
+            this.hash = hash;
+            this.url = url;
+        }
+        
+        public String getHash() {
+            return hash;
+        }
+        
+        public URL getURL() {
+            return url;
+        }
+        @Override public int hashCode() {
+            return hash.hashCode();
+        }
+        @Override public boolean equals(Object obj) {
+            return obj instanceof ApprovedClasspathEntry && ((ApprovedClasspathEntry) obj).hash.equals(hash);
+        }
+        @Override public int compareTo(ApprovedClasspathEntry o) {
+            return hash.compareTo(o.hash);
+        }
+    }
+    
     /** All scripts which are already approved, via {@link #hash}. */
-    private final Set<String> approvedScriptHashes = new TreeSet<String>();
+    private final TreeSet<String> approvedScriptHashes = new TreeSet<String>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
-    private final Set<String> approvedSignatures = new TreeSet<String>();
+    private final TreeSet<String> approvedSignatures = new TreeSet<String>();
 
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
-    private /*final*/ Set<String> aclApprovedSignatures;
+    private /*final*/ TreeSet<String> aclApprovedSignatures;
+
+    /** All external classpath entries allowed used for scripts. */
+    private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
+
+    /* for test */ void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
+        approvedClasspathEntries.add(acp);
+    }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static abstract class PendingThing {
@@ -172,9 +230,63 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
     }
 
-    private final Set<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
+    /**
+     * A classpath entry requiring approval by an administrator.
+     * 
+     * They are distinguished only with hashes,
+     * but other additional information is provided for possible administrator use.
+     * (Currently no context information is actually displayed, since the entry could be used from many scripts, so this might be misleading.)
+     */
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public static final class PendingClasspathEntry extends PendingThing implements Comparable<PendingClasspathEntry> {
+        private final String hash;
+        private final URL url;
+        
+        PendingClasspathEntry(@Nonnull String hash, @Nonnull URL url, @Nonnull ApprovalContext context) {
+            super(context);
+            /**
+             * hash should be stored as files located at the classpath can be modified.
+             */
+            this.hash = hash;
+            this.url = url;
+        }
+        
+        public String getHash() {
+            return hash;
+        }
+        
+        public URL getURL() {
+            return url;
+        }
+        @Override public int hashCode() {
+            return getHash().hashCode();
+        }
+        @Override public boolean equals(Object obj) {
+            return obj instanceof PendingClasspathEntry && ((PendingClasspathEntry) obj).getHash().equals(getHash());
+        }
+        @Override public int compareTo(PendingClasspathEntry o) {
+            return hash.compareTo(o.hash);
+        }
+    }
 
-    private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
+
+    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+
+    private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
+
+    private PendingClasspathEntry getPendingClasspathEntry(String hash) {
+        PendingClasspathEntry e = pendingClasspathEntries.floor(new PendingClasspathEntry(hash, null, null));
+        if (e != null && e.hash.equals(hash)) {
+            return e;
+        } else {
+            return null;
+        }
+    }
+
+    /* for test */ void addPendingClasspathEntry(PendingClasspathEntry pcp) {
+        pendingClasspathEntries.add(pcp);
+    }
 
     public ScriptApproval() {
         try {
@@ -182,8 +294,15 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         } catch (IOException x) {
             LOG.log(Level.WARNING, null, x);
         }
+        /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
+        }
+        if (approvedClasspathEntries == null) {
+            approvedClasspathEntries = new TreeSet<ApprovedClasspathEntry>();
+        }
+        if (pendingClasspathEntries == null) {
+            pendingClasspathEntries = new TreeSet<PendingClasspathEntry>();
         }
     }
 
@@ -198,6 +317,26 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new AssertionError(x);
         } catch (UnsupportedEncodingException x) {
             throw new AssertionError(x);
+        }
+    }
+
+    /** Creates digest of JAR contents. */
+    private static String hashClasspathEntry(URL entry) throws IOException {
+        InputStream is = entry.openStream();
+        try {
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-1");
+                DigestInputStream input = new DigestInputStream(new BufferedInputStream(is), digest);
+                byte[] buffer = new byte[1024];
+                while (input.read(buffer) != -1) {
+                    // discard
+                }
+                return Util.toHexString(digest.digest());
+            } catch (NoSuchAlgorithmException x) {
+                throw new AssertionError(x);
+            }
+        } finally {
+            is.close();
         }
     }
 
@@ -259,6 +398,97 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new UnapprovedUsageException(hash);
         }
         return script;
+    }
+
+    /**
+     * Called when configuring a classpath entry.
+     * Usage is similar to {@link #configuring(String, Language, ApprovalContext)}.
+     * @param url the location of the entry
+     * @param context any additional information
+     */
+    public synchronized void configuring(@Nonnull ClasspathEntry entry, @Nonnull ApprovalContext context) {
+        URL url = entry.getURL();
+        String hash;
+        try {
+            hash = hashClasspathEntry(url);
+        } catch (IOException x) {
+            // This is a case the path doesn't really exist
+            LOG.log(Level.WARNING, null, x);
+            return;
+        }
+        
+        ApprovedClasspathEntry acp = new ApprovedClasspathEntry(hash, url);
+        if (!approvedClasspathEntries.contains(acp)) {
+            boolean shouldSave = false;
+            PendingClasspathEntry pcp = new PendingClasspathEntry(hash, url, context);
+            if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
+                LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with RUN_SCRIPTS permission.", new Object[] {url, hash});
+                pendingClasspathEntries.remove(pcp);
+                approvedClasspathEntries.add(acp);
+                shouldSave = true;
+            } else {
+                if (pendingClasspathEntries.add(pcp)) {
+                    LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, hash});
+                    shouldSave = true;
+                }
+            }
+            if (shouldSave) {
+                try {
+                    save();
+                } catch (IOException x) {
+                    LOG.log(Level.WARNING, null, x);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Like {@link #checking(String, Language)} but for classpath entries.
+     * (This is automatic if use {@link ClasspathEntry} as a configuration element.)
+     * @param entry the classpath entry to verify
+     * @return whether it will be approved
+     */
+    public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
+        URL url = entry.getURL();
+        try {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
+                return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
+            } else {
+                return FormValidation.ok();
+            }
+        } catch (FileNotFoundException x) {
+            return FormValidation.error(Messages.ClasspathEntry_path_notExists());
+        } catch (IOException x) {
+            return FormValidation.error(x, "Could not verify: " + url); // TODO NO18N
+        }
+    }
+    
+    /**
+     * Asserts that a classpath entry is approved.
+     * Also records it as a pending entry if not approved.
+     * @param entry a classpath entry
+     * @throws IOException when failed to the entry is inaccessible
+     * @throws UnapprovedClasspathException when the entry is not approved
+     */
+    public synchronized void using(@Nonnull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
+        URL url = entry.getURL();
+        String hash = hashClasspathEntry(url);
+        
+        if (!approvedClasspathEntries.contains(new ApprovedClasspathEntry(hash, url))) {
+            // Never approve classpath here.
+            ApprovalContext context = ApprovalContext.create();
+            if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
+                LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
+                try {
+                    save();
+                } catch (IOException x) {
+                    LOG.log(Level.WARNING, null, x);
+                }
+            }
+            throw new UnapprovedClasspathException(url, hash);
+        }
+        
+        LOG.log(Level.FINER, "{0} ({1}) had been approved", new Object[] {url, hash});
     }
 
     /**
@@ -351,7 +581,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return null;
     }
 
-    public String getUrlName() {
+    @Override public String getUrlName() {
         return "scriptApproval";
     }
 
@@ -458,6 +688,100 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         save();
         // Should be [[], []] but still returning it for consistency with approve methods.
         return Jenkins.getInstance().getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
+        ArrayList<ApprovedClasspathEntry> r = new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
+        Collections.sort(r, new Comparator<ApprovedClasspathEntry>() {
+            @Override public int compare(ApprovedClasspathEntry o1, ApprovedClasspathEntry o2) {
+                return o1.url.toString().compareTo(o2.url.toString());
+            }
+        });
+        return r;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
+        List<PendingClasspathEntry> r = new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
+        Collections.sort(r, new Comparator<PendingClasspathEntry>() {
+            @Override public int compare(PendingClasspathEntry o1, PendingClasspathEntry o2) {
+                return o1.url.toString().compareTo(o2.url.toString());
+            }
+        });
+        return r;
+    }
+
+    @Restricted(NoExternalUse.class) // for use from Ajax
+    @JavaScriptMethod
+    public JSON getClasspathRenderInfo() {
+        JSONArray pendings = new JSONArray();
+        for (PendingClasspathEntry cp : getPendingClasspathEntries()) {
+            pendings.add(new JSONObject().element("hash", cp.getHash()).element("path", ClasspathEntry.urlToPath(cp.getURL())));
+        }
+        JSONArray approveds = new JSONArray();
+        for (ApprovedClasspathEntry cp : getApprovedClasspathEntries()) {
+            approveds.add(new JSONObject().element("hash", cp.getHash()).element("path", ClasspathEntry.urlToPath(cp.getURL())));
+        }
+        return new JSONArray().element(pendings).element(approveds);
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod
+    public JSON approveClasspathEntry(String hash) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        URL url = null;
+        synchronized (this) {
+            PendingClasspathEntry cp = getPendingClasspathEntry(hash);
+            if (cp != null) {
+                pendingClasspathEntries.remove(cp);
+                url = cp.getURL();
+                approvedClasspathEntries.add(new ApprovedClasspathEntry(hash, url));
+                save();
+            }
+        }
+        if (url != null) {
+            SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
+            try {
+                for (ApprovalListener listener : Jenkins.getInstance().getExtensionList(ApprovalListener.class)) {
+                    listener.onApprovedClasspathEntry(hash, url);
+                }
+            } finally {
+                SecurityContextHolder.setContext(orig);
+            }
+        }
+        return getClasspathRenderInfo();
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod
+    public JSON denyClasspathEntry(String hash) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        PendingClasspathEntry cp = getPendingClasspathEntry(hash);
+        if (cp != null) {
+            pendingClasspathEntries.remove(cp);
+            save();
+        }
+        return getClasspathRenderInfo();
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod
+    public JSON denyApprovedClasspathEntry(String hash) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        if (approvedClasspathEntries.remove(new ApprovedClasspathEntry(hash, null))) {
+            save();
+        }
+        return getClasspathRenderInfo();
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod
+    public synchronized JSON clearApprovedClasspathEntries() throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        approvedClasspathEntries.clear();
+        save();
+        return getClasspathRenderInfo();
     }
 
 }

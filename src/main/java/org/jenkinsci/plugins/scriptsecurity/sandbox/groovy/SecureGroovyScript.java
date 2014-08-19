@@ -32,14 +32,21 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.util.FormValidation;
-import java.util.concurrent.Callable;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
+import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -57,11 +64,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     private final String script;
     private final boolean sandbox;
+    private final @CheckForNull List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
 
-    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox) {
+    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
+        this.classpath = classpath;
+    }
+
+    @Deprecated public SecureGroovyScript(String script, boolean sandbox) {
+        this(script, sandbox, null);
     }
 
     private Object readResolve() {
@@ -77,9 +90,12 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return sandbox;
     }
 
+    public @Nonnull List<ClasspathEntry> getClasspath() {
+        return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
+    }
+
     /**
      * To be called in your own {@link DataBoundConstructor} when storing the field of this type.
-     * Should always be called, though it does nothing when {@link #isSandbox}.
      * @param context an approval context
      * @return this object
      */
@@ -87,6 +103,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         calledConfiguring = true;
         if (!sandbox) {
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
+        }
+        for (ClasspathEntry entry : getClasspath()) {
+            ScriptApproval.get().configuring(entry, context);
         }
         return this;
     }
@@ -99,34 +118,41 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     /** Convenience form of {@link #configuring} that calls {@link ApprovalContext#withCurrentUser} and {@link ApprovalContext#withItemAsKey}. */
     public SecureGroovyScript configuringWithKeyItem() {
         ApprovalContext context = ApprovalContext.create();
-        if (!sandbox) {
-            context = context.withCurrentUser().withItemAsKey(currentItem());
-        }
+        context = context.withCurrentUser().withItemAsKey(currentItem());
         return configuring(context);
     }
 
     /** Convenience form of {@link #configuring} that calls {@link ApprovalContext#withCurrentUser} and {@link ApprovalContext#withItem}. */
     public SecureGroovyScript configuringWithNonKeyItem() {
         ApprovalContext context = ApprovalContext.create();
-        if (!sandbox) {
-            context = context.withCurrentUser().withItem(currentItem());
-        }
+        context = context.withCurrentUser().withItem(currentItem());
         return configuring(context);
     }
 
     /**
      * Runs the Groovy script, using the sandbox if so configured.
-     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader};
-     *               <strong>do not allow a user-customized classpath</strong>
+     * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
      * @param binding Groovy variable bindings
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
      * @throws UnapprovedUsageException in case of a non-sandbox issue
+     * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
     public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
+        }
+        List<ClasspathEntry> cp = getClasspath();
+        if (!cp.isEmpty()) {
+            List<URL> urlList = new ArrayList<URL>(cp.size());
+            
+            for (ClasspathEntry entry : cp) {
+                ScriptApproval.get().using(entry);
+                urlList.add(entry.getURL());
+            }
+            
+            loader = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
         if (sandbox) {
             GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
