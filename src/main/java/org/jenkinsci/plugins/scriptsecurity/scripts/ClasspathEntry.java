@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
+package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,26 +30,28 @@ import java.io.IOException;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
 import hudson.Util;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.model.Items;
 import hudson.util.FormValidation;
 import javax.annotation.Nonnull;
 
 /**
- * A classpath used for a groovy script.
+ * A classpath entry used for a script.
  */
-public final class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClasspath> {
+public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> {
 
     private final @Nonnull String path;
     
     @DataBoundConstructor
-    public AdditionalClasspath(@Nonnull String path) {
+    public ClasspathEntry(@Nonnull String path) {
         this.path = Util.fixNull(path);
     }
     
@@ -64,7 +66,7 @@ public final class AdditionalClasspath extends AbstractDescribableImpl<Additiona
     
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof AdditionalClasspath && ((AdditionalClasspath) obj).path.equals(path);
+        return obj instanceof ClasspathEntry && ((ClasspathEntry) obj).path.equals(path);
     }
 
     @Override public int hashCode() {
@@ -72,10 +74,10 @@ public final class AdditionalClasspath extends AbstractDescribableImpl<Additiona
     }
     
     @Extension
-    public static class DescriptorImpl extends Descriptor<AdditionalClasspath> {
+    public static class DescriptorImpl extends Descriptor<ClasspathEntry> {
         @Override
         public String getDisplayName() {
-            return "AdditionalClasspath";
+            return "ClasspathEntry";
         }
         
         public FormValidation doCheckPath(@QueryParameter String path) {
@@ -84,21 +86,26 @@ public final class AdditionalClasspath extends AbstractDescribableImpl<Additiona
             }
             File file = new File(path);
             if (!file.isAbsolute()) {
-                return FormValidation.error(Messages.AdditionalClasspath_path_notAbsolute());
+                return FormValidation.error(Messages.ClasspathEntry_path_notAbsolute());
             }
             if (!file.exists()) {
-                return FormValidation.error(Messages.AdditionalClasspath_path_notExists());
+                return FormValidation.error(Messages.ClasspathEntry_path_notExists());
             }
             if (Jenkins.getInstance().isUseSecurity() && !Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
                 try {
                     if (!ScriptApproval.get().isClasspathApproved(path)) {
-                        return FormValidation.error(Messages.AdditionalClasspath_path_notApproved());
+                        return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
                     }
                 } catch(IOException e) {
-                    return FormValidation.error(Messages.AdditionalClasspath_path_notApproved(), e);
+                    return FormValidation.error(Messages.ClasspathEntry_path_notApproved(), e);
                 }
             }
             return FormValidation.ok();
         }
     }
+
+    @Initializer(before=InitMilestone.EXTENSIONS_AUGMENTED) public static void alias() {
+        Items.XSTREAM2.alias("entry", ClasspathEntry.class);
+    }
+
 }

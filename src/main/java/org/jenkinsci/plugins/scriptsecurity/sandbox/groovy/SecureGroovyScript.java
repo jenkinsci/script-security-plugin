@@ -30,9 +30,9 @@ import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BuildListener;
-import hudson.model.StreamBuildListener;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.StreamBuildListener;
 import hudson.util.FormValidation;
 import hudson.util.NullStream;
 import java.io.File;
@@ -41,15 +41,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import javax.annotation.CheckForNull;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
+import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -67,13 +67,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     private final String script;
     private final boolean sandbox;
-    private final List<AdditionalClasspath> additionalClasspathList;
+    private final List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
 
-    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, List<AdditionalClasspath> additionalClasspathList) {
+    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
-        this.additionalClasspathList = additionalClasspathList;
+        this.classpath = classpath;
     }
 
     public SecureGroovyScript(String script, boolean sandbox) {
@@ -93,8 +93,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return sandbox;
     }
 
-    public List<AdditionalClasspath> getAdditionalClasspathList() {
-        return additionalClasspathList;
+    public List<ClasspathEntry> getClasspath() {
+        return classpath;
     }
 
     /**
@@ -108,9 +108,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!sandbox) {
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
         }
-        if (getAdditionalClasspathList() != null && !getAdditionalClasspathList().isEmpty()) {
-            for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
-                ScriptApproval.get().configuringClasspath(classpath.getPath(), context);
+        if (getClasspath() != null && !getClasspath().isEmpty()) {
+            for (ClasspathEntry entry : getClasspath()) {
+                ScriptApproval.get().configuringClasspath(entry.getPath(), context);
             }
         }
         return this;
@@ -150,11 +150,11 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
-        if (getAdditionalClasspathList() != null && !getAdditionalClasspathList().isEmpty()) {
-            List<URL> urlList = new ArrayList<URL>(getAdditionalClasspathList().size());
+        if (getClasspath() != null && !getClasspath().isEmpty()) {
+            List<URL> urlList = new ArrayList<URL>(getClasspath().size());
             
-            for (AdditionalClasspath classpath: getAdditionalClasspathList()) {
-                File file = new File(classpath.getPath());
+            for (ClasspathEntry entry : getClasspath()) {
+                File file = new File(entry.getPath());
                 if (!file.isAbsolute()) {
                     listener.getLogger().println(String.format("%s: classpath should be absolute. Not added to class loader", file));
                     continue;
@@ -163,7 +163,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     listener.getLogger().println(String.format("%s: Does not exist. Not added to class loader", file));
                     continue;
                 }
-                ScriptApproval.get().checkClasspathApproved(classpath.getPath());
+                ScriptApproval.get().checkClasspathApproved(entry.getPath());
                 try {
                     urlList.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {

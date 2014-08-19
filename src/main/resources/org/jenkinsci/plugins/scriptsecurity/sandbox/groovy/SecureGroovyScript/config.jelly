@@ -33,13 +33,7 @@ THE SOFTWARE.
     <f:entry field="sandbox" title="${%Use Groovy Sandbox}">
         <f:checkbox/>
     </f:entry>
-    <f:advanced>
-        <f:entry title="${%Additional classpath}" field="additionalClasspathList">
-          <f:repeatableProperty
-            field="additionalClasspathList"
-            add="${%Add classpath}"
-            header="${%Classpath}"
-          />
-        </f:entry>
-    </f:advanced>
+    <f:entry title="${%Additional classpath}" field="classpath">
+        <f:repeatableProperty add="${%Add entry}" header="${%Classpath entry}" field="classpath"/>
+    </f:entry>
 </j:jelly>

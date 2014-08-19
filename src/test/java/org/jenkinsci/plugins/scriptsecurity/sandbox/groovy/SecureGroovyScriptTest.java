@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
@@ -149,9 +150,9 @@ public class SecureGroovyScriptTest {
     }
 
     @Test public void testClasspathConfiguration() throws Exception {
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         FreeStyleProject p = r.createFreeStyleProject();
@@ -166,7 +167,7 @@ public class SecureGroovyScriptTest {
         
         p = r.jenkins.getItemByFullName(p.getFullName(), FreeStyleProject.class);
         TestGroovyRecorder recorder = (TestGroovyRecorder)p.getPublishersList().get(0);
-        assertEquals(classpathList, recorder.getScript().getAdditionalClasspathList());
+        assertEquals(classpathList, recorder.getScript().getClasspath());
     }
 
     @Test public void testClasspathInSandbox() throws Exception {
@@ -178,9 +179,9 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(gmas);
         
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         // Approve classpath.
@@ -254,10 +255,10 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(gmas);
         
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
             String path = jarfile.getAbsolutePath();
-            classpathList.add(new AdditionalClasspath(path));
+            classpathList.add(new ClasspathEntry(path));
             
             // String hash = ScriptApproval.hashClasspath(path);
             // ScriptApproval.get().addApprovedClasspath(new ScriptApproval.ApprovedClasspath(hash, path));
@@ -346,9 +347,9 @@ public class SecureGroovyScriptTest {
             FileUtils.copyFileToDirectory(jarfile, tmpDir);
         }
         
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
         for (File jarfile: tmpDir.listFiles()) {
-            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
         
         String SCRIPT_TO_RUN = "\"Script is run\";";
@@ -431,8 +432,8 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
-        classpathList.add(new AdditionalClasspath(tmpDir.getAbsolutePath()));
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
+        classpathList.add(new ClasspathEntry(tmpDir.getAbsolutePath()));
         
         final String testingDisplayName = "TESTDISPLAYNAME";
         
@@ -519,8 +520,8 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<AdditionalClasspath> classpathList1 = new ArrayList<AdditionalClasspath>();
-        classpathList1.add(new AdditionalClasspath(tmpDir1.getAbsolutePath()));
+        List<ClasspathEntry> classpathList1 = new ArrayList<ClasspathEntry>();
+        classpathList1.add(new ClasspathEntry(tmpDir1.getAbsolutePath()));
         
         FreeStyleProject p1 = r.createFreeStyleProject();
         p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
@@ -578,8 +579,8 @@ public class SecureGroovyScriptTest {
             }
         }
         
-        List<AdditionalClasspath> classpathList2 = new ArrayList<AdditionalClasspath>();
-        classpathList2.add(new AdditionalClasspath(tmpDir2.getAbsolutePath()));
+        List<ClasspathEntry> classpathList2 = new ArrayList<ClasspathEntry>();
+        classpathList2.add(new ClasspathEntry(tmpDir2.getAbsolutePath()));
         
         FreeStyleProject p2 = r.createFreeStyleProject();
         p2.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
@@ -618,10 +619,10 @@ public class SecureGroovyScriptTest {
         wcApprover.login("approver");
         
         
-        List<AdditionalClasspath> classpathList = new ArrayList<AdditionalClasspath>();
+        List<ClasspathEntry> classpathList = new ArrayList<ClasspathEntry>();
         
         for (File jarfile: getAllJarFiles()) {
-            classpathList.add(new AdditionalClasspath(jarfile.getAbsolutePath()));
+            classpathList.add(new ClasspathEntry(jarfile.getAbsolutePath()));
             System.out.println(jarfile);
         }
         
