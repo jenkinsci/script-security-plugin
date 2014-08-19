@@ -90,8 +90,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     /** Gets the singleton instance. */
-    public static ScriptApproval get() {
-        return Jenkins.getInstance().getExtensionList(RootAction.class).get(ScriptApproval.class);
+    public static @Nonnull ScriptApproval get() {
+        ScriptApproval instance = Jenkins.getInstance().getExtensionList(RootAction.class).get(ScriptApproval.class);
+        if (instance == null) {
+            throw new IllegalStateException("maybe need to rebuild plugin?");
+        }
+        return instance;
     }
 
     /**
