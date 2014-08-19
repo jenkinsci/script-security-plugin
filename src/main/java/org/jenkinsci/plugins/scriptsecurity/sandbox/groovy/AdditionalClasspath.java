@@ -76,7 +76,7 @@ public class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClass
     public static class DescriptorImpl extends Descriptor<AdditionalClasspath> {
         @Override
         public String getDisplayName() {
-            return Messages.AdditionalClasspath_DisplayName();
+            return "AdditionalClasspath";
         }
         
         public FormValidation doCheckPath(@QueryParameter String path) {
