@@ -32,7 +32,10 @@ import org.jvnet.hudson.test.JenkinsRule;
 import com.gargoylesoftware.htmlunit.ConfirmHandler;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.Util;
 import java.net.URL;
+import java.util.TreeSet;
+import org.jvnet.hudson.test.WithoutJenkins;
 
 public class ScriptApprovalTest {
 
@@ -56,7 +59,23 @@ public class ScriptApprovalTest {
         ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ApprovalContext.create());
         assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
     }
-    
+
+    // http://stackoverflow.com/a/25393190/12916
+    @WithoutJenkins
+    @Test public void getPendingClasspathEntry() throws Exception {
+        TreeSet<ScriptApproval.PendingClasspathEntry> pendingClasspathEntries = new TreeSet<ScriptApproval.PendingClasspathEntry>();
+        for (int i = 1; i < 100; i++) {
+            pendingClasspathEntries.add(new ScriptApproval.PendingClasspathEntry(hashOf(i), new URL("file:/x" + i + ".jar"), ApprovalContext.create()));
+        }
+        ScriptApproval.PendingClasspathEntry dummy = new ScriptApproval.PendingClasspathEntry(hashOf(77), null, null);
+        ScriptApproval.PendingClasspathEntry real = pendingClasspathEntries.floor(dummy);
+        assertEquals(real, dummy);
+        assertEquals("file:/x77.jar", real.getURL().toString());
+    }
+    private static String hashOf(int i) {
+        return Util.getDigestOf("hash #" + i);
+    }
+
     @Test public void approveClasspaths() throws Exception {
         final String CLASSPATH_HASH1 = "0000000000000000000000000000000000000000";
         final URL CLASSPATH_PATH1 = new URL("file:/path/to/some/jar1.jar");

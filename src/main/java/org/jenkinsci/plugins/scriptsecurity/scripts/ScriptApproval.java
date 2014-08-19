@@ -52,10 +52,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -103,7 +101,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * but additional information is provided for convenience.
      */
     @Restricted(NoExternalUse.class) // for use from Jelly and tests
-    public static class ApprovedClasspathEntry {
+    public static class ApprovedClasspathEntry implements Comparable<ApprovedClasspathEntry> {
         private final String hash;
         private final URL url;
         
@@ -119,6 +117,15 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         public URL getURL() {
             return url;
         }
+        @Override public int hashCode() {
+            return hash.hashCode();
+        }
+        @Override public boolean equals(Object obj) {
+            return obj instanceof ApprovedClasspathEntry && ((ApprovedClasspathEntry) obj).hash.equals(hash);
+        }
+        @Override public int compareTo(ApprovedClasspathEntry o) {
+            return hash.compareTo(o.hash);
+        }
     }
     
     /** All scripts which are already approved, via {@link #hash}. */
@@ -130,38 +137,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
     private /*final*/ Set<String> aclApprovedSignatures;
 
-    /** All external classpaths allowed used for scripts. Keys are hashes.*/
-    private /*final*/ Map<String, ApprovedClasspathEntry> approvedClasspathMap /*= new LinkedHashMap<String, ApprovedClasspathEntry>()*/;
+    /** All external classpath entries allowed used for scripts. */
+    private /*final*/ Set<ApprovedClasspathEntry> approvedClasspathEntries;
 
-    private Map<String,ApprovedClasspathEntry> getApprovedClasspathMap() {
-        return approvedClasspathMap;
-    }
-
-    private boolean hasApprovedClasspathEntry(String hash) {
-        return getApprovedClasspathMap().containsKey(hash);
-    }
-
-    private ApprovedClasspathEntry getApprovedClasspathEntry(String hash) {
-        return getApprovedClasspathMap().get(hash);
-    }
-
-    /**
-     * @return true if added
-     */
-    boolean addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
-        if (hasApprovedClasspathEntry(acp.getHash())) {
-            return false;
-        }
-        getApprovedClasspathMap().put(acp.getHash(), acp);
-        return true;
-    }
-
-    private boolean removeApprovedClasspathEntry(String hash) {
-        return getApprovedClasspathMap().remove(hash) != null;
-    }
-
-    private void removeAllApprovedClasspathEntries() {
-        getApprovedClasspathMap().clear();
+    /* for test */ void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
+        approvedClasspathEntries.add(acp);
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
@@ -253,7 +233,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * (Currently no context information is actually displayed, since the entry could be used from many scripts, so this might be misleading.)
      */
     @Restricted(NoExternalUse.class) // for use from Jelly
-    public static final class PendingClasspathEntry extends PendingThing {
+    public static final class PendingClasspathEntry extends PendingThing implements Comparable<PendingClasspathEntry> {
         private final URL url;
         private final String hash;
         
@@ -279,44 +259,28 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         @Override public boolean equals(Object obj) {
             return obj instanceof PendingClasspathEntry && ((PendingClasspathEntry) obj).getHash().equals(getHash());
         }
+        @Override public int compareTo(PendingClasspathEntry o) {
+            return hash.compareTo(o.hash);
+        }
     }
 
     private final Set<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
 
     private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
 
-    private /*final*/ Map<String, PendingClasspathEntry> pendingClasspathMap /*= new LinkedHashMap<String, PendingClasspathEntry>()*/;
-
-    private Map<String, PendingClasspathEntry> getPendingClasspathMap() {
-        return pendingClasspathMap;
-    }
-
-    private boolean hasPendingClasspathEntry(String hash) {
-        return getPendingClasspathMap().containsKey(hash);
-    }
+    private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
 
     private PendingClasspathEntry getPendingClasspathEntry(String hash) {
-        return getPendingClasspathMap().get(hash);
-    }
-
-    /**
-     * @param pcp
-     * @return true if added
-     */
-    boolean addPendingClasspathEntry(PendingClasspathEntry pcp) {
-        if (hasPendingClasspathEntry(pcp.getHash())) {
-            return false;
+        PendingClasspathEntry e = pendingClasspathEntries.floor(new PendingClasspathEntry(hash, null, null));
+        if (e != null && e.hash.equals(hash)) {
+            return e;
+        } else {
+            return null;
         }
-        getPendingClasspathMap().put(pcp.getHash(), pcp);
-        return true;
     }
 
-    /**
-     * @param hash
-     * @return true if removed
-     */
-    private boolean removePendingClasspathEntry(String hash) {
-        return getPendingClasspathMap().remove(hash) != null;
+    /* for test */ void addPendingClasspathEntry(PendingClasspathEntry pcp) {
+        pendingClasspathEntries.add(pcp);
     }
 
     public ScriptApproval() {
@@ -329,11 +293,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
         }
-        if (approvedClasspathMap == null) {
-            approvedClasspathMap = new LinkedHashMap<String, ApprovedClasspathEntry>();
+        if (approvedClasspathEntries == null) {
+            approvedClasspathEntries = new TreeSet<ApprovedClasspathEntry>();
         }
-        if (pendingClasspathMap == null) {
-            pendingClasspathMap = new LinkedHashMap<String, PendingClasspathEntry>();
+        if (pendingClasspathEntries == null) {
+            pendingClasspathEntries = new TreeSet<PendingClasspathEntry>();
         }
     }
 
@@ -448,15 +412,17 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             return;
         }
         
-        if (!hasApprovedClasspathEntry(hash)) {
+        ApprovedClasspathEntry acp = new ApprovedClasspathEntry(hash, url);
+        if (!approvedClasspathEntries.contains(acp)) {
             boolean shouldSave = false;
+            PendingClasspathEntry pcp = new PendingClasspathEntry(hash, url, context);
             if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
                 LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with RUN_SCRIPTS permission.", new Object[] {url, hash});
-                removePendingClasspathEntry(hash);
-                addApprovedClasspathEntry(new ApprovedClasspathEntry(hash, url));
+                pendingClasspathEntries.remove(pcp);
+                approvedClasspathEntries.add(acp);
                 shouldSave = true;
             } else {
-                if (addPendingClasspathEntry(new PendingClasspathEntry(hash, url, context))) {
+                if (pendingClasspathEntries.add(pcp)) {
                     LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, hash});
                     shouldSave = true;
                 }
@@ -480,7 +446,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
         URL url = entry.getURL();
         try {
-            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !hasApprovedClasspathEntry(hashClasspathEntry(url))) {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
                 return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
             } else {
                 return FormValidation.ok();
@@ -503,10 +469,10 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         URL url = entry.getURL();
         String hash = hashClasspathEntry(url);
         
-        if (!hasApprovedClasspathEntry(hash)) {
+        if (!approvedClasspathEntries.contains(new ApprovedClasspathEntry(hash, url))) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
-            if (addPendingClasspathEntry(new PendingClasspathEntry(hash, url, context))) {
+            if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
                 LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
                 try {
                     save();
@@ -517,7 +483,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new UnapprovedClasspathException(url, hash);
         }
         
-        LOG.log(Level.FINER, "{0} ({1}) had been approved as {2}", new Object[] {url, hash, getApprovedClasspathEntry(hash).getURL()});
+        LOG.log(Level.FINER, "{0} ({1}) had been approved", new Object[] {url, hash});
     }
 
     /**
@@ -720,13 +686,13 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     @Restricted(NoExternalUse.class)
-    public List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
-        return new ArrayList<ApprovedClasspathEntry>(getApprovedClasspathMap().values());
+    public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
+        return new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
     }
 
     @Restricted(NoExternalUse.class)
-    public List<PendingClasspathEntry> getPendingClasspathEntries() {
-        return new ArrayList<PendingClasspathEntry>(getPendingClasspathMap().values());
+    public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
+        return new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
     }
 
     @Restricted(NoExternalUse.class) // for use from Ajax
@@ -749,8 +715,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         PendingClasspathEntry cp = getPendingClasspathEntry(hash);
         if (cp != null) {
-            removePendingClasspathEntry(hash);
-            addApprovedClasspathEntry(new ApprovedClasspathEntry(cp.getHash(), cp.getURL()));
+            pendingClasspathEntries.remove(cp);
+            approvedClasspathEntries.add(new ApprovedClasspathEntry(cp.getHash(), cp.getURL()));
             save();
         }
         return getClasspathRenderInfo();
@@ -762,7 +728,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         PendingClasspathEntry cp = getPendingClasspathEntry(hash);
         if (cp != null) {
-            removePendingClasspathEntry(hash);
+            pendingClasspathEntries.remove(cp);
             save();
         }
         return getClasspathRenderInfo();
@@ -772,7 +738,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod
     public JSON denyApprovedClasspathEntry(String hash) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
-        if (removeApprovedClasspathEntry(hash)) {
+        if (approvedClasspathEntries.remove(new ApprovedClasspathEntry(hash, null))) {
             save();
         }
         return getClasspathRenderInfo();
@@ -782,7 +748,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod
     public synchronized JSON clearApprovedClasspathEntries() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
-        removeAllApprovedClasspathEntries();
+        approvedClasspathEntries.clear();
         save();
         return getClasspathRenderInfo();
     }
