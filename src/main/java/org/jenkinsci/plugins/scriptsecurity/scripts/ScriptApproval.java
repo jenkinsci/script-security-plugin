@@ -133,16 +133,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
     
     /** All scripts which are already approved, via {@link #hash}. */
-    private final Set<String> approvedScriptHashes = new TreeSet<String>();
+    private final TreeSet<String> approvedScriptHashes = new TreeSet<String>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
-    private final Set<String> approvedSignatures = new TreeSet<String>();
+    private final TreeSet<String> approvedSignatures = new TreeSet<String>();
 
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
-    private /*final*/ Set<String> aclApprovedSignatures;
+    private /*final*/ TreeSet<String> aclApprovedSignatures;
 
     /** All external classpath entries allowed used for scripts. */
-    private /*final*/ Set<ApprovedClasspathEntry> approvedClasspathEntries;
+    private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
 
     /* for test */ void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
         approvedClasspathEntries.add(acp);
@@ -238,8 +238,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      */
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static final class PendingClasspathEntry extends PendingThing implements Comparable<PendingClasspathEntry> {
-        private final URL url;
         private final String hash;
+        private final URL url;
         
         PendingClasspathEntry(@Nonnull String hash, @Nonnull URL url, @Nonnull ApprovalContext context) {
             super(context);
@@ -268,9 +268,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
     }
 
-    private final Set<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
+    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
 
-    private final Set<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
 
     private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
 
