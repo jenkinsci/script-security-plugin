@@ -51,6 +51,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -691,12 +692,24 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
-        return new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
+        ArrayList<ApprovedClasspathEntry> r = new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
+        Collections.sort(r, new Comparator<ApprovedClasspathEntry>() {
+            @Override public int compare(ApprovedClasspathEntry o1, ApprovedClasspathEntry o2) {
+                return o1.url.toString().compareTo(o2.url.toString());
+            }
+        });
+        return r;
     }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
-        return new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
+        List<PendingClasspathEntry> r = new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
+        Collections.sort(r, new Comparator<PendingClasspathEntry>() {
+            @Override public int compare(PendingClasspathEntry o1, PendingClasspathEntry o2) {
+                return o1.url.toString().compareTo(o2.url.toString());
+            }
+        });
+        return r;
     }
 
     @Restricted(NoExternalUse.class) // for use from Ajax
