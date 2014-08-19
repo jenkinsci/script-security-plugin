@@ -35,41 +35,40 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
+import javax.annotation.Nonnull;
 
 /**
  * A classpath used for a groovy script.
  */
-public class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClasspath> {
-    private final String path;
+public final class AdditionalClasspath extends AbstractDescribableImpl<AdditionalClasspath> {
+
+    private final @Nonnull String path;
     
     @DataBoundConstructor
-    public AdditionalClasspath(String path) {
-        this.path = StringUtils.trim(path);
+    public AdditionalClasspath(@Nonnull String path) {
+        this.path = Util.fixNull(path);
     }
     
-    public String getPath() {
+    public @Nonnull String getPath() {
         return path;
     }
     
     @Override
     public String toString() {
-        return String.format("Classpath: %s", getPath());
+        return path;
     }
     
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof AdditionalClasspath)) {
-            return false;
-        }
-        
-        if (getPath() == null) {
-            return ((AdditionalClasspath)obj).getPath() == null;
-        }
-        
-        return getPath().equals(((AdditionalClasspath)obj).getPath());
+        return obj instanceof AdditionalClasspath && ((AdditionalClasspath) obj).path.equals(path);
+    }
+
+    @Override public int hashCode() {
+        return path.hashCode();
     }
     
     @Extension
