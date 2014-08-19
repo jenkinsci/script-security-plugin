@@ -100,7 +100,7 @@ THE SOFTWARE.
                             });
                             block.insert(approveButton);
                             block.insert(denyButton);
-                            block.insert(e.hash + "(" + e.path + ")");
+                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
                             
                             $('pendingClasspathEntries').insert(block);
                         });
@@ -126,7 +126,7 @@ THE SOFTWARE.
                          */
                         approvedClasspathEntries.each(function(e) {
                             var block = new Element('p', { 'id': 'acp-' + e.hash });
-                            var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash, 'path': e.path });
+                            var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash});
                             deleteButton.insert('Delete');
                             deleteButton.observe('click', function() {
                                 if (confirm('Really delete this approved classpath entry? Any existing scripts using it will need to be rerun and the entry reapproved.')) {
@@ -134,7 +134,7 @@ THE SOFTWARE.
                                 }
                             });
                             block.insert(deleteButton);
-                            block.insert(e.hash + "(" + e.path + ")");
+                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
                             
                             $('approvedClasspathEntries').insert(block);
                         });
@@ -237,6 +237,7 @@ THE SOFTWARE.
                 No pending classpath entry approvals.
             </p>
             <div id="pendingClasspathEntries">
+                Classpath entries pending approval. (Beware of remote URLs.)
             </div>
             <p>Classpath entries already approved:</p>
             <p id="approvedClasspathEntries-none">
