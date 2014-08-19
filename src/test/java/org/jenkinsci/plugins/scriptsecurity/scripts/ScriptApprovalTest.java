@@ -32,6 +32,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 import com.gargoylesoftware.htmlunit.ConfirmHandler;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import java.net.URL;
 
 public class ScriptApprovalTest {
 
@@ -56,17 +57,17 @@ public class ScriptApprovalTest {
         assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
     }
     
-    @Test public void testApproveClasspaths() throws Exception {
+    @Test public void approveClasspaths() throws Exception {
         final String CLASSPATH_HASH1 = "0000000000000000000000000000000000000000";
-        final String CLASSPATH_PATH1 = "/path/to/some/jar1.jar";
+        final URL CLASSPATH_PATH1 = new URL("file:/path/to/some/jar1.jar");
         final String CLASSPATH_HASH2 = "1234567890abcdef1234567890abcdef12345678";
-        final String CLASSPATH_PATH2 = "/path/to/some/classpath2";
+        final URL CLASSPATH_PATH2 = new URL("file:/path/to/some/classpath2");
         final String CLASSPATH_HASH3 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-        final String CLASSPATH_PATH3 = "/path/to/some/jar3.jar";
+        final URL CLASSPATH_PATH3 = new URL("file:/path/to/some/jar3.jar");
         final String CLASSPATH_HASH4 = "abcdef1234567890abcdef1234567890abcdef12";
-        final String CLASSPATH_PATH4 = "/path/to/some/classpath4";
+        final URL CLASSPATH_PATH4 = new URL("file:/path/to/some/classpath4");
         final String CLASSPATH_HASH5 = "9999999999999999999999999999999999999999";
-        final String CLASSPATH_PATH5 = "/path/to/some/jar5.jar";
+        final URL CLASSPATH_PATH5 = new URL("file:/path/to/some/jar5.jar");
         
         ApprovalContext context = ApprovalContext.create();
         

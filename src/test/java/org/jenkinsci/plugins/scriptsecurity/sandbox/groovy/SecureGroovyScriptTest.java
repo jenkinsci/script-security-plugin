@@ -192,7 +192,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -310,7 +310,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -385,7 +385,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -405,7 +405,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -459,7 +459,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -488,7 +488,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -545,7 +545,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().approveClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().approveClasspath(pcp.getHash());
             }
         }
         
@@ -643,7 +643,7 @@ public class SecureGroovyScriptTest {
             List<ScriptApproval.PendingClasspath> pcps = ScriptApproval.get().getPendingClasspaths();
             assertNotEquals(0, pcps.size());
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().denyClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().denyClasspath(pcp.getHash());
             }
             
             assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());
@@ -709,7 +709,7 @@ public class SecureGroovyScriptTest {
             assertEquals(0, acps.size());
             
             for(ScriptApproval.PendingClasspath pcp: pcps) {
-                ScriptApproval.get().denyClasspath(pcp.getHash(), pcp.getPath());
+                ScriptApproval.get().denyClasspath(pcp.getHash());
             }
             
             assertEquals(0, ScriptApproval.get().getPendingClasspaths().size());

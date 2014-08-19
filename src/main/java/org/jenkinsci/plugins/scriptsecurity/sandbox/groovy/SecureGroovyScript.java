@@ -35,8 +35,6 @@ import hudson.model.Item;
 import hudson.model.StreamBuildListener;
 import hudson.util.FormValidation;
 import hudson.util.NullStream;
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -110,7 +108,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
         if (getClasspath() != null && !getClasspath().isEmpty()) {
             for (ClasspathEntry entry : getClasspath()) {
-                ScriptApproval.get().configuringClasspath(entry.getPath(), context);
+                ScriptApproval.get().configuringClasspath(entry.getURL(), context);
             }
         }
         return this;
@@ -154,23 +152,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             List<URL> urlList = new ArrayList<URL>(getClasspath().size());
             
             for (ClasspathEntry entry : getClasspath()) {
-                File file = new File(entry.getPath());
-                if (!file.isAbsolute()) {
-                    listener.getLogger().println(String.format("%s: classpath should be absolute. Not added to class loader", file));
-                    continue;
-                }
-                if (!file.exists()) {
-                    listener.getLogger().println(String.format("%s: Does not exist. Not added to class loader", file));
-                    continue;
-                }
-                ScriptApproval.get().checkClasspathApproved(entry.getPath());
-                try {
-                    urlList.add(file.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    listener.getLogger().println(String.format("%s: Bad url. Not added to class loader", file));
-                    e.printStackTrace(listener.getLogger());
-                    continue;
-                }
+                URL url = entry.getURL();
+                ScriptApproval.get().checkClasspathApproved(url);
+                urlList.add(url);
             }
             
             loader = new URLClassLoader(urlList.toArray(new URL[0]), loader);

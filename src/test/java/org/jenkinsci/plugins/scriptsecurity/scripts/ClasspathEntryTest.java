@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2014 CloudBees, Inc.
+ * Copyright 2014 Jesse Glick.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,32 +25,18 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import java.net.URL;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-/**
- * Exception thrown by {@link ScriptApproval#checkClasspathApproved(String)}.
- */
-public final class UnapprovedClasspathException extends SecurityException {
-
-    private static final long serialVersionUID = -4774006715053263794L;
-    private final URL url;
-    private final String hash;
-
-    UnapprovedClasspathException(URL url, String hash) {
-        super(String.format("classpath %s (%s) not yet approved for use", url, hash));
-        this.url = url;
-        this.hash = hash;
-    }
-
-    public URL getURL() {
-        return url;
-    }
+public class ClasspathEntryTest {
     
-    /**
-     * Gets a token which identifies the contents of classpath.
-     * @return an opaque token as in {@link ApprovalListener#onApprovedClasspath}
-     */
-    public String getHash() {
-        return hash;
+    @Test public void pathURLConversion() throws Exception {
+        assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
+        assertEquals("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
+    }
+    private static void assertRoundTrip(String path, String url) throws Exception {
+        assertEquals(path, ClasspathEntry.urlToPath(new URL(url)));
+        assertEquals(url, ClasspathEntry.pathToURL(path).toString());
     }
 
 }

@@ -81,22 +81,22 @@ THE SOFTWARE.
                         /*
                            Create a list like:
                             <p id="pcp-${pcp.hash}">
-                                <button class="approve" onclick="approveClasspath('${pcp.hash}', '${pcp.path}')">Approve</button> /
-                                <button class="deny"    onclick="denyClasspath('${pcp.hash}', '${pcp.path}')">Deny</button> 
+                                <button class="approve" onclick="approveClasspath('${pcp.hash}')">Approve</button> /
+                                <button class="deny"    onclick="denyClasspath('${pcp.hash}')">Deny</button> 
                                 ${pcp.hash} (${pcp.path})
                             </p>
                          */
                         pendingClasspaths.each(function(e) {
                             var block = new Element('p', { 'id': 'pcp-' + e.hash });
-                            var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash, 'path': e.path });
+                            var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash});
                             approveButton.insert('Approve');
                             approveButton.observe('click', function() {
-                                approveClasspath(this.readAttribute('hash'), this.readAttribute('path'));
+                                approveClasspath(this.readAttribute('hash'));
                             });
-                            var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash, 'path': e.path });
+                            var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash});
                             denyButton.insert('Deny');
                             denyButton.observe('click', function() {
-                                denyClasspath(this.readAttribute('hash'), this.readAttribute('path'));
+                                denyClasspath(this.readAttribute('hash'));
                             });
                             block.insert(approveButton);
                             block.insert(denyButton);
@@ -148,13 +148,13 @@ THE SOFTWARE.
                     renderApprovedClasspaths(r.responseObject()[1]);
                 }
                 
-                function approveClasspath(hash, path) {
-                    mgr.approveClasspath(hash, path, function(r) {
+                function approveClasspath(hash) {
+                    mgr.approveClasspath(hash, function(r) {
                         renderClasspaths(r);
                     });
                 }
-                function denyClasspath(hash, path) {
-                    mgr.denyClasspath(hash, path, function(r) {
+                function denyClasspath(hash) {
+                    mgr.denyClasspath(hash, function(r) {
                         renderClasspaths(r);
                     });
                 }
