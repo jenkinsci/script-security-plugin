@@ -485,25 +485,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return hasApprovedClasspath(hash);
     }
     
-    private static Item currentExecutingItem() {
-        if (Executor.currentExecutor() == null) {
-            return null;
-        }
-        Queue.Executable exe = Executor.currentExecutor().getCurrentExecutable();
-        if (exe == null || !(exe instanceof AbstractBuild)) {
-            return null;
-        }
-        AbstractBuild<?,?> build = (AbstractBuild<?,?>)exe;
-        AbstractProject<?,?> project = build.getParent();
-        return project.getRootProject();
-    }
-    
     /**
-     * Asserts a classpath is approved. Also records it as a pending classpath if not approved.
-     * 
-     * @param path classpath
-     * @throws IOException when failed to access classpath.
-     * @throws UnapprovedClasspathException when the classpath is not approved.
+     * Asserts that a classpath entry is approved.
+     * Also records it as a pending entry if not approved.
+     * @param url a classpath entry
+     * @throws IOException when failed to the entry is inaccessible
+     * @throws UnapprovedClasspathException when the entry is not approved
      */
     public synchronized void checkClasspathApproved(@Nonnull URL url) throws IOException, UnapprovedClasspathException {
         String hash = hashClasspathEntry(url);
@@ -511,7 +498,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (!hasApprovedClasspath(hash)) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
-            context = context.withCurrentUser().withItemAsKey(currentExecutingItem());
             if (addPendingClasspath(new PendingClasspath(hash, url, context))) {
                 LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
                 try {
