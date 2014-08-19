@@ -38,8 +38,10 @@ import hudson.util.NullStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -91,8 +93,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return sandbox;
     }
 
-    public List<ClasspathEntry> getClasspath() {
-        return classpath;
+    public @Nonnull List<ClasspathEntry> getClasspath() {
+        return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
     }
 
     /**
@@ -106,10 +108,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!sandbox) {
             ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
         }
-        if (getClasspath() != null && !getClasspath().isEmpty()) {
-            for (ClasspathEntry entry : getClasspath()) {
-                ScriptApproval.get().configuringClasspath(entry.getURL(), context);
-            }
+        for (ClasspathEntry entry : getClasspath()) {
+            ScriptApproval.get().configuringClasspath(entry.getURL(), context);
         }
         return this;
     }
@@ -148,16 +148,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
-        if (getClasspath() != null && !getClasspath().isEmpty()) {
-            List<URL> urlList = new ArrayList<URL>(getClasspath().size());
+        List<ClasspathEntry> cp = getClasspath();
+        if (!cp.isEmpty()) {
+            List<URL> urlList = new ArrayList<URL>(cp.size());
             
-            for (ClasspathEntry entry : getClasspath()) {
+            for (ClasspathEntry entry : cp) {
                 URL url = entry.getURL();
                 ScriptApproval.get().checkClasspathApproved(url);
                 urlList.add(url);
             }
             
-            loader = new URLClassLoader(urlList.toArray(new URL[0]), loader);
+            loader = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
         if (sandbox) {
             GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
