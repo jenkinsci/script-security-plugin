@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import hudson.Functions;
 import java.net.URL;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -31,7 +32,11 @@ import static org.junit.Assert.*;
 public class ClasspathEntryTest {
     
     @Test public void pathURLConversion() throws Exception {
-        assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
+        if (!Functions.isWindows()) {
+            assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
+        } else {
+            assertRoundTrip("C:\\tmp\\x.jar", "file:/C:/tmp/x.jar");
+        }
         assertEquals("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
     }
     private static void assertRoundTrip(String path, String url) throws Exception {
