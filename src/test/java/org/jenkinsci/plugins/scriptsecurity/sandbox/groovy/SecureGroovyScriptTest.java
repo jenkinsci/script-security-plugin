@@ -36,6 +36,7 @@ import hudson.security.GlobalMatrixAuthorizationStrategy;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import hudson.util.PersistedList;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import org.apache.tools.ant.taskdefs.Expand;
 import org.apache.tools.ant.taskdefs.Touch;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
+import org.jenkinsci.plugins.scriptsecurity.testutil.ScriptSecurityJenkinsRule;
 import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,10 +59,20 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 public class SecureGroovyScriptTest {
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    @Rule public ScriptSecurityJenkinsRule r = new ScriptSecurityJenkinsRule();
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
  
+    /**
+     * assertNotEquals does not supported since JUnit 4.11
+     * @param a
+     * @param b
+     */
+    private static <T> void assertNotEquals(T a, T b) {
+        String msg = "Expected <" + a + "> but was <" + b +">";
+        assertFalse(msg, a.equals(b));
+    }
+    
     @Test public void basicApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
@@ -80,7 +92,7 @@ public class SecureGroovyScriptTest {
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
-        List<Publisher> publishers = p.getPublishersList();
+        PersistedList<Publisher> publishers = p.getPublishersList();
         assertEquals(1, publishers.size());
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());

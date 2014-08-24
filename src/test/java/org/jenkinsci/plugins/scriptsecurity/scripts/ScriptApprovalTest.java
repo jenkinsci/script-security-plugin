@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.jenkinsci.plugins.scriptsecurity.testutil.ScriptSecurityJenkinsRule;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
@@ -39,7 +40,7 @@ import org.jvnet.hudson.test.WithoutJenkins;
 
 public class ScriptApprovalTest {
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    @Rule public ScriptSecurityJenkinsRule r = new ScriptSecurityJenkinsRule();
 
     @Test public void emptyScript() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
