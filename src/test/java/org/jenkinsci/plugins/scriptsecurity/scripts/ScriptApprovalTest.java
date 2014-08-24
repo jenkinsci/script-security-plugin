@@ -106,6 +106,11 @@ public class ScriptApprovalTest {
             }
         });
         
+        // ignore 404 for /scriptApproval/ajaxBuildQueue
+        // This is fixed in Jenkins 1.487.
+        // See https://github.com/jenkinsci/jenkins/commit/a1286064ad3415a8a7d5de7ff7dca90fe63d9892
+        wc.setThrowExceptionOnFailingAjax(false);
+        
         HtmlPage page = wc.goTo(ScriptApproval.get().getUrlName());
         
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
