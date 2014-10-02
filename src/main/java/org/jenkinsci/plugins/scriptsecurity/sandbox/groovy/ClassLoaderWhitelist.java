@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
  *
  * @author Jesse Glick
  */
-public class ClassLoaderWhitelist extends Whitelist {
+public final class ClassLoaderWhitelist extends Whitelist {
     private final ClassLoader scriptLoader;
 
     public ClassLoaderWhitelist(ClassLoader scriptLoader) {
