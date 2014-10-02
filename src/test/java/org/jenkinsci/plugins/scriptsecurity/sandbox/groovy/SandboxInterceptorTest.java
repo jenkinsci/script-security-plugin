@@ -284,9 +284,23 @@ public class SandboxInterceptorTest {
 
     @Test public void closures() throws Exception {
         // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
-        assertRejected(new StaticWhitelist("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String"), "method groovy.lang.GroovyObject getProperty java.lang.String", "{-> delegate = new Exception('oops'); message}()");
+        assertRejected(
+                new StaticWhitelist(
+                        "method java.util.concurrent.Callable call",
+                        "field groovy.lang.Closure delegate",
+                        "new java.lang.Exception java.lang.String"),
+                "method groovy.lang.GroovyObject getProperty java.lang.String",
+                "{-> delegate = new Exception('oops'); message}()"
+        );
         // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
-        assertRejected(new StaticWhitelist("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String"), /* unclassified method Script1$_run_closure1 printStackTrace */ null, "{-> delegate = new Exception('oops'); printStackTrace()}()");
+        assertRejected(
+                new StaticWhitelist(
+                        "method java.util.concurrent.Callable call",
+                        "field groovy.lang.Closure delegate",
+                        "new java.lang.Exception java.lang.String"),
+                /* unclassified method Script1$_run_closure1 printStackTrace */ null,
+                "{-> delegate = new Exception('oops'); printStackTrace()}()"
+        );
     }
 
     @Test public void templates() throws Exception {
