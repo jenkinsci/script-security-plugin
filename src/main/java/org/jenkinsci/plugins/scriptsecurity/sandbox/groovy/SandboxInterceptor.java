@@ -50,9 +50,17 @@ final class SandboxInterceptor extends GroovyInterceptor {
             if (receiver instanceof Number || (receiver instanceof String && method.equals("plus"))) {
                 // Synthetic methods like Integer.plus(Integer).
                 return super.onMethodCall(invoker, receiver, method, args);
-            } else {
-                throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
             }
+
+            // if no matching method, look for catchAll "invokeMethod"
+            try {
+                receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
+                return onMethodCall(invoker,receiver,"invokeMethod",method,args);
+            } catch (NoSuchMethodException e) {
+                // fall through
+            }
+
+            throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else {

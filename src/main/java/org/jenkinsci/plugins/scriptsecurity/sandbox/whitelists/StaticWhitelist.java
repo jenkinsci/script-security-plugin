@@ -35,11 +35,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+
+import static java.util.Arrays.asList;
 
 /**
  * Whitelist based on a static file.
@@ -68,6 +71,10 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         for (String line : lines) {
             add(line);
         }
+    }
+
+    public StaticWhitelist(String... lines) throws IOException {
+        this(asList(lines));
     }
 
     private void add(String line) throws IOException {

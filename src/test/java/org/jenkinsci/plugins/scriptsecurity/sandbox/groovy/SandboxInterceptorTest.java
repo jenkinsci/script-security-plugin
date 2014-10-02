@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.json.JsonBuilder;
+import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
@@ -31,6 +33,8 @@ import groovy.lang.MissingPropertyException;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
+
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +43,7 @@ import java.util.concurrent.Callable;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.BlanketWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
@@ -72,6 +77,37 @@ public class SandboxInterceptorTest {
         String expected = "-1-'1'-";
         assertEvaluate(new AnnotatedWhitelist(), expected, script);
         assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
+    }
+
+    /**
+     * Tests the proper interception of builder-like method.
+     */
+    @Test public void testInvokeMethod() throws Exception {
+        String script = "def builder = new groovy.json.JsonBuilder(); builder.point { x 5; y 3; }; builder.toString()";
+        String expected = "{\"point\":{\"x\":5,\"y\":3}}";
+        assertEvaluate(new BlanketWhitelist(), expected, script);
+        // this whitelisting strategy isn't ideal
+        // see https://issues.jenkins-ci.org/browse/JENKINS-24982
+        assertEvaluate(new ProxyWhitelist(
+            new AbstractWhitelist() {
+                @Override
+                public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+                    if (method.getName().equals("invokeMethod") && receiver instanceof JsonBuilder)
+                        return true;
+                    if (method.getName().equals("invokeMethod") && receiver instanceof Closure) {
+                        Object d = ((Closure) receiver).getDelegate();
+                        return d.getClass().getName().equals("groovy.json.JsonDelegate");
+                    }
+                    if (method.getName().equals("toString") && receiver instanceof JsonBuilder)
+                        return true;
+                    return false;
+                }
+            },
+            new StaticWhitelist(
+                "new groovy.json.JsonBuilder"
+//                "method groovy.json.JsonBuilder toString",
+//                "method groovy.json.JsonBuilder invokeMethod java.lang.String java.lang.Object"
+        )), expected, script);
     }
 
     @Ignore("TODO there are various unhandled cases, such as Closure → SAM, or numeric conversions, or number → String, or boxing/unboxing.")
