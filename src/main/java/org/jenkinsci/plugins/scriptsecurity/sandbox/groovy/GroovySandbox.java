@@ -26,14 +26,13 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+
 import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
 
@@ -111,33 +110,9 @@ public class GroovySandbox {
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      */
     public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
-        final ClassLoader scriptLoader = script.getClass().getClassLoader();
-        Whitelist wrapperWhitelist = new Whitelist() {
-            private boolean permits(Class<?> declaringClass) {
-                return declaringClass.getClassLoader() == scriptLoader;
-            }
-            @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
-                return permits(method.getDeclaringClass()) || whitelist.permitsMethod(method, receiver, args);
-            }
-            @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
-                return permits(constructor.getDeclaringClass()) || whitelist.permitsConstructor(constructor, args);
-            }
-            @Override public boolean permitsStaticMethod(Method method, Object[] args) {
-                return permits(method.getDeclaringClass()) || whitelist.permitsStaticMethod(method, args);
-            }
-            @Override public boolean permitsFieldGet(Field field, Object receiver) {
-                return permits(field.getDeclaringClass()) || whitelist.permitsFieldGet(field, receiver);
-            }
-            @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
-                return permits(field.getDeclaringClass()) || whitelist.permitsFieldSet(field, receiver, value);
-            }
-            @Override public boolean permitsStaticFieldGet(Field field) {
-                return permits(field.getDeclaringClass()) || whitelist.permitsStaticFieldGet(field);
-            }
-            @Override public boolean permitsStaticFieldSet(Field field, Object value) {
-                return permits(field.getDeclaringClass()) || whitelist.permitsStaticFieldSet(field, value);
-            }
-        };
+        Whitelist wrapperWhitelist = new ProxyWhitelist(
+                new ClassLoaderWhitelist(script.getClass().getClassLoader()),
+                whitelist);
         GroovyInterceptor sandbox = new SandboxInterceptor(wrapperWhitelist);
         sandbox.register();
         try {
