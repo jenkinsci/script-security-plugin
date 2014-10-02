@@ -298,7 +298,7 @@ public class SandboxInterceptorTest {
                         "method java.util.concurrent.Callable call",
                         "field groovy.lang.Closure delegate",
                         "new java.lang.Exception java.lang.String"),
-                /* unclassified method Script1$_run_closure1 printStackTrace */ null,
+                "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
                 "{-> delegate = new Exception('oops'); printStackTrace()}()"
         );
     }
