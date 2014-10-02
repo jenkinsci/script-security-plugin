@@ -67,7 +67,7 @@ public class SandboxInterceptorTest {
         String script = "def x = 1; new " + clazz + "().method(\"foo${x}\")";
         String expected = "-foo1";
         assertEvaluate(new AnnotatedWhitelist(), expected, script);
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " method java.lang.String")), expected, script);
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " method java.lang.String"), expected, script);
     }
 
     /** Checks that methods specifically expecting {@link GString} also work. */
@@ -76,7 +76,7 @@ public class SandboxInterceptorTest {
         String script = "def x = 1; def c = new " + clazz + "(); c.quote(\"-${c.specialize(x)}-${x}-\")";
         String expected = "-1-'1'-";
         assertEvaluate(new AnnotatedWhitelist(), expected, script);
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object")), expected, script);
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object"), expected, script);
     }
 
     /**
@@ -115,40 +115,40 @@ public class SandboxInterceptorTest {
         String clazz = Clazz.class.getName();
         String script = "int x = 1; " + clazz + ".incr(x)";
         Long expected = 2L;
-        // works but is undesirable: assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Integer")), expected, script);
+        // works but is undesirable: assertEvaluate(new StaticWhitelist("staticMethod " + clazz + " incr java.lang.Integer")), expected, script);
         assertEvaluate(new AnnotatedWhitelist(), expected, script);
         // wrapper types must be declared for primitives:
-        assertEvaluate(new StaticWhitelist(Arrays.asList("staticMethod " + clazz + " incr java.lang.Long")), expected, script);
+        assertEvaluate(new StaticWhitelist("staticMethod " + clazz + " incr java.lang.Long"), expected, script);
     }
 
     @Test public void staticFields() throws Exception {
         String clazz = Clazz.class.getName();
-        assertEvaluate(new StaticWhitelist(Arrays.asList("staticField " + clazz + " flag")), true, clazz + ".flag=true");
+        assertEvaluate(new StaticWhitelist("staticField " + clazz + " flag"), true, clazz + ".flag=true");
         assertTrue(Clazz.flag);
     }
 
     @Test public void propertiesAndGettersAndSetters() throws Exception {
         String clazz = Clazz.class.getName();
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "field " + clazz + " prop")), "default", "new " + clazz + "().prop");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp")), "default", "new " + clazz + "().prop");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "field " + clazz + " prop", "method " + clazz + " getProp")), "default", "new " + clazz + "().prop");
-        assertRejected(new StaticWhitelist(Arrays.asList("new " + clazz)), "field " + clazz + " prop", "new " + clazz + "().prop");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "method " + clazz + " setProp java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop", "method " + clazz + " setProp java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
-        assertRejected(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp")), "field " + clazz + " prop", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2")), "default", "new " + clazz + "().prop2");
-        assertRejected(new StaticWhitelist(Arrays.asList("new " + clazz)), "method " + clazz + " getProp2", "new " + clazz + "().prop2");
-        assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2", "method " + clazz + " setProp2 java.lang.String")), "edited", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
-        assertRejected(new StaticWhitelist(Arrays.asList("new " + clazz, "method " + clazz + " getProp2")), "method " + clazz + " setProp2 java.lang.String", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop"), "default", "new " + clazz + "().prop");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp"), "default", "new " + clazz + "().prop");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop", "method " + clazz + " getProp"), "default", "new " + clazz + "().prop");
+        assertRejected(new StaticWhitelist("new " + clazz), "field " + clazz + " prop", "new " + clazz + "().prop");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "method " + clazz + " setProp java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop", "method " + clazz + " setProp java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp"), "field " + clazz + " prop", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2"), "default", "new " + clazz + "().prop2");
+        assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp2", "new " + clazz + "().prop2");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2", "method " + clazz + " setProp2 java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
+        assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2"), "method " + clazz + " setProp2 java.lang.String", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
         try {
-            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().nonexistent");
+            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent");
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
         }
         try {
-            assertEvaluate(new StaticWhitelist(Arrays.asList("new " + clazz)), "should be rejected", "new " + clazz + "().nonexistent = 'edited'");
+            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent = 'edited'");
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
@@ -211,9 +211,9 @@ public class SandboxInterceptorTest {
         String getProperty = "method groovy.lang.GroovyObject getProperty java.lang.String";
         String setProperty = "method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object";
         String script = "def d = new " + dynamic + "(); d.prop = 'val'; d.prop";
-        assertEvaluate(new StaticWhitelist(Arrays.asList(ctor, getProperty, setProperty)), "val", script);
-        assertRejected(new StaticWhitelist(Arrays.asList(ctor, setProperty)), getProperty, script);
-        assertRejected(new StaticWhitelist(Arrays.asList(ctor)), setProperty, script);
+        assertEvaluate(new StaticWhitelist(ctor, getProperty, setProperty), "val", script);
+        assertRejected(new StaticWhitelist(ctor, setProperty), getProperty, script);
+        assertRejected(new StaticWhitelist(ctor), setProperty, script);
     }
 
     public static final class Dynamic extends GroovyObjectSupport {
@@ -251,7 +251,7 @@ public class SandboxInterceptorTest {
 
     @Test public void defSyntax() throws Exception {
         String clazz = Unsafe.class.getName();
-        Whitelist w = new ProxyWhitelist(new AnnotatedWhitelist(), /* for some reason def syntax triggers this */new StaticWhitelist(Collections.singleton("method java.util.Collection toArray")));
+        Whitelist w = new ProxyWhitelist(new AnnotatedWhitelist(), /* for some reason def syntax triggers this */new StaticWhitelist("method java.util.Collection toArray"));
         assertEvaluate(w, "ok", "m(); def m() {" + clazz + ".ok()}");
         assertEvaluate(w, "ok", "m(); def static m() {" + clazz + ".ok()}");
         assertRejected(w, "staticMethod " + clazz + " explode", "m(); def m() {" + clazz + ".explode()}");
@@ -284,9 +284,9 @@ public class SandboxInterceptorTest {
 
     @Test public void closures() throws Exception {
         // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
-        assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), "method groovy.lang.GroovyObject getProperty java.lang.String", "{-> delegate = new Exception('oops'); message}()");
+        assertRejected(new StaticWhitelist("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String"), "method groovy.lang.GroovyObject getProperty java.lang.String", "{-> delegate = new Exception('oops'); message}()");
         // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
-        assertRejected(new StaticWhitelist(Arrays.asList("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String")), /* unclassified method Script1$_run_closure1 printStackTrace */ null, "{-> delegate = new Exception('oops'); printStackTrace()}()");
+        assertRejected(new StaticWhitelist("method java.util.concurrent.Callable call", "field groovy.lang.Closure delegate", "new java.lang.Exception java.lang.String"), /* unclassified method Script1$_run_closure1 printStackTrace */ null, "{-> delegate = new Exception('oops'); printStackTrace()}()");
     }
 
     @Test public void templates() throws Exception {
@@ -296,7 +296,7 @@ public class SandboxInterceptorTest {
             @Override public String call() throws Exception {
                 return t.make(new HashMap<String,Object>(Collections.singletonMap("aspect", "CRUEL"))).toString();
             }
-        }, new StaticWhitelist(Arrays.asList("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object"))));
+        }, new StaticWhitelist("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object")));
     }
     
     @Test public void selfProperties() throws Exception {
