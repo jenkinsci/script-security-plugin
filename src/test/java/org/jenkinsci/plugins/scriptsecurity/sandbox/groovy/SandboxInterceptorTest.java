@@ -53,6 +53,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.jvnet.hudson.test.Bug;
 
 public class SandboxInterceptorTest {
 
@@ -328,6 +329,15 @@ public class SandboxInterceptorTest {
     @Ignore("https://github.com/kohsuke/groovy-sandbox/issues/16")
     @Test public void infiniteLoop() throws Exception {
         assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
+    }
+
+    @Bug(25118)
+    @Test public void primitiveTypes() throws Exception {
+        try {
+            assertEvaluate(new ProxyWhitelist(), "2", "'123'.charAt(1);");
+        } catch (RejectedAccessException x) {
+            assertNotNull(x.toString(), x.getSignature());
+        }
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
