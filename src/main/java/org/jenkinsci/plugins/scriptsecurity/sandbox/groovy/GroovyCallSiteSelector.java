@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang.ClassUtils;
 
 /**
  * Assists in determination of which method or other JVM element is actually about to be called by Groovy.
@@ -56,6 +57,15 @@ class GroovyCallSiteSelector {
             }
             if (parameterTypes[i].isInstance(parameters[i])) {
                 // OK, this parameter matches.
+                continue;
+            }
+            if (
+                    parameterTypes[i].isPrimitive()
+                    && parameters[i] != null
+                    && ClassUtils.primitiveToWrapper(parameterTypes[i]).isInstance(parameters[i])
+            ) {
+                // Groovy passes primitive values as objects (for example, passes 0 as Integer(0))
+                // The prior test fails as int.class.isInstance(new Integer(0)) returns false.
                 continue;
             }
             // TODO what about a primitive parameter type and a wrapped parameter?
