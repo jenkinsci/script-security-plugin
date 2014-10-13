@@ -334,10 +334,11 @@ public class SandboxInterceptorTest {
     @Bug(25118)
     @Test public void primitiveTypes() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "2", "'123'.charAt(1);");
+            assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.charAt(1);");
         } catch (RejectedAccessException x) {
             assertNotNull(x.toString(), x.getSignature());
         }
+        assertEvaluate(new StaticWhitelist("method java.lang.CharSequence charAt int"), '2', "'123'.charAt(1);");
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
