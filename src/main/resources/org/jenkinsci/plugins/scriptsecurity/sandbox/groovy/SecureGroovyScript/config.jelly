@@ -30,8 +30,8 @@ THE SOFTWARE.
         <!-- TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1 means no true Groovy support -->
         <f:textarea checkMethod="post"/> <!-- TODO codemirror-mode="clike" codemirror-config="'onBlur': cmChange" -->
     </f:entry>
-    <f:entry field="sandbox" title="${%Use Groovy Sandbox}">
-        <f:checkbox/>
+    <f:entry field="sandbox">
+        <f:checkbox title="${%Use Groovy Sandbox}"/>
     </f:entry>
     <f:entry title="${%Additional classpath}" field="classpath">
         <f:repeatableProperty add="${%Add entry}" header="${%Classpath entry}" field="classpath"/>
