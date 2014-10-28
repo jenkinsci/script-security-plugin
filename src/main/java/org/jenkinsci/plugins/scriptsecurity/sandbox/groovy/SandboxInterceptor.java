@@ -92,10 +92,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     @Override public Object onSetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property, Object value) throws Throwable {
-        if (receiver == null) {
-            // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
-            return super.onSetProperty(invoker, receiver, property, value);
-        }
         if (receiver instanceof Script && !property.equals("binding") && !property.equals("metaClass")) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
@@ -126,10 +122,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
-        if (receiver == null) {
-            // TODO https://github.com/kohsuke/groovy-sandbox/issues/15 should not be necessary
-            return super.onGetProperty(invoker, receiver, property);
-        }
         if (receiver instanceof Script) { // SimpleTemplateEngine "out" variable, and anything else added in a binding
             ((Script) receiver).getBinding().getVariable(property); // throw MissingPropertyException if appropriate; do not let it go to Script.super.getProperty
             return super.onGetProperty(invoker, receiver, property);
