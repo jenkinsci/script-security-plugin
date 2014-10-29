@@ -53,5 +53,11 @@
             <version>2.0.1</version>
             <scope>provided</scope>
         </dependency>
+        <dependency> <!-- TODO default as of 1.568+ -->
+            <groupId>org.jenkins-ci</groupId>
+            <artifactId>test-annotations</artifactId>
+            <version>1.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

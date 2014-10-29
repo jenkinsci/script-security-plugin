@@ -53,7 +53,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.jvnet.hudson.test.Bug;
+import org.jvnet.hudson.test.Issue;
 
 public class SandboxInterceptorTest {
 
@@ -265,6 +265,7 @@ public class SandboxInterceptorTest {
     }
 
     /** Expect errors from {@link org.codehaus.groovy.runtime.NullObject}. */
+    @Issue("kohsuke/groovy-sandbox #15")
     @Test public void nullPointerException() throws Exception {
         try {
             assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member");
@@ -326,11 +327,12 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("kohsuke/groovy-sandbox #16")
     @Test public void infiniteLoop() throws Exception {
         assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
     }
 
-    @Bug(25118)
+    @Issue("JENKINS-25118")
     @Test public void primitiveTypes() throws Exception {
         try {
             assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.charAt(1);");
