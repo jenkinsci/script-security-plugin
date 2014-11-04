@@ -24,6 +24,10 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.Binding;
+import hudson.remoting.Which;
+import org.apache.tools.ant.AntClassLoader;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -53,7 +57,9 @@ import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.kohsuke.groovy.sandbox.impl.Checker;
 
 public class SecureGroovyScriptTest {
 
@@ -714,6 +720,26 @@ public class SecureGroovyScriptTest {
             
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+        }
+    }
+
+    @Test @Issue("JENKINS-25348")
+    public void testSandboxClassResolution() throws Exception {
+        File jar = Which.jarFile(Checker.class);
+
+        // this child-first classloader creates an environment in which another groovy-sandbox exists
+        AntClassLoader a = new AntClassLoader(getClass().getClassLoader(),false);
+        a.addPathComponent(jar);
+
+        // make sure we are loading two different copies now
+        assertNotSame(Checker.class, a.loadClass(Checker.class.getName()));
+
+        SecureGroovyScript sgs = new SecureGroovyScript("System.gc()", true, null);
+        try {
+            sgs.configuringWithKeyItem().evaluate(a, new Binding());
+            fail("Expecting a rejection");
+        } catch (RejectedAccessException e) {
+            assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
         }
     }
 }

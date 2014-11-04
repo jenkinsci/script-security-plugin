@@ -43,12 +43,32 @@ public class GroovySandbox {
 
     /**
      * Prepares a compiler configuration the sandbox.
+     *
+     * <h2>CAUTION</h2>
+     * <p>
+     * When creating {@link GroovyShell} with this {@link CompilerConfiguration},
+     * you also have to use {@link #createSecureClassLoader(ClassLoader)} to wrap
+     * a classloader of your choice into sandbox-aware one.
+     *
+     * <p>
+     * Otherwise the classloader that you provide to {@link GroovyShell} might
+     * have its own copy of groovy-sandbox, which lets the code escape the sandbox.
+     *
      * @return a compiler configuration set up to use the sandbox
      */
     public static @Nonnull CompilerConfiguration createSecureCompilerConfiguration() {
         CompilerConfiguration cc = new CompilerConfiguration();
         cc.addCompilationCustomizers(new SandboxTransformer());
         return cc;
+    }
+
+    /**
+     * Prepares a classloader for Groovy shell for sandboxing.
+     *
+     * See {@link #createSecureCompilerConfiguration()} for the discussion.
+     */
+    public static @Nonnull ClassLoader createSecureClassLoader(ClassLoader base) {
+        return new SandboxResolvingClassLoader(base);
     }
     
     /**

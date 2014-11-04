@@ -154,6 +154,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             
             loader = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
+        loader = GroovySandbox.createSecureClassLoader(loader);
         if (sandbox) {
             GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
             try {
