@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import hudson.Extension;
 import hudson.model.ManagementLink;
+import hudson.security.Permission;
 import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -34,8 +35,8 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class ScriptApprovalLink extends ManagementLink {
 
     @Override public String getIconFileName() {
-        // Show only for users with RUN_SCRIPTS
-        return Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)?"notepad.png":null;
+        // for 1.466 - 1.489, there's no getRequiredPermission(), so we compensate that here
+        return Jenkins.getInstance().hasPermission(getRequiredPermission())?"notepad.png":null;
     }
 
     @Override public String getUrlName() {
@@ -62,5 +63,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             message += " <strong>" + outstanding + " classpath entries pending approval.</strong>";
         }
         return message;
+    }
+
+    // since 1.489, this is @Override
+    public Permission getRequiredPermission() {
+        return Jenkins.RUN_SCRIPTS;
     }
 }
