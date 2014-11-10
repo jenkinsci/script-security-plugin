@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.google.common.primitives.Primitives;
 import groovy.lang.GString;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -88,10 +89,16 @@ class GroovyCallSiteSelector {
      */
     public static @CheckForNull Method method(@Nonnull Object receiver, @Nonnull String method, @Nonnull Object[] args) {
         for (Class<?> c : types(receiver)) {
+            Method candidate = null;
             for (Method m : c.getDeclaredMethods()) {
                 if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
-                    return m;
+                    if (candidate == null || isMoreSpecific(m, candidate)) {
+                        candidate = m;
+                    }
                 }
+            }
+            if (candidate != null) {
+                return candidate;
             }
         }
         return null;
@@ -108,13 +115,15 @@ class GroovyCallSiteSelector {
 
     public static @CheckForNull Method staticMethod(@Nonnull Class<?> receiver, @Nonnull String method, @Nonnull Object[] args) {
         // TODO should we check for inherited static calls?
+        Method candidate = null;
         for (Method m : receiver.getDeclaredMethods()) {
             if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
-                // TODO should we issue an error if multiple overloads match? or try to find the “most specific”?
-                return m;
+                if (candidate == null || isMoreSpecific(m, candidate)) {
+                    candidate = m;
+                }
             }
         }
-        return null;
+        return candidate;
     }
 
     public static @CheckForNull Field field(@Nonnull Object receiver, @Nonnull String field) {
@@ -152,6 +161,22 @@ class GroovyCallSiteSelector {
         }
         // Visit supertypes first.
         types.add(c);
+    }
+
+    private static boolean isMoreSpecific(Method more, Method less) {
+        Class<?>[] moreParams = more.getParameterTypes();
+        Class<?>[] lessParams = less.getParameterTypes();
+        assert moreParams.length == lessParams.length;
+        for (int i = 0; i < moreParams.length; i++) {
+            Class<?> moreParam = Primitives.wrap(moreParams[i]);
+            Class<?> lessParam = Primitives.wrap(lessParams[i]);
+            if (moreParam.isAssignableFrom(lessParam)) {
+                return false;
+            } else if (lessParam.isAssignableFrom(moreParam)) {
+                return true;
+            }
+        }
+        throw new IllegalStateException(more + " and " + less + " seem incomparable");
     }
 
     private GroovyCallSiteSelector() {}

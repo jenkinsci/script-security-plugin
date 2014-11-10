@@ -312,7 +312,7 @@ public class SandboxInterceptorTest {
             @Override public String call() throws Exception {
                 return t.make(new HashMap<String,Object>(Collections.singletonMap("aspect", "CRUEL"))).toString();
             }
-        }, new StaticWhitelist("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.Object")));
+        }, new StaticWhitelist("method java.lang.String toLowerCase", "method java.io.PrintWriter print java.lang.String")));
     }
     
     @Test public void selfProperties() throws Exception {
