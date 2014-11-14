@@ -1,5 +1,6 @@
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
+method java.io.PrintWriter print java.lang.String
 
 # Useful general stuff:
 method java.lang.CharSequence length
