@@ -35,6 +35,7 @@ import groovy.text.Template;
 import hudson.Functions;
 
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -340,6 +341,15 @@ public class SandboxInterceptorTest {
             assertNotNull(x.toString(), x.getSignature());
         }
         assertEvaluate(new StaticWhitelist("method java.lang.CharSequence charAt int"), '2', "'123'.charAt(1);");
+    }
+
+    @Test public void ambiguousOverloads() {
+        // Groovy selects one of these. How, I do not know.
+        assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+    }
+    public static final class Ambiguity {
+        @Whitelisted public static boolean m(String x) {return true;}
+        @Whitelisted public static boolean m(URL x) {return true;}
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {

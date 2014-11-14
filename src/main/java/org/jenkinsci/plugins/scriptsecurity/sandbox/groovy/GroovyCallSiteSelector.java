@@ -176,7 +176,8 @@ class GroovyCallSiteSelector {
                 return true;
             }
         }
-        throw new IllegalStateException(more + " and " + less + " seem incomparable");
+        // Incomparable. Arbitrarily pick one of them.
+        return more.toString().compareTo(less.toString()) > 0;
     }
 
     private GroovyCallSiteSelector() {}
