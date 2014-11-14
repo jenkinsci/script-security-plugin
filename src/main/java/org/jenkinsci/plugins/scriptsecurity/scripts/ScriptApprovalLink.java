@@ -35,8 +35,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class ScriptApprovalLink extends ManagementLink {
 
     @Override public String getIconFileName() {
-        // for 1.466 - 1.489, there's no getRequiredPermission(), so we compensate that here
-        return Jenkins.getInstance().hasPermission(getRequiredPermission())?"notepad.png":null;
+        return "notepad.png";
     }
 
     @Override public String getUrlName() {
@@ -65,8 +64,8 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         return message;
     }
 
-    // since 1.489, this is @Override
-    public Permission getRequiredPermission() {
+    @Override public Permission getRequiredPermission() {
         return Jenkins.RUN_SCRIPTS;
     }
+
 }
