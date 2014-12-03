@@ -10,3 +10,4 @@ method java.util.Collection add java.lang.Object
 method java.util.Map put java.lang.Object java.lang.Object
 new java.net.URL java.lang.String
 method java.lang.String split java.lang.String
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object

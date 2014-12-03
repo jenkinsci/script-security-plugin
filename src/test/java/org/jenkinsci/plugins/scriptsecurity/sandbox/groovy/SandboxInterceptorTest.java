@@ -352,9 +352,17 @@ public class SandboxInterceptorTest {
         @Whitelisted public static boolean m(URL x) {return true;}
     }
 
+    @Test public void regexps() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "goodbye world", "def text = 'hello world'; def matcher = text =~ 'hello (.+)'; matcher ? \"goodbye ${matcher[0][1]}\" : 'fail'");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        assertEquals(expected, GroovySandbox.run(shell.parse(script), whitelist));
+        Object actual = GroovySandbox.run(shell.parse(script), whitelist);
+        if (actual instanceof GString) {
+            actual = actual.toString(); // for ease of comparison
+        }
+        assertEquals(expected, actual);
     }
 
     private static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
