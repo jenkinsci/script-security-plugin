@@ -29,6 +29,7 @@ import hudson.Functions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
@@ -60,6 +61,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 // fall through
             }
 
+            // look for GDK methods
+            Object[] selfArgs = new Object[args.length + 1];
+            selfArgs[0] = receiver;
+            System.arraycopy(args, 0, selfArgs, 1, args.length);
+            if (GroovyCallSiteSelector.staticMethod(DefaultGroovyMethods.class, method, selfArgs) != null) {
+                return onStaticCall(invoker, DefaultGroovyMethods.class, method, selfArgs);
+            }
+
             throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
@@ -82,6 +91,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.staticMethod(receiver, method, args);
         if (m == null) {
+            // TODO consider DefaultGroovyStaticMethods
             throw new RejectedAccessException("unclassified staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
