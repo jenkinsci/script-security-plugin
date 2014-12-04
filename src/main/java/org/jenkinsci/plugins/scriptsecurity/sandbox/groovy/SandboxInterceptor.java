@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.Functions;
 import java.lang.reflect.Constructor;
@@ -132,9 +133,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, Object receiver, String property) throws Throwable {
+        MissingPropertyException mpe = null;
         if (receiver instanceof Script) { // SimpleTemplateEngine "out" variable, and anything else added in a binding
-            ((Script) receiver).getBinding().getVariable(property); // throw MissingPropertyException if appropriate; do not let it go to Script.super.getProperty
-            return super.onGetProperty(invoker, receiver, property);
+            try {
+                ((Script) receiver).getBinding().getVariable(property); // do not let it go to Script.super.getProperty
+                return super.onGetProperty(invoker, receiver, property);
+            } catch (MissingPropertyException x) {
+                mpe = x; // throw only if we are not whitelisted
+            }
         }
         if (property.equals("length") && receiver.getClass().isArray()) {
             return super.onGetProperty(invoker, receiver, property);
@@ -159,6 +165,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
             if (f2 != null && whitelist.permitsStaticFieldGet(f2)) {
                 return super.onGetProperty(invoker, receiver, property);
             }
+        }
+        if (mpe != null) {
+            throw mpe;
         }
         throw rejectField(f, m, m2, f2, receiver, property);
     }

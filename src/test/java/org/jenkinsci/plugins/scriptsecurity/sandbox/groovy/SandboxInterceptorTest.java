@@ -27,9 +27,11 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
 import groovy.lang.MissingPropertyException;
+import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
@@ -41,6 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -325,6 +328,31 @@ public class SandboxInterceptorTest {
             assertEvaluate(new ProxyWhitelist(), "should fail", "GOOP");
         } catch (MissingPropertyException x) {
             assertEquals("GOOP", x.getProperty());
+        }
+    }
+
+    @Test public void specialScript() throws Exception {
+        CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+        cc.setScriptBaseClass(SpecialScript.class.getName());
+        GroovyShell shell = new GroovyShell(cc);
+        Whitelist wl = new AbstractWhitelist() {
+            @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+                return method.getDeclaringClass() == GroovyObject.class && method.getName().equals("getProperty") && receiver instanceof SpecialScript && args[0].equals("magic");
+            }
+        };
+        assertEquals(42, GroovySandbox.run(shell.parse("magic"), wl));
+        try {
+            GroovySandbox.run(shell.parse("boring"), wl);
+        } catch (MissingPropertyException x) {
+            assertEquals("boring", x.getProperty());
+        }
+    }
+    public static abstract class SpecialScript extends Script {
+        @Override public Object getProperty(String property) {
+            if (property.equals("magic")) {
+                return 42;
+            }
+            return super.getProperty(property);
         }
     }
 
