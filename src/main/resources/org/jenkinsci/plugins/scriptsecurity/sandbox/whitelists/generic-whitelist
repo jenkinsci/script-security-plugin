@@ -14,3 +14,4 @@ new java.net.URL java.lang.String
 method java.lang.String split java.lang.String
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+method java.util.Collection contains java.lang.Object
