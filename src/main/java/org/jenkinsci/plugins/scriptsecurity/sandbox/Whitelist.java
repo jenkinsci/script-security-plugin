@@ -29,6 +29,8 @@ import hudson.ExtensionPoint;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.WeakHashMap;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
@@ -69,12 +71,18 @@ public abstract class Whitelist implements ExtensionPoint {
      * @return an aggregated default list
      */
     public static synchronized @Nonnull Whitelist all() {
+        Jenkins j = Jenkins.getInstance();
+        if (j == null) {
+            return new ProxyWhitelist();
+        }
+        Whitelist all = allByJenkins.get(j);
         if (all == null) {
             // TODO should check for dynamic changes in this list, e.g. from dynamically loaded plugins, and return a fresh aggregate
-            all = new ProxyWhitelist(Jenkins.getInstance().getExtensionList(Whitelist.class));
+            all = new ProxyWhitelist(j.getExtensionList(Whitelist.class));
+            allByJenkins.put(j, all);
         }
         return all;
     }
-    private static Whitelist all;
+    private static final Map<Jenkins,Whitelist> allByJenkins = new WeakHashMap<Jenkins,Whitelist>();
 
 }
