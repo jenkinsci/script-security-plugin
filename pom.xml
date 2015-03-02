@@ -59,5 +59,19 @@
             <version>1.1</version>
             <scope>test</scope>
         </dependency>
+        <!-- TODO as of 1.532.x+ the inherited version is not a range dep and so the following two overrides can be removed: -->
+        <dependency>
+            <groupId>com.github.jnr</groupId>
+            <artifactId>jffi</artifactId>
+            <version>1.2.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jnr</groupId>
+            <artifactId>jffi</artifactId>
+            <version>1.2.7</version>
+            <classifier>native</classifier>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
