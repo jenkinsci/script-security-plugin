@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
+import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
@@ -54,6 +56,8 @@ import org.apache.tools.ant.taskdefs.Touch;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import static org.junit.Assert.*;
+
+import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -66,7 +70,11 @@ public class SecureGroovyScriptTest {
     @Rule public JenkinsRule r = new JenkinsRule();
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
- 
+
+    /**
+     * Basic approval test where the user doesn't have RUN_SCRIPTS privs but has unchecked
+     * the sandbox checkbox. Should result in script going to pending approval.
+     */
     @Test public void basicApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
@@ -85,7 +93,15 @@ public class SecureGroovyScriptTest {
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
         script.setText(groovy);
+
+        // The fact that the user doesn't have RUN_SCRIPT privs means sandbox mode should be on by default.
+        // We need to switch it off to force it into approval.
+        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) config.getInputsByName("_.sandbox").get(0);
+        assertEquals(true, sandboxRB.isChecked()); // should be checked
+        sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
+
         r.submit(config);
+
         List<Publisher> publishers = p.getPublishersList();
         assertEquals(1, publishers.size());
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
@@ -115,6 +131,90 @@ public class SecureGroovyScriptTest {
         r.jenkins.reload();
         p = r.jenkins.getItemByFullName("p", FreeStyleProject.class);
         assertEquals("P#3", r.assertBuildStatusSuccess(p.scheduleBuild2(0)).getDescription());
+    }
+
+
+    /**
+     * Test where the user has RUN_SCRIPTS privs, default to non sandbox mode.
+     */
+    @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
+        gmas.add(Jenkins.READ, "devel");
+        gmas.add(Jenkins.RUN_SCRIPTS, "devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            gmas.add(p, "devel");
+        }
+        r.jenkins.setAuthorizationStrategy(gmas);
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        JenkinsRule.WebClient wc = r.createWebClient();
+        wc.login("devel");
+        HtmlPage page = wc.getPage(p, "configure");
+        HtmlForm config = page.getFormByName("config");
+        config.getButtonByCaption("Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        HtmlTextArea script = config.getTextAreaByName("_.script");
+        String groovy = "build.externalizableId";
+        script.setText(groovy);
+        r.submit(config);
+        List<Publisher> publishers = p.getPublishersList();
+        assertEquals(1, publishers.size());
+        TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
+        assertEquals(groovy, publisher.getScript().getScript());
+
+        // The user has RUN_SCRIPTS privs => should default to non sandboxed
+        assertFalse(publisher.getScript().isSandbox());
+
+        // Because it has RUN_SCRIPTS privs, the script should not have ended up pending approval
+        Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
+        assertEquals(0, pendingScripts.size());
+
+        // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
+        assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+    }
+
+    /**
+     * Test where the user doesn't have RUN_SCRIPTS privs, default to sandbox mode.
+     */
+    @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
+        gmas.add(Jenkins.READ, "devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            gmas.add(p, "devel");
+        }
+        r.jenkins.setAuthorizationStrategy(gmas);
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        JenkinsRule.WebClient wc = r.createWebClient();
+        wc.login("devel");
+        HtmlPage page = wc.getPage(p, "configure");
+        HtmlForm config = page.getFormByName("config");
+        config.getButtonByCaption("Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        HtmlTextArea script = config.getTextAreaByName("_.script");
+        String groovy = "build.externalizableId";
+        script.setText(groovy);
+        r.submit(config);
+        List<Publisher> publishers = p.getPublishersList();
+        assertEquals(1, publishers.size());
+        TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
+        assertEquals(groovy, publisher.getScript().getScript());
+
+        // The user doesn't have RUN_SCRIPTS privs => should default to sandboxed mode
+        assertTrue(publisher.getScript().isSandbox());
+
+        // When sandboxed, only approved classpath entries are allowed so doesn't get added to pending approvals list.
+        // See SecureGroovyScript.configuring(ApprovalContext)
+        Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
+        assertEquals(0, pendingScripts.size());
+
+        // We didn't add the approved classpath so ...
+        try {
+            ScriptApproval.get().using(groovy, GroovyLanguage.get());
+            fail("Expected UnapprovedUsageException");
+        } catch (UnapprovedUsageException e) {
+            assertEquals("script not yet approved for use", e.getMessage());
+        }
     }
 
     private List<File> getAllJarFiles() throws URISyntaxException {
