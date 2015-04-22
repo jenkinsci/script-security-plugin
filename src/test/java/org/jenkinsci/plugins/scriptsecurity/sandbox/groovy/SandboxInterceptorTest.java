@@ -87,7 +87,7 @@ public class SandboxInterceptorTest {
     /**
      * Tests the proper interception of builder-like method.
      */
-    @Test public void testInvokeMethod() throws Exception {
+    @Test public void invokeMethod() throws Exception {
         String script = "def builder = new groovy.json.JsonBuilder(); builder.point { x 5; y 3; }; builder.toString()";
         String expected = "{\"point\":{\"x\":5,\"y\":3}}";
         assertEvaluate(new BlanketWhitelist(), expected, script);
@@ -113,6 +113,13 @@ public class SandboxInterceptorTest {
 //                "method groovy.json.JsonBuilder toString",
 //                "method groovy.json.JsonBuilder invokeMethod java.lang.String java.lang.Object"
         )), expected, script);
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should be rejected", "class Real {}; def real = new Real(); real.nonexistent(42)");
+        } catch (RejectedAccessException x) {
+            String message = x.getMessage();
+            assertEquals(message, "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object", x.getSignature());
+            assertTrue(message, message.contains("Real nonexistent java.lang.Integer"));
+        }
     }
 
     @Ignore("TODO there are various unhandled cases, such as Closure → SAM, or numeric conversions, or number → String, or boxing/unboxing.")
