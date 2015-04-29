@@ -11,7 +11,21 @@ method java.util.Collection size
 method java.util.Map put java.lang.Object java.lang.Object
 method java.util.List get int
 new java.net.URL java.lang.String
+method java.lang.String contains java.lang.CharSequence
+method java.lang.String endsWith java.lang.String
+method java.lang.String indexOf java.lang.String
+method java.lang.String toLowerCase
+method java.lang.String matches java.lang.String
 method java.lang.String split java.lang.String
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+method java.lang.String startsWith java.lang.String
+method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
+
+# Groovy:
+method groovy.lang.Script getBinding
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
