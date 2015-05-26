@@ -298,22 +298,20 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void closures() throws Exception {
-        // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
         assertRejected(
                 new StaticWhitelist(
                         "method java.util.concurrent.Callable call",
                         "field groovy.lang.Closure delegate",
                         "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject getProperty java.lang.String",
+                "method java.lang.Throwable getMessage",
                 "{-> delegate = new Exception('oops'); message}()"
         );
-        // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
         assertRejected(
                 new StaticWhitelist(
                         "method java.util.concurrent.Callable call",
                         "field groovy.lang.Closure delegate",
                         "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+                "method java.lang.Throwable printStackTrace",
                 "{-> delegate = new Exception('oops'); printStackTrace()}()"
         );
     }
@@ -406,6 +404,7 @@ public class SandboxInterceptorTest {
      * script-security understands this logic and checks access at the actual target of the proxy, so that Closures
      * can be used safely.
      */
+    @Issue("JENKINS-28586")
     @Test public void closureDelegate() throws Exception {
         ProxyWhitelist rules = new ProxyWhitelist(
                 new GenericWhitelist(),

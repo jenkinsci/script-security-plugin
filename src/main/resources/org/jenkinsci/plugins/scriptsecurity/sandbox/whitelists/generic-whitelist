@@ -22,6 +22,9 @@ method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
 
 # Groovy:
+staticField groovy.lang.Closure *
+field groovy.lang.Closure resolveStrategy
+field groovy.lang.Closure delegate
 method groovy.lang.Script getBinding
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
@@ -29,6 +32,3 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
-staticField groovy.lang.Closure DELEGATE_ONLY
-field groovy.lang.Closure resolveStrategy
-field groovy.lang.Closure delegate
