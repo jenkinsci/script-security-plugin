@@ -29,3 +29,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
+staticField groovy.lang.Closure DELEGATE_ONLY
+field groovy.lang.Closure resolveStrategy
+field groovy.lang.Closure delegate
