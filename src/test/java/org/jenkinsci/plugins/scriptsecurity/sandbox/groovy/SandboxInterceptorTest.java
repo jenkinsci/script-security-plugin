@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.json.JsonBuilder;
+import groovy.json.JsonDelegate;
 import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
@@ -101,10 +102,8 @@ public class SandboxInterceptorTest {
                 public boolean permitsMethod(Method method, Object receiver, Object[] args) {
                     if (method.getName().equals("invokeMethod") && receiver instanceof JsonBuilder)
                         return true;
-                    if (method.getName().equals("invokeMethod") && receiver instanceof Closure) {
-                        Object d = ((Closure) receiver).getDelegate();
-                        return d.getClass().getName().equals("groovy.json.JsonDelegate");
-                    }
+                    if (method.getName().equals("invokeMethod") && receiver instanceof JsonDelegate)
+                        return true;
                     if (method.getName().equals("toString") && receiver instanceof JsonBuilder)
                         return true;
                     return false;
@@ -298,22 +297,20 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void closures() throws Exception {
-        // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
         assertRejected(
                 new StaticWhitelist(
                         "method java.util.concurrent.Callable call",
                         "field groovy.lang.Closure delegate",
                         "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject getProperty java.lang.String",
+                "method java.lang.Throwable getMessage",
                 "{-> delegate = new Exception('oops'); message}()"
         );
-        // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
         assertRejected(
                 new StaticWhitelist(
                         "method java.util.concurrent.Callable call",
                         "field groovy.lang.Closure delegate",
                         "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+                "method java.lang.Throwable printStackTrace",
                 "{-> delegate = new Exception('oops'); printStackTrace()}()"
         );
     }
