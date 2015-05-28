@@ -26,7 +26,6 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
-import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
@@ -320,6 +319,59 @@ public class SandboxInterceptorTest {
         );
     }
 
+    /**
+     * Tests the method invocation / property access through closures.
+     *
+     * <p>
+     * Groovy closures act as a proxy when it comes to property/method access. Based on the configuration, it can
+     * access those from some combination of owner/delegate. As this is an important building block for custom DSL,
+     * script-security understands this logic and checks access at the actual target of the proxy, so that Closures
+     * can be used safely.
+     */
+    @Test public void closureDelegate() throws Exception {
+        ProxyWhitelist rules = new ProxyWhitelist(
+                new GenericWhitelist(),
+                new StaticWhitelist(
+                        "new java.awt.Point",
+                        "method java.util.concurrent.Callable call"     // this shouldn't have to be here, but JENKINS-24982
+        ));
+
+        { // method access
+            assertEvaluate(rules, 3,
+                    StringUtils.join(Arrays.asList(
+                            "class Dummy { def getX() { return 3; } }",
+                            "def c = { -> getX() };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new Dummy();",
+                            "return c();"
+                    ), "\n"));
+            assertRejected(rules, "method java.awt.geom.Point2D getX",
+                    StringUtils.join(Arrays.asList(
+                            "def c = { -> getX() };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new java.awt.Point();",
+                            "return c();"
+                    ), "\n"));
+        }
+        {// property access
+            assertEvaluate(rules, 3,
+                    StringUtils.join(Arrays.asList(
+                            "class Dummy { def getX() { return 3; } }",
+                            "def c = { -> x };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new Dummy();",
+                            "return c();"
+                    ), "\n"));
+            assertRejected(rules, "field java.awt.Point x",
+                    StringUtils.join(Arrays.asList(
+                            "def c = { -> x };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new java.awt.Point();",
+                            "return c();"
+                    ), "\n"));
+        }
+    }
+
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
@@ -397,59 +449,6 @@ public class SandboxInterceptorTest {
 
     @Test public void splitAndJoin() throws Exception {
         assertEvaluate(new GenericWhitelist(), Collections.singletonMap("part0", "one\ntwo"), "def list = [['one', 'two']]; def map = [:]; for (int i = 0; i < list.size(); i++) {map[\"part${i}\"] = list.get(i).join(\"\\n\")}; map");
-    }
-
-    /**
-     * Tests the method invocation / property access through closures.
-     *
-     * <p>
-     * Groovy closures act as a proxy when it comes to property/method access. Based on the configuration, it can
-     * access those from some combination of owner/delegate. As this is an important building block for custom DSL,
-     * script-security understands this logic and checks access at the actual target of the proxy, so that Closures
-     * can be used safely.
-     */
-    @Test public void closureDelegate() throws Exception {
-        ProxyWhitelist rules = new ProxyWhitelist(
-                new GenericWhitelist(),
-                new StaticWhitelist(
-                        "new java.awt.Point",
-                        "method java.util.concurrent.Callable call"     // this shouldn't have to be here, but JENKINS-24982
-        ));
-
-        { // method access
-            assertEvaluate(rules, 3,
-                    StringUtils.join(Arrays.asList(
-                            "class Dummy { def getX() { return 3; } }",
-                            "def c = { -> getX() };",
-                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
-                            "c.delegate = new Dummy();",
-                            "return c();"
-                    ), "\n"));
-            assertRejected(rules, "method java.awt.geom.Point2D getX",
-                    StringUtils.join(Arrays.asList(
-                            "def c = { -> getX() };",
-                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
-                            "c.delegate = new java.awt.Point();",
-                            "return c();"
-                    ), "\n"));
-        }
-        {// property access
-            assertEvaluate(rules, 3,
-                    StringUtils.join(Arrays.asList(
-                            "class Dummy { def getX() { return 3; } }",
-                            "def c = { -> x };",
-                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
-                            "c.delegate = new Dummy();",
-                            "return c();"
-                    ), "\n"));
-            assertRejected(rules, "field java.awt.Point x",
-                    StringUtils.join(Arrays.asList(
-                            "def c = { -> x };",
-                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
-                            "c.delegate = new java.awt.Point();",
-                            "return c();"
-                    ), "\n"));
-        }
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
