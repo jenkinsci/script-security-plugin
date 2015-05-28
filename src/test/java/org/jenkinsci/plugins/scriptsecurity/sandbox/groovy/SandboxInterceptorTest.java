@@ -245,9 +245,14 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Ignore("TODO not yet implemented")
+    @Issue("JENKINS-25119")
     @Test public void defaultGroovyMethods() throws Exception {
-        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+        assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), 123, "'123'.toInteger();");
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
+        /* TODO No such property: it for class: Script1:
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+        */
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
@@ -393,16 +398,6 @@ public class SandboxInterceptorTest {
 
     @Test public void splitAndJoin() throws Exception {
         assertEvaluate(new GenericWhitelist(), Collections.singletonMap("part0", "one\ntwo"), "def list = [['one', 'two']]; def map = [:]; for (int i = 0; i < list.size(); i++) {map[\"part${i}\"] = list.get(i).join(\"\\n\")}; map");
-    }
-
-    @Issue("JENKINS-25119")
-    @Test public void groovyAdditionalMethod() throws Exception {
-        try {
-            assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.toInteger();");
-        } catch (RejectedAccessException x) {
-            assertNotNull(x.toString(), x.getSignature());
-        }
-        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), new Integer(123), "'123'.toInteger();");
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
