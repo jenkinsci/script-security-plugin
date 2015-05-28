@@ -301,19 +301,13 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void closures() throws Exception {
-        assertRejected(
-                new StaticWhitelist(
-                        "method java.util.concurrent.Callable call",
-                        "field groovy.lang.Closure delegate",
-                        "new java.lang.Exception java.lang.String"),
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.lang.Exception java.lang.String"));
+        assertRejected(wl,
                 "method java.lang.Throwable getMessage",
                 "{-> delegate = new Exception('oops'); message}()"
         );
         assertRejected(
-                new StaticWhitelist(
-                        "method java.util.concurrent.Callable call",
-                        "field groovy.lang.Closure delegate",
-                        "new java.lang.Exception java.lang.String"),
+                wl,
                 "method java.lang.Throwable printStackTrace",
                 "{-> delegate = new Exception('oops'); printStackTrace()}()"
         );
@@ -331,10 +325,7 @@ public class SandboxInterceptorTest {
     @Test public void closureDelegate() throws Exception {
         ProxyWhitelist rules = new ProxyWhitelist(
                 new GenericWhitelist(),
-                new StaticWhitelist(
-                        "new java.awt.Point",
-                        "method java.util.concurrent.Callable call"     // this shouldn't have to be here, but JENKINS-24982
-        ));
+                new StaticWhitelist("new java.awt.Point"));
 
         { // method access
             assertEvaluate(rules, 3,
