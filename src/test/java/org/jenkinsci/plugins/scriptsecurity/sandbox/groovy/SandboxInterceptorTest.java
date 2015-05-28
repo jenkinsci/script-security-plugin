@@ -395,6 +395,16 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), Collections.singletonMap("part0", "one\ntwo"), "def list = [['one', 'two']]; def map = [:]; for (int i = 0; i < list.size(); i++) {map[\"part${i}\"] = list.get(i).join(\"\\n\")}; map");
     }
 
+    @Issue("JENKINS-25119")
+    @Test public void groovyAdditionalMethod() throws Exception {
+        try {
+            assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.toInteger();");
+        } catch (RejectedAccessException x) {
+            assertNotNull(x.toString(), x.getSignature());
+        }
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), new Integer(123), "'123'.toInteger();");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
