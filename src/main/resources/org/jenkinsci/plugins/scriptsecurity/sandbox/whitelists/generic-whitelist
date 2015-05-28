@@ -6,6 +6,7 @@ method java.io.PrintWriter print java.lang.String
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Object equals java.lang.Object
+method java.lang.Object toString
 method java.util.Collection add java.lang.Object
 method java.util.Collection size
 method java.util.Map put java.lang.Object java.lang.Object
@@ -15,14 +16,19 @@ method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
 method java.lang.String indexOf java.lang.String
 method java.lang.String toLowerCase
+method java.lang.String trim
 method java.lang.String matches java.lang.String
 method java.lang.String split java.lang.String
 method java.lang.String startsWith java.lang.String
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
+method java.util.concurrent.Callable call
 
 # Groovy:
 method groovy.lang.Script getBinding
+method groovy.lang.Closure call java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
