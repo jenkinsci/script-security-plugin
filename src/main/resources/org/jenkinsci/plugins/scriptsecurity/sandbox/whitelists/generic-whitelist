@@ -27,14 +27,6 @@ method java.util.concurrent.Callable call
 # Groovy:
 method groovy.lang.Script getBinding
 method groovy.lang.Closure call java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
 staticField groovy.lang.Closure OWNER_FIRST
 staticField groovy.lang.Closure DELEGATE_FIRST
 staticField groovy.lang.Closure OWNER_ONLY
@@ -44,3 +36,11 @@ method groovy.lang.Closure getResolveStrategy
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.Closure getDelegate
 method groovy.lang.Closure setDelegate java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
