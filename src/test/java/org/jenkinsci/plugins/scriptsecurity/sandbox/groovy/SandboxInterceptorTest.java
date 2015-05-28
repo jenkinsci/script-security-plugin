@@ -246,9 +246,14 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Ignore("TODO not yet implemented")
+    @Issue("JENKINS-25119")
     @Test public void defaultGroovyMethods() throws Exception {
-        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+        assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), 123, "'123'.toInteger();");
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
+        /* TODO No such property: it for class: Script1:
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+        */
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
