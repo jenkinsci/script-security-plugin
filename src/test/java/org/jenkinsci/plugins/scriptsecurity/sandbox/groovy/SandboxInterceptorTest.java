@@ -300,19 +300,6 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Test public void closures() throws Exception {
-        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.lang.Exception java.lang.String"));
-        assertRejected(wl,
-                "method java.lang.Throwable getMessage",
-                "{-> delegate = new Exception('oops'); message}()"
-        );
-        assertRejected(
-                wl,
-                "method java.lang.Throwable printStackTrace",
-                "{-> delegate = new Exception('oops'); printStackTrace()}()"
-        );
-    }
-
     /**
      * Tests the method invocation / property access through closures.
      *
@@ -323,10 +310,18 @@ public class SandboxInterceptorTest {
      * can be used safely.
      */
     @Test public void closureDelegate() throws Exception {
-        ProxyWhitelist rules = new ProxyWhitelist(
-                new GenericWhitelist(),
-                new StaticWhitelist("new java.awt.Point"));
+        ProxyWhitelist rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.lang.Exception java.lang.String"));
+        assertRejected(rules,
+                "method java.lang.Throwable getMessage",
+                "{-> delegate = new Exception('oops'); message}()"
+        );
+        assertRejected(
+                rules,
+                "method java.lang.Throwable printStackTrace",
+                "{-> delegate = new Exception('oops'); printStackTrace()}()"
+        );
 
+        rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.awt.Point"));
         { // method access
             assertEvaluate(rules, 3,
                     StringUtils.join(Arrays.asList(
