@@ -27,6 +27,15 @@ method java.util.concurrent.Callable call
 # Groovy:
 method groovy.lang.Script getBinding
 method groovy.lang.Closure call java.lang.Object
+staticField groovy.lang.Closure OWNER_FIRST
+staticField groovy.lang.Closure DELEGATE_FIRST
+staticField groovy.lang.Closure OWNER_ONLY
+staticField groovy.lang.Closure DELEGATE_ONLY
+staticField groovy.lang.Closure TO_SELF
+method groovy.lang.Closure getResolveStrategy
+method groovy.lang.Closure setResolveStrategy int
+method groovy.lang.Closure getDelegate
+method groovy.lang.Closure setDelegate java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object

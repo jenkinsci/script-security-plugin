@@ -25,7 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.json.JsonBuilder;
-import groovy.lang.Closure;
+import groovy.json.JsonDelegate;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
@@ -43,6 +43,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -99,10 +101,8 @@ public class SandboxInterceptorTest {
                 public boolean permitsMethod(Method method, Object receiver, Object[] args) {
                     if (method.getName().equals("invokeMethod") && receiver instanceof JsonBuilder)
                         return true;
-                    if (method.getName().equals("invokeMethod") && receiver instanceof Closure) {
-                        Object d = ((Closure) receiver).getDelegate();
-                        return d.getClass().getName().equals("groovy.json.JsonDelegate");
-                    }
+                    if (method.getName().equals("invokeMethod") && receiver instanceof JsonDelegate)
+                        return true;
                     if (method.getName().equals("toString") && receiver instanceof JsonBuilder)
                         return true;
                     return false;
@@ -250,7 +250,7 @@ public class SandboxInterceptorTest {
         assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
         assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), 123, "'123'.toInteger();");
         assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
-        /* TODO No such property: it for class: Script1:
+        /* TODO No such property: it for class: groovy.lang.Binding:
         assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
         */
     }
@@ -300,25 +300,62 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Test public void closures() throws Exception {
-        // TODO https://github.com/kohsuke/groovy-sandbox/issues/11 would like that to be rejecting method java.lang.Throwable getMessage
-        assertRejected(
-                new StaticWhitelist(
-                        "method java.util.concurrent.Callable call",
-                        "field groovy.lang.Closure delegate",
-                        "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject getProperty java.lang.String",
+    /**
+     * Tests the method invocation / property access through closures.
+     *
+     * <p>
+     * Groovy closures act as a proxy when it comes to property/method access. Based on the configuration, it can
+     * access those from some combination of owner/delegate. As this is an important building block for custom DSL,
+     * script-security understands this logic and checks access at the actual target of the proxy, so that Closures
+     * can be used safely.
+     */
+    @Test public void closureDelegate() throws Exception {
+        ProxyWhitelist rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.lang.Exception java.lang.String"));
+        assertRejected(rules,
+                "method java.lang.Throwable getMessage",
                 "{-> delegate = new Exception('oops'); message}()"
         );
-        // TODO similarly this would preferably be rejecting method java.lang.Throwable printStackTrace
         assertRejected(
-                new StaticWhitelist(
-                        "method java.util.concurrent.Callable call",
-                        "field groovy.lang.Closure delegate",
-                        "new java.lang.Exception java.lang.String"),
-                "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+                rules,
+                "method java.lang.Throwable printStackTrace",
                 "{-> delegate = new Exception('oops'); printStackTrace()}()"
         );
+
+        rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.awt.Point"));
+        { // method access
+            assertEvaluate(rules, 3,
+                    StringUtils.join(Arrays.asList(
+                            "class Dummy { def getX() { return 3; } }",
+                            "def c = { -> getX() };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new Dummy();",
+                            "return c();"
+                    ), "\n"));
+            assertRejected(rules, "method java.awt.geom.Point2D getX",
+                    StringUtils.join(Arrays.asList(
+                            "def c = { -> getX() };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new java.awt.Point();",
+                            "return c();"
+                    ), "\n"));
+        }
+        {// property access
+            assertEvaluate(rules, 3,
+                    StringUtils.join(Arrays.asList(
+                            "class Dummy { def getX() { return 3; } }",
+                            "def c = { -> x };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new Dummy();",
+                            "return c();"
+                    ), "\n"));
+            assertRejected(rules, "field java.awt.Point x",
+                    StringUtils.join(Arrays.asList(
+                            "def c = { -> x };",
+                            "c.resolveStrategy = Closure.DELEGATE_ONLY;",
+                            "c.delegate = new java.awt.Point();",
+                            "return c();"
+                    ), "\n"));
+        }
     }
 
     @Test public void templates() throws Exception {
