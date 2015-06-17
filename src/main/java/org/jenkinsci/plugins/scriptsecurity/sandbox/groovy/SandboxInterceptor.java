@@ -92,7 +92,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
             } else if (GroovyCallSiteSelector.method(c.getDelegate(), method, args) != null) {
                 return onMethodCall(invoker, c.getDelegate(), method, args);
             } else {
-                throw new RejectedAccessException("unclassified OWNER_FIRST call for method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+                // Try delegating to the owner anyway; for example it may in turn be a Closure.
+                return onMethodCall(invoker, c.getOwner(), method, args);
             }
         default:
             // TODO support others
