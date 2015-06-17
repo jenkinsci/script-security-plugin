@@ -358,6 +358,20 @@ public class SandboxInterceptorTest {
         }
     }
 
+    /* TODO fails to reproduce the problem; onMethodCall sent to Script1, not a Closure
+    @Test public void closureScope() throws Exception {
+        CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+        cc.setScriptBaseClass(ScriptOwningClosure.class.getName());
+        GroovyShell shell = new GroovyShell(cc);
+        Whitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        assertEquals(42, GroovySandbox.run(shell.parse("def r = { -> answer()}; r()"), wl));
+    }
+    public static abstract class ScriptOwningClosure extends Script {
+        @Whitelisted public int answer() {return 42;}
+        public int bogus() {return 0;}
+    }
+    */
+
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");

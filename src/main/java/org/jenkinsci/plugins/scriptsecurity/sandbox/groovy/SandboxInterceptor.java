@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.Closure;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.Functions;
@@ -49,6 +50,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
+            if (receiver instanceof Closure) {
+                return onClosureCall((Closure) receiver, method, args, invoker, receiver);
+            }
             if (receiver instanceof Number || (receiver instanceof String && method.equals("plus"))) {
                 // Synthetic methods like Integer.plus(Integer).
                 return super.onMethodCall(invoker, receiver, method, args);
@@ -77,6 +81,23 @@ final class SandboxInterceptor extends GroovyInterceptor {
             throw StaticWhitelist.rejectMethod(m, EnumeratingWhitelist.getName(receiver.getClass()) + " " + args[0] + printArgumentTypes((Object[]) args[1]));
         } else {
             throw StaticWhitelist.rejectMethod(m);
+        }
+    }
+
+    private Object onClosureCall(Closure c, String method, Object[] args, Invoker invoker, Object receiver) throws Throwable {
+        switch (c.getResolveStrategy()) {
+        case Closure.OWNER_FIRST:
+            if (GroovyCallSiteSelector.method(c.getOwner(), method, args) != null) {
+                return onMethodCall(invoker, c.getOwner(), method, args);
+            } else if (GroovyCallSiteSelector.method(c.getDelegate(), method, args) != null) {
+                return onMethodCall(invoker, c.getDelegate(), method, args);
+            } else {
+                // Try delegating to the owner anyway; for example it may in turn be a Closure.
+                return onMethodCall(invoker, c.getOwner(), method, args);
+            }
+        default:
+            // TODO support others
+            throw new RejectedAccessException("unsupported Closure.resolveStrategy " + c.getResolveStrategy() + " for method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
         }
     }
 
