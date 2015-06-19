@@ -24,6 +24,9 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
 import groovy.lang.GString;
@@ -35,6 +38,7 @@ import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
+import hudson.util.IOUtils;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -56,7 +60,6 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -216,7 +219,7 @@ public class SandboxInterceptorTest {
             this._prop2 = prop2;
         }
     }
-    
+
     @Test public void dynamicProperties() throws Exception {
         String dynamic = Dynamic.class.getName();
         String ctor = "new " + dynamic;
@@ -367,7 +370,7 @@ public class SandboxInterceptorTest {
             }
         }, new ProxyWhitelist(new StaticWhitelist("method java.lang.String toLowerCase"), new GenericWhitelist())));
     }
-    
+
     @Test public void selfProperties() throws Exception {
         assertEvaluate(new ProxyWhitelist(), true, "BOOL=true; BOOL");
     }
@@ -435,6 +438,11 @@ public class SandboxInterceptorTest {
 
     @Test public void splitAndJoin() throws Exception {
         assertEvaluate(new GenericWhitelist(), Collections.singletonMap("part0", "one\ntwo"), "def list = [['one', 'two']]; def map = [:]; for (int i = 0; i < list.size(); i++) {map[\"part${i}\"] = list.get(i).join(\"\\n\")}; map");
+    }
+
+    @Test public void keywordsAndOperators() throws Exception {
+        String script = IOUtils.toString(this.getClass().getResourceAsStream("SandboxInterceptorTest/all.groovy"));
+        assertEvaluate(new GenericWhitelist(), null, script);
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
