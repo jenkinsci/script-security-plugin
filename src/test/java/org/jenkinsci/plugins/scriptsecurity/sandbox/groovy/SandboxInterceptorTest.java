@@ -26,16 +26,19 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
+import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyShell;
+import groovy.lang.MetaMethod;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Arrays;
@@ -47,6 +50,7 @@ import java.util.concurrent.Callable;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist;
@@ -435,6 +439,39 @@ public class SandboxInterceptorTest {
 
     @Test public void splitAndJoin() throws Exception {
         assertEvaluate(new GenericWhitelist(), Collections.singletonMap("part0", "one\ntwo"), "def list = [['one', 'two']]; def map = [:]; for (int i = 0; i < list.size(); i++) {map[\"part${i}\"] = list.get(i).join(\"\\n\")}; map");
+    }
+
+    public static class ClassWithInvokeMethod extends GroovyObjectSupport {
+        @Override
+        public Object invokeMethod(String name, Object args) {
+            throw new IllegalStateException();
+        }
+    }
+
+    @Test public void invokeMethod_vs_DefaultGroovyMethods() throws Exception {
+        // Closure defines the invokeMethod method, and asBoolean is defined on DefaultGroovyMethods.
+        // the method dispatching in this case is that c.asBoolean() resolves to DefaultGroovyMethods.asBoolean()
+        // and not invokeMethod("asBoolean")
+
+        // calling asBoolean shouldn't go through invokeMethod
+        MetaMethod m1 = InvokerHelper.getMetaClass(ClassWithInvokeMethod.class).pickMethod("asBoolean",new Class[0]);
+        assert m1!=null;
+        assert (Boolean)m1.invoke(new ClassWithInvokeMethod(),new Object[0]);
+
+        // as such, it should be allowed so long as asBoolean is whitelisted
+        assertEvaluate(
+                new ProxyWhitelist(
+                        new GenericWhitelist(),
+                        new AbstractWhitelist() {
+                            @Override
+                            public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+                                return constructor.getDeclaringClass()==ClassWithInvokeMethod.class;
+                            }
+                        }
+                ),
+                true,
+                "def c = new org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.ClassWithInvokeMethod(); c.asBoolean()"
+        );
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
