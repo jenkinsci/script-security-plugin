@@ -10,7 +10,12 @@
     <packaging>hpi</packaging>
     <name>Script Security Plugin</name>
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url> 
+    <properties>
+      <maven.findbugs.version>3.0.1</maven.findbugs.version>
+      <!--TODO: make true after the code cleanup-->
+      <maven.findbugs.failure.strict>false</maven.findbugs.failure.strict>
+    </properties>
     <licenses>
         <license>
             <name>MIT License</name>
@@ -50,7 +55,7 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>2.0.1</version>
+            <version>3.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency> <!-- TODO default as of 1.568+ -->
@@ -74,4 +79,27 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <version>${maven.findbugs.version}</version>
+          <configuration>
+            <xmlOutput>true</xmlOutput>
+            <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
+            <failOnError>${maven.findbugs.failure.strict}</failOnError>
+          </configuration>
+          <executions>
+            <execution>
+              <id>run-findbugs</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
 </project>
