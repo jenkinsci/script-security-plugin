@@ -12,9 +12,9 @@
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url> 
     <properties>
-      <maven.findbugs.version>3.0.1</maven.findbugs.version>
+      <findbugs-maven-plugin.version>3.0.1</findbugs-maven-plugin.version>
       <!--TODO: make true after the code cleanup-->
-      <maven.findbugs.failure.strict>false</maven.findbugs.failure.strict>
+      <findbugs.failOnError>false</findbugs.failOnError>
     </properties>
     <licenses>
         <license>
@@ -84,11 +84,11 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
-          <version>${maven.findbugs.version}</version>
+          <version>${findbugs-maven-plugin.version}</version>
           <configuration>
             <xmlOutput>true</xmlOutput>
             <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
-            <failOnError>${maven.findbugs.failure.strict}</failOnError>
+            <failOnError>${findbugs.failOnError}</failOnError>
           </configuration>
           <executions>
             <execution>
