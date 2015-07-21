@@ -26,7 +26,6 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
-import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
@@ -38,7 +37,6 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Arrays;
@@ -455,22 +453,17 @@ public class SandboxInterceptorTest {
 
         // calling asBoolean shouldn't go through invokeMethod
         MetaMethod m1 = InvokerHelper.getMetaClass(ClassWithInvokeMethod.class).pickMethod("asBoolean",new Class[0]);
-        assert m1!=null;
-        assert (Boolean)m1.invoke(new ClassWithInvokeMethod(),new Object[0]);
+        assertNotNull(m1);
+        assertTrue((Boolean) m1.invoke(new ClassWithInvokeMethod(), new Object[0]));
 
         // as such, it should be allowed so long as asBoolean is whitelisted
         assertEvaluate(
                 new ProxyWhitelist(
                         new GenericWhitelist(),
-                        new AbstractWhitelist() {
-                            @Override
-                            public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
-                                return constructor.getDeclaringClass()==ClassWithInvokeMethod.class;
-                            }
-                        }
+                        new StaticWhitelist("new " + ClassWithInvokeMethod.class.getName())
                 ),
                 true,
-                "def c = new org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.ClassWithInvokeMethod(); c.asBoolean()"
+                "def c = new " + ClassWithInvokeMethod.class.getCanonicalName() + "(); c.asBoolean()"
         );
     }
 
