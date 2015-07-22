@@ -54,20 +54,20 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return super.onMethodCall(invoker, receiver, method, args);
             }
 
-            // if no matching method, look for catchAll "invokeMethod"
-            try {
-                receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
-                return onMethodCall(invoker,receiver,"invokeMethod",method,args);
-            } catch (NoSuchMethodException e) {
-                // fall through
-            }
-
             // look for GDK methods
             Object[] selfArgs = new Object[args.length + 1];
             selfArgs[0] = receiver;
             System.arraycopy(args, 0, selfArgs, 1, args.length);
             if (GroovyCallSiteSelector.staticMethod(DefaultGroovyMethods.class, method, selfArgs) != null) {
                 return onStaticCall(invoker, DefaultGroovyMethods.class, method, selfArgs);
+            }
+
+            // if no matching method, look for catchAll "invokeMethod"
+            try {
+                receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
+                return onMethodCall(invoker,receiver,"invokeMethod",method,args);
+            } catch (NoSuchMethodException e) {
+                // fall through
             }
 
             throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
