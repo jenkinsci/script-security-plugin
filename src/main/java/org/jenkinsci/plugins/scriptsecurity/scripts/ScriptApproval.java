@@ -360,7 +360,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
                 throw new AssertionError(x);
             } finally {
                 if (input != null) {
-                    input.close();;
+                    input.close();
                 }
             }
         } finally {
@@ -433,7 +433,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     /**
      * Called when configuring a classpath entry.
      * Usage is similar to {@link #configuring(String, Language, ApprovalContext)}.
-     * @param entry entry, which is being configured
+     * @param entry entry to be configured
      * @param context any additional information
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
@@ -840,6 +840,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return getClasspathRenderInfo();
     }
 
+    //TODO: Remove once the baseline supports Jenkins.getActiveInstance (1.590+)
     @Nonnull
     private static Jenkins getJenkins() throws IOException {
         final Jenkins jenkins = Jenkins.getInstance();
