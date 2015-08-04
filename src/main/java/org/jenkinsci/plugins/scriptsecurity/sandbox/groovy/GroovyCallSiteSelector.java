@@ -89,14 +89,13 @@ class GroovyCallSiteSelector {
      */
     public static @CheckForNull Method method(@Nonnull Object receiver, @Nonnull String method, @Nonnull Object[] args) {
         for (Class<?> c : types(receiver)) {
-            Method candidate = null;
-            for (Method m : c.getDeclaredMethods()) {
-                if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
-                    if (candidate == null || isMoreSpecific(m, candidate)) {
-                        candidate = m;
-                    }
-                }
+            Method candidate = findMatchingMethod(c, method, args);
+            if (candidate != null) {
+                return candidate;
             }
+        }
+        if (receiver instanceof GString) { // cf. GString.invokeMethod
+            Method candidate = findMatchingMethod(String.class, method, args);
             if (candidate != null) {
                 return candidate;
             }
@@ -115,6 +114,10 @@ class GroovyCallSiteSelector {
 
     public static @CheckForNull Method staticMethod(@Nonnull Class<?> receiver, @Nonnull String method, @Nonnull Object[] args) {
         // TODO should we check for inherited static calls?
+        return findMatchingMethod(receiver, method, args);
+    }
+
+    private static Method findMatchingMethod(Class<?> receiver, String method, Object[] args) {
         Method candidate = null;
         for (Method m : receiver.getDeclaredMethods()) {
             if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
