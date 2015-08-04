@@ -88,6 +88,13 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " specialize java.lang.Object", "method " + clazz + " quote java.lang.Object"), expected, script);
     }
 
+    @Ignore("TODO second line fails with: Scripts not permitted to use method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object (org.codehaus.groovy.runtime.GStringImpl substring java.lang.Integer java.lang.Integer)")
+    @Issue("JENKINS-29541")
+    @Test public void substringGString() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "hell", "'hello world'.substring(0, 4)");
+        assertEvaluate(new GenericWhitelist(), "hell", "def place = 'world'; \"hello ${place}\".substring(0, 4)");
+    }
+
     /**
      * Tests the proper interception of builder-like method.
      */

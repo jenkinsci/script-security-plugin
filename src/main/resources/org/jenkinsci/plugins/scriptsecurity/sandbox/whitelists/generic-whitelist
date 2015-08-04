@@ -20,6 +20,7 @@ method java.lang.String trim
 method java.lang.String matches java.lang.String
 method java.lang.String split java.lang.String
 method java.lang.String startsWith java.lang.String
+method java.lang.String substring int int
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
 method java.util.concurrent.Callable call
