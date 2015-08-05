@@ -25,11 +25,14 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.io.NullOutputStream;
+import groovy.lang.GString;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 
 public class GroovyCallSiteSelectorTest {
 
@@ -45,6 +48,14 @@ public class GroovyCallSiteSelectorTest {
         assertEquals(PrintWriter.class.getMethod("print", Object.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {new Object()}));
         assertEquals(PrintWriter.class.getMethod("print", String.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {"message"}));
         assertEquals(PrintWriter.class.getMethod("print", int.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {42}));
+    }
+
+    @Issue("JENKINS-29541")
+    @Test public void methodsOnGString() throws Exception {
+        GStringImpl gString = new GStringImpl(new Object[0], new String[] {"x"});
+        assertEquals(String.class.getMethod("substring", int.class), GroovyCallSiteSelector.method(gString, "substring", new Object[] {99}));
+        assertEquals(GString.class.getMethod("getValues"), GroovyCallSiteSelector.method(gString, "getValues", new Object[0]));
+        assertEquals(GString.class.getMethod("getStrings"), GroovyCallSiteSelector.method(gString, "getStrings", new Object[0]));
     }
 
 }
