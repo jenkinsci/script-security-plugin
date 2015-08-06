@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 
 import org.apache.commons.lang.StringUtils;
@@ -38,8 +39,10 @@ import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.util.FormValidation;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 /**
@@ -81,18 +84,38 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
         return url;
     }
     
+    private @CheckForNull URI getURI() {
+        try {
+            return url.toURI();
+        } catch(URISyntaxException ex) {
+            return null;
+        }
+    }
+    
     @Override
     public String toString() {
         return url.toString();
     }
     
     @Override
+    @SuppressFBWarnings(value = "DMI_BLOCKING_METHODS_ON_URL", 
+            justification = "Method call has been optimized, but we still need URLs as a fallback") 
     public boolean equals(Object obj) {
-        return obj instanceof ClasspathEntry && ((ClasspathEntry) obj).url.equals(url);
+        if (!(obj instanceof ClasspathEntry)) {
+            return false;
+        }
+        // Performance optimization to avoid domain name resolution
+        final ClasspathEntry cmp = (ClasspathEntry)obj; 
+        final URI uri = getURI();
+        return uri != null ? uri.equals(cmp.getURI()) : url.equals(cmp.url);
     }
 
+    @SuppressFBWarnings(value = "DMI_BLOCKING_METHODS_ON_URL", 
+            justification = "Method call has been optimized, but we still need URLs as a fallback") 
     @Override public int hashCode() {
-        return url.hashCode();
+        // Performance optimization to avoid domain name resolution
+        final URI uri = getURI();
+        return uri != null ? uri.hashCode() : url.hashCode();
     }
     
     @Extension
