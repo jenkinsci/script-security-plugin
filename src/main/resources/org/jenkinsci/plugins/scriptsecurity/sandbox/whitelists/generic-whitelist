@@ -24,6 +24,12 @@ method java.lang.String substring int int
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
 method java.util.concurrent.Callable call
+method java.util.HashMap get java.lang.Object
+method java.util.HashMap put java.lang.Object java.lang.Object
+method java.util.LinkedHashMap get java.lang.Object
+method java.util.LinkedHashMap put java.lang.Object java.lang.Object
+method java.util.Map get java.lang.Object
+method java.util.Map put java.lang.Object java.lang.Object
 
 # Groovy:
 method groovy.lang.Script getBinding
