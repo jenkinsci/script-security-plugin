@@ -246,6 +246,10 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test public void mapProperties() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 42, "def m = [:]; m.answer = 42; m.answer");
+    }
+
     public static final class Special {
         final Object o;
         Special(Object o) {
