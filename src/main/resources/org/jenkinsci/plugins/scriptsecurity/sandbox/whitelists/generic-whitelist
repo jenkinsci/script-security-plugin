@@ -51,3 +51,4 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.uti
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
