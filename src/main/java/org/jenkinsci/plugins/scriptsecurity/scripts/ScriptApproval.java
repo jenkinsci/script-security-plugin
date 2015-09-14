@@ -45,7 +45,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -218,9 +217,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static final class PendingSignature extends PendingThing {
         public final String signature;
-        PendingSignature(@Nonnull String signature, @Nonnull ApprovalContext context) {
+        public final boolean dangerous;
+        PendingSignature(@Nonnull String signature, boolean dangerous, @Nonnull ApprovalContext context) {
             super(context);
             this.signature = signature;
+            this.dangerous = dangerous;
         }
         public String getHash() {
             // Security important, just for UI:
@@ -575,7 +576,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      */
     public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
         String signature = x.getSignature();
-        if (signature != null && pendingSignatures.add(new PendingSignature(signature, context))) {
+        if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             try {
                 save();
             } catch (IOException x2) {
@@ -706,7 +707,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod public synchronized String[][] approveSignature(String signature) throws IOException {
         final Jenkins jenkins = getJenkins();
         jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
-        pendingSignatures.remove(new PendingSignature(signature, ApprovalContext.create()));
+        pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         approvedSignatures.add(signature);
         save();
         return jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
@@ -716,7 +717,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod public synchronized String[][] aclApproveSignature(String signature) throws IOException {
         final Jenkins jenkins = getJenkins();
         jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
-        pendingSignatures.remove(new PendingSignature(signature, ApprovalContext.create()));
+        pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         aclApprovedSignatures.add(signature);
         save();
         return jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
@@ -726,7 +727,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod public synchronized void denySignature(String signature) throws IOException {
         final Jenkins jenkins = getJenkins();
         jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
-        pendingSignatures.remove(new PendingSignature(signature, ApprovalContext.create()));
+        pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         save();
     }
 

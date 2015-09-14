@@ -215,6 +215,9 @@ THE SOFTWARE.
                                 <button onclick="denySignature('${s.signature}', '${s.hash}')">Deny</button> signature
                                 <st:include it="${s.context}" page="index.jelly"/>:
                                 <code>${s.signature}</code>
+                                <j:if test="${s.dangerous}">
+                                    <st:nbsp/><strong><font color="red">Approving this signature may introduce a security vulnerability! You are advised to deny it.</font></strong>
+                                </j:if>
                             </p>
                         </div>
                     </j:forEach>
