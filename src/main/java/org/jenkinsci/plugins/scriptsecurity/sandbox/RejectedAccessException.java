@@ -79,6 +79,7 @@ public final class RejectedAccessException extends SecurityException {
 
     /**
      * True if {@link #getSignature} is non-null but it would be a bad idea for an administrator to approve it.
+     * @since TODO 1.16?
      */
     public boolean isDangerous() {
         return dangerous;
@@ -86,6 +87,8 @@ public final class RejectedAccessException extends SecurityException {
 
     /**
      * You may set this flag if you think it would be a security risk for this signature to be approved.
+     * @throws IllegalArgumentException in case you tried to set this to true when using the nonspecific {@link #RejectedAccessException(String)} constructor
+     * @since TODO 1.16?
      */
     public void setDangerous(boolean dangerous) {
         if (signature == null && dangerous) {
