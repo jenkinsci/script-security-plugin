@@ -35,14 +35,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
+import static java.util.Arrays.asList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-
-import static java.util.Arrays.asList;
 
 /**
  * Whitelist based on a static file.
@@ -60,7 +60,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         String line;
         while ((line = br.readLine()) != null) {
             line = line.trim();
-            if (line.length() == 0 || line.startsWith("#")) {
+            if (line.isEmpty() || line.startsWith("#")) {
                 continue;
             }
             add(line);
@@ -147,31 +147,31 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     public static RejectedAccessException rejectMethod(@Nonnull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
-        return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
+        return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
     public static RejectedAccessException rejectMethod(@Nonnull Method m, String info) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
-        return new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()), info);
+        return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()), info));
     }
 
     public static RejectedAccessException rejectNew(@Nonnull Constructor<?> c) {
-        return new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes()));
+        return blacklist(new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes())));
     }
 
     public static RejectedAccessException rejectStaticMethod(@Nonnull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) != 0;
-        return new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()));
+        return blacklist(new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
     public static RejectedAccessException rejectField(@Nonnull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) == 0;
-        return new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
+        return blacklist(new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }
 
     public static RejectedAccessException rejectStaticField(@Nonnull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) != 0;
-        return new RejectedAccessException("staticField", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName());
+        return blacklist(new RejectedAccessException("staticField", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }
 
     private static String printArgumentTypes(Class<?>[] parameterTypes) {
@@ -181,6 +181,37 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             b.append(EnumeratingWhitelist.getName(c));
         }
         return b.toString();
+    }
+
+    private static final Set<String> BLACKLIST;
+    static {
+        try {
+            InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist");
+            try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, "US-ASCII"));
+                BLACKLIST = new HashSet<String>();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+                    // TODO could consider trying to load the AccessibleObject, assuming the defining Class is accessible, as a defense against typos
+                    BLACKLIST.add(line);
+                }
+            } finally {
+                is.close();
+            }
+        } catch (IOException x) {
+            throw new ExceptionInInitializerError(x);
+        }
+    }
+
+    private static RejectedAccessException blacklist(RejectedAccessException x) {
+        if (BLACKLIST.contains(x.getSignature())) {
+            x.setDangerous(true);
+        }
+        return x;
     }
 
 }

@@ -35,6 +35,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 public final class RejectedAccessException extends SecurityException {
 
     private final String signature;
+    private boolean dangerous;
 
     /**
      * Rejects access to a well-described script element.
@@ -74,6 +75,26 @@ public final class RejectedAccessException extends SecurityException {
      */
     public @CheckForNull String getSignature() {
         return signature;
+    }
+
+    /**
+     * True if {@link #getSignature} is non-null but it would be a bad idea for an administrator to approve it.
+     * @since TODO 1.16?
+     */
+    public boolean isDangerous() {
+        return dangerous;
+    }
+
+    /**
+     * You may set this flag if you think it would be a security risk for this signature to be approved.
+     * @throws IllegalArgumentException in case you tried to set this to true when using the nonspecific {@link #RejectedAccessException(String)} constructor
+     * @since TODO 1.16?
+     */
+    public void setDangerous(boolean dangerous) {
+        if (signature == null && dangerous) {
+            throw new IllegalArgumentException("you cannot mark this dangerous without specifying a signature");
+        }
+        this.dangerous = dangerous;
     }
 
 }
