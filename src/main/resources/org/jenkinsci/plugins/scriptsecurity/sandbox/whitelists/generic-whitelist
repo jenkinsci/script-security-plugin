@@ -41,6 +41,12 @@ method groovy.lang.Closure setDelegate java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThan java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThanEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareIdentical java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotIdentical java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
