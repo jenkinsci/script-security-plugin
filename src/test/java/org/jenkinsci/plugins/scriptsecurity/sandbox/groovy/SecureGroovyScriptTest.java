@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import groovy.lang.Binding;
@@ -75,7 +76,7 @@ public class SecureGroovyScriptTest {
      * Basic approval test where the user doesn't have RUN_SCRIPTS privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
      */
-    @Ignore("Upgrade issue; fix after next core update") @Test public void basicApproval() throws Exception {
+    @Test public void basicApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
         gmas.add(Jenkins.READ, "devel");
@@ -88,7 +89,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        config.getButtonByCaption("Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
@@ -137,7 +138,7 @@ public class SecureGroovyScriptTest {
     /**
      * Test where the user has RUN_SCRIPTS privs, default to non sandbox mode.
      */
-    @Ignore("Upgrade issue; fix after next core update") @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
         gmas.add(Jenkins.READ, "devel");
@@ -151,7 +152,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        config.getButtonByCaption("Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
@@ -176,7 +177,7 @@ public class SecureGroovyScriptTest {
     /**
      * Test where the user doesn't have RUN_SCRIPTS privs, default to sandbox mode.
      */
-    @Ignore("Upgrade issue; fix after next core update") @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
         gmas.add(Jenkins.READ, "devel");
@@ -189,7 +190,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        config.getButtonByCaption("Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
@@ -841,5 +842,21 @@ public class SecureGroovyScriptTest {
         } catch (RejectedAccessException e) {
             assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
         }
+    }
+    
+    /**
+     * Get the form button having the specified text/caption.
+     * @param htmlForm The form containing the button.
+     * @param caption The button text/caption being searched for.
+     * @return The button if found.
+     * @throws ElementNotFoundException Failed to find the button on the form.
+     */
+    private HtmlButton getButtonByCaption(final HtmlForm htmlForm, final String caption) throws ElementNotFoundException {
+        for (HtmlElement b : htmlForm.getHtmlElementsByTagName("button")) {
+            if(b instanceof HtmlButton && b.getTextContent().trim().equals(caption)) {
+                return (HtmlButton) b;
+            }
+        }
+        throw new ElementNotFoundException("button", "caption", caption);
     }
 }
