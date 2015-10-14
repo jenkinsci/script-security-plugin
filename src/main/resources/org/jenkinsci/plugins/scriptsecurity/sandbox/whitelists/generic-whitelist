@@ -7,6 +7,7 @@ method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Object equals java.lang.Object
 method java.lang.Object toString
+staticMethod java.util.Arrays toString java.lang.Object[]
 method java.util.Collection add java.lang.Object
 method java.util.Collection size
 method java.util.Map get java.lang.Object
@@ -25,6 +26,7 @@ method java.lang.String substring int int
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
 method java.util.concurrent.Callable call
+new java.io.StringReader java.lang.String
 
 # Groovy:
 method groovy.lang.Script getBinding
@@ -51,6 +53,7 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.la
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Collection java.lang.Object
@@ -58,3 +61,16 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boole
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size boolean[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size byte[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size char[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size int[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size float[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size double[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.StringBuffer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
