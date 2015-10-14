@@ -25,7 +25,9 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.gargoylesoftware.htmlunit.ElementNotFoundException;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
