@@ -5,6 +5,7 @@ method java.io.PrintWriter print java.lang.String
 # Useful general stuff:
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
+method java.lang.Object getClass
 method java.lang.Object equals java.lang.Object
 method java.lang.Object toString
 staticMethod java.util.Arrays toString java.lang.Object[]
@@ -55,6 +56,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
