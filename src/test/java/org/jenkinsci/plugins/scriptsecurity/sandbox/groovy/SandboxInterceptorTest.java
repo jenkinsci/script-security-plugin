@@ -485,6 +485,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), null, script);
     }
 
+    @Issue("JENKINS-31234")
+    @Test public void calendarGetInstance() throws Exception {
+        assertEvaluate(new GenericWhitelist(), true, "Calendar.getInstance().get(Calendar.DAY_OF_MONTH) < 32");
+        assertEvaluate(new GenericWhitelist(), true, "Calendar.instance.get(Calendar.DAY_OF_MONTH) < 32");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
