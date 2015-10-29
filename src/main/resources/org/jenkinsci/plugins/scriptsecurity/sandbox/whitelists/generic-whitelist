@@ -28,6 +28,27 @@ method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.util.Collection contains java.lang.Object
 method java.util.concurrent.Callable call
 new java.io.StringReader java.lang.String
+staticMethod java.util.Calendar getInstance
+method java.util.Calendar get int
+staticField java.util.Calendar ERA
+staticField java.util.Calendar YEAR
+staticField java.util.Calendar MONTH
+staticField java.util.Calendar WEEK_OF_YEAR
+staticField java.util.Calendar WEEK_OF_MONTH
+staticField java.util.Calendar DATE
+staticField java.util.Calendar DAY_OF_MONTH
+staticField java.util.Calendar DAY_OF_YEAR
+staticField java.util.Calendar DAY_OF_WEEK
+staticField java.util.Calendar DAY_OF_WEEK_IN_MONTH
+staticField java.util.Calendar AM_PM
+staticField java.util.Calendar HOUR
+staticField java.util.Calendar HOUR_OF_DAY
+staticField java.util.Calendar MINUTE
+staticField java.util.Calendar SECOND
+staticField java.util.Calendar MILLISECOND
+staticField java.util.Calendar ZONE_OFFSET
+staticField java.util.Calendar DST_OFFSET
+staticField java.util.Calendar FIELD_COUNT
 
 # Groovy:
 method groovy.lang.Script getBinding

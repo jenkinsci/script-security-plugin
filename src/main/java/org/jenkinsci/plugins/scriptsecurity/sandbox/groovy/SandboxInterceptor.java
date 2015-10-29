@@ -113,24 +113,30 @@ final class SandboxInterceptor extends GroovyInterceptor {
             return super.onSetProperty(invoker, receiver, property, value);
         }
         // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
-        Object[] args = new Object[] {value};
-        Method m = GroovyCallSiteSelector.method(receiver, "set" + Functions.capitalize(property), args);
-        if (m != null && whitelist.permitsMethod(m, receiver, args)) {
+        Object[] args1 = new Object[] {value};
+        String setter = "set" + Functions.capitalize(property);
+        Method m = GroovyCallSiteSelector.method(receiver, setter, args1);
+        if (m != null && whitelist.permitsMethod(m, receiver, args1)) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
-        args = new Object[] {property, value};
-        Method m2 = GroovyCallSiteSelector.method(receiver, "setProperty", args);
-        if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
+        Object[] args2 = new Object[] {property, value};
+        Method m2 = GroovyCallSiteSelector.method(receiver, "setProperty", args2);
+        if (m2 != null && whitelist.permitsMethod(m2, receiver, args2)) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
         Field f2 = null;
+        Method m3 = null;
         if (receiver instanceof Class) {
             f2 = GroovyCallSiteSelector.staticField((Class) receiver, property);
             if (f2 != null && whitelist.permitsStaticFieldSet(f2, value)) {
                 return super.onSetProperty(invoker, receiver, property, value);
             }
+            m3 = GroovyCallSiteSelector.staticMethod((Class) receiver, setter, args1);
+            if (m3 != null && whitelist.permitsStaticMethod(m3, args1)) {
+                return super.onSetProperty(invoker, receiver, property, value);
+            }
         }
-        throw rejectField(f, m, m2, f2, receiver, property);
+        throw rejectField(f, m, m2, f2, m3, receiver, property);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_LOAD_OF_KNOWN_NULL_VALUE")
@@ -151,35 +157,45 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (f != null && whitelist.permitsFieldGet(f, receiver)) {
             return super.onGetProperty(invoker, receiver, property);
         }
-        Object[] args = new Object[] {};
-        Method m = GroovyCallSiteSelector.method(receiver, "get" + Functions.capitalize(property), args);
-        if (m != null && whitelist.permitsMethod(m, receiver, args)) {
+        Object[] args0 = new Object[] {};
+        String getter = "get" + Functions.capitalize(property);
+        Method m = GroovyCallSiteSelector.method(receiver, getter, args0);
+        if (m != null && whitelist.permitsMethod(m, receiver, args0)) {
             return super.onGetProperty(invoker, receiver, property);
         }
-        args = new Object[] {property};
-        Method m2 = GroovyCallSiteSelector.method(receiver, "getProperty", args);
-        if (m2 != null && whitelist.permitsMethod(m2, receiver, args)) {
+        Object[] args1 = new Object[] {property};
+        Method m2 = GroovyCallSiteSelector.method(receiver, "getProperty", args1);
+        if (m2 != null && whitelist.permitsMethod(m2, receiver, args1)) {
             return super.onGetProperty(invoker, receiver, property);
         }
         Field f2 = null;
+        Method m3 = null;
         if (receiver instanceof Class) {
             f2 = GroovyCallSiteSelector.staticField((Class) receiver, property);
             if (f2 != null && whitelist.permitsStaticFieldGet(f2)) {
+                return super.onGetProperty(invoker, receiver, property);
+            }
+            m3 = GroovyCallSiteSelector.staticMethod((Class) receiver, getter, args0);
+            if (m3 != null && whitelist.permitsStaticMethod(m3, args0)) {
                 return super.onGetProperty(invoker, receiver, property);
             }
         }
         if (mpe != null) {
             throw mpe;
         }
-        throw rejectField(f, m, m2, f2, receiver, property);
+        throw rejectField(f, m, m2, f2, m3, receiver, property);
     }
 
-    private static RejectedAccessException rejectField(Field f, Method m, Method m2, Field f2, Object receiver, String property) {
+    private static RejectedAccessException rejectField(Field f, Method m, Method m2, Field f2, Method m3, Object receiver, String property) {
         if (f == null) {
             if (m == null) {
                 if (m2 == null) {
                     if (f2 == null) {
-                        return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                        if (m3 == null) {
+                            return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+                        } else {
+                            return StaticWhitelist.rejectStaticMethod(m3);
+                        }
                     } else {
                         return StaticWhitelist.rejectStaticField(f2);
                     }
