@@ -58,4 +58,17 @@ public class GroovyCallSiteSelectorTest {
         assertEquals(GString.class.getMethod("getStrings"), GroovyCallSiteSelector.method(gString, "getStrings", new Object[0]));
     }
 
+    @Issue("JENKINS-31701")
+    @Test public void primitives() throws Exception {
+        assertEquals(Primitives.class.getMethod("m1", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m1", new Object[] {Long.MAX_VALUE}));
+        assertEquals(Primitives.class.getMethod("m1", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m1", new Object[] {99}));
+        assertEquals(Primitives.class.getMethod("m2", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m2", new Object[] {Long.MAX_VALUE}));
+        assertEquals(Primitives.class.getMethod("m2", int.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m2", new Object[] {99}));
+    }
+    public static class Primitives {
+        public static void m1(long x) {}
+        public static void m2(int x) {}
+        public static void m2(long x) {}
+    }
+
 }
