@@ -80,20 +80,25 @@ class GroovyCallSiteSelector {
         return true;
     }
 
+    /**
+     * {@link Class#isInstance} extended to handle some important cases of primitive types.
+     */
     private static boolean isInstancePrimitive(@Nonnull Class<?> type, @Nonnull Object instance) {
         if (type.isInstance(instance)) {
             return true;
         }
         // https://docs.oracle.com/javase/specs/jls/se8/html/jls-5.html#jls-5.1.2
         if (instance instanceof Number) {
-            Number n = (Number) instance;
-            if (type == Long.class || type == Double.class) {
-                return true;
+            if (type == Long.class && instance instanceof Integer) {
+                return true; // widening
             }
-            if (type == Integer.class && n.longValue() <= Integer.MAX_VALUE && n.longValue() >= Integer.MIN_VALUE) {
-                return true;
+            if (type == Integer.class && instance instanceof Long) {
+                Long n = (Long) instance;
+                if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+                    return true; // safe narrowing
+                }
             }
-            // TODO etc. for other types if they ever come up
+            // TODO etc. for other conversions if they ever come up
         }
         return false;
     }
