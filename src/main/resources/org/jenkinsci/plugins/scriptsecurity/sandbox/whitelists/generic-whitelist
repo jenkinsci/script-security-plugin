@@ -7,7 +7,6 @@ method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Object getClass
 method java.lang.Object equals java.lang.Object
-method java.lang.Object getClass
 method java.lang.Object toString
 staticMethod java.util.Arrays toString java.lang.Object[]
 method java.util.Collection add java.lang.Object
