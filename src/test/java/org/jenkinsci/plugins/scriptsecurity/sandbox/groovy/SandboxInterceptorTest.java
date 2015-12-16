@@ -491,6 +491,14 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "Calendar.instance.get(Calendar.DAY_OF_MONTH) < 32");
     }
 
+    @Issue("JENKINS-31701")
+    @Test public void primitiveWidening() throws Exception {
+        assertEvaluate(new AnnotatedWhitelist(), 4L, SandboxInterceptorTest.class.getName() + ".usePrimitive(2)");
+    }
+    @Whitelisted public static long usePrimitive(long x) {
+        return x + 2;
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);

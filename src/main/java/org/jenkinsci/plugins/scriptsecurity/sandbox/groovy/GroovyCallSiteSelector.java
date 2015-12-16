@@ -63,7 +63,7 @@ class GroovyCallSiteSelector {
             if (
                     parameterTypes[i].isPrimitive()
                     && parameters[i] != null
-                    && ClassUtils.primitiveToWrapper(parameterTypes[i]).isInstance(parameters[i])
+                    && isInstancePrimitive(ClassUtils.primitiveToWrapper(parameterTypes[i]), parameters[i])
             ) {
                 // Groovy passes primitive values as objects (for example, passes 0 as Integer(0))
                 // The prior test fails as int.class.isInstance(new Integer(0)) returns false.
@@ -78,6 +78,29 @@ class GroovyCallSiteSelector {
             return false;
         }
         return true;
+    }
+
+    /**
+     * {@link Class#isInstance} extended to handle some important cases of primitive types.
+     */
+    private static boolean isInstancePrimitive(@Nonnull Class<?> type, @Nonnull Object instance) {
+        if (type.isInstance(instance)) {
+            return true;
+        }
+        // https://docs.oracle.com/javase/specs/jls/se8/html/jls-5.html#jls-5.1.2
+        if (instance instanceof Number) {
+            if (type == Long.class && instance instanceof Integer) {
+                return true; // widening
+            }
+            if (type == Integer.class && instance instanceof Long) {
+                Long n = (Long) instance;
+                if (n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE) {
+                    return true; // safe narrowing
+                }
+            }
+            // TODO etc. for other conversions if they ever come up
+        }
+        return false;
     }
 
     /**
@@ -166,6 +189,7 @@ class GroovyCallSiteSelector {
         types.add(c);
     }
 
+    // TODO nowhere close to implementing http://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.12.2.5
     private static boolean isMoreSpecific(Method more, Method less) {
         Class<?>[] moreParams = more.getParameterTypes();
         Class<?>[] lessParams = less.getParameterTypes();
@@ -176,6 +200,11 @@ class GroovyCallSiteSelector {
             if (moreParam.isAssignableFrom(lessParam)) {
                 return false;
             } else if (lessParam.isAssignableFrom(moreParam)) {
+                return true;
+            }
+            if (moreParam == Long.class && lessParam == Integer.class) {
+                return false;
+            } else if (moreParam == Integer.class && lessParam == Long.class) {
                 return true;
             }
         }
