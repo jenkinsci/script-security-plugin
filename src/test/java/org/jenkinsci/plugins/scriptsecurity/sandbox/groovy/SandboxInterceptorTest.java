@@ -499,6 +499,13 @@ public class SandboxInterceptorTest {
         return x + 2;
     }
 
+    @Issue("JENKINS-32211")
+    @Test public void tokenize() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.tokenize().size()");
+        assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.tokenize(' ').size()");
+        assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.tokenize('ba').size()");
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
