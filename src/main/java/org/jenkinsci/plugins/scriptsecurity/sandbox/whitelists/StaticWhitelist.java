@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * Whitelist based on a static file.
