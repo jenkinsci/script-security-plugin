@@ -187,9 +187,22 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             return joinWithSpaces(new StringBuilder(receiverType).append(' ').append(method), argumentTypes).toString();
         }
         @Override boolean exists() throws Exception {
+            return exists(type(receiverType), true);
+        }
+        // Cf. GroovyCallSiteSelector.visitTypes.
+        @SuppressWarnings("InfiniteRecursion")
+        private boolean exists(Class<?> c, boolean start) throws Exception {
+            Class<?> s = c.getSuperclass();
+            if (s != null && exists(s, false)) {
+                return !start;
+            }
+            for (Class<?> i : c.getInterfaces()) {
+                if (exists(i, false)) {
+                    return !start;
+                }
+            }
             try {
-                type(receiverType).getMethod(method, types(argumentTypes));
-                // TODO verify that it does not override/implement a method in a supertype (cf. GroovyCallSiteSelector.method)
+                c.getMethod(method, types(argumentTypes));
                 return true;
             } catch (NoSuchMethodException x) {
                 return false;

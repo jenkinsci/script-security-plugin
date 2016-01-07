@@ -64,7 +64,7 @@ public class StaticWhitelistTest {
         }
         assertEquals("entries in " + definition + " should be sorted and unique", new TreeSet<EnumeratingWhitelist.Signature>(sigs).toString(), sigs.toString());
         for (EnumeratingWhitelist.Signature sig : sigs) {
-            assertTrue(sig + " exists", sig.exists());
+            assertTrue(sig + " does not exist (or is an override)", sig.exists());
         }
     }
 
