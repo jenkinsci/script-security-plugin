@@ -25,8 +25,15 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import groovy.lang.GroovyObject;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.TreeSet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -36,6 +43,31 @@ public class StaticWhitelistTest {
         assertFalse(StaticWhitelist.rejectMethod(Collection.class.getMethod("clear")).isDangerous());
         assertTrue(StaticWhitelist.rejectNew(File.class.getConstructor(String.class)).isDangerous());
         assertTrue(StaticWhitelist.rejectMethod(GroovyObject.class.getMethod("invokeMethod", String.class, Object.class)).isDangerous());
+    }
+
+    static void sanity(URL definition) throws Exception {
+        StaticWhitelist wl = StaticWhitelist.from(definition);
+        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
+        InputStream is = definition.openStream();
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                sigs.add(StaticWhitelist.parse(line));
+            }
+        } finally {
+            is.close();
+        }
+        assertEquals("entries in " + definition + " should be sorted and unique", new TreeSet<EnumeratingWhitelist.Signature>(sigs).toString(), sigs.toString());
+        // TODO check for existence of Java members
+    }
+
+    @Test public void sanity() throws Exception {
+        sanity(StaticWhitelist.class.getResource("blacklist"));
     }
 
 }

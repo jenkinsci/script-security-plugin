@@ -132,9 +132,31 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
     }
 
-    public static final class MethodSignature {
-        private final String receiverType, method;
-        private final String[] argumentTypes;
+    public static abstract class Signature implements Comparable<Signature> {
+        /** Form as in {@link StaticWhitelist} entries. */
+        @Override public abstract String toString();
+        final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+            for (String type : types) {
+                b.append(' ').append(type);
+            }
+            return b;
+        }
+        abstract String signaturePart();
+        @Override public int compareTo(Signature o) {
+            int r = signaturePart().compareTo(o.signaturePart());
+            return r != 0 ? r : toString().compareTo(o.toString());
+        }
+        @Override public boolean equals(Object obj) {
+            return obj != null && obj.getClass() == getClass() && toString().equals(obj.toString());
+        }
+        @Override public int hashCode() {
+            return toString().hashCode();
+        }
+    }
+
+    public static class MethodSignature extends Signature {
+        final String receiverType, method;
+        final String[] argumentTypes;
         public MethodSignature(String receiverType, String method, String[] argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
@@ -143,15 +165,27 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         public MethodSignature(Class<?> receiverType, String method, Class<?>... argumentTypes) {
             this(getName(receiverType), method, argumentTypes(argumentTypes));
         }
-        @Override public String toString() {
-            return receiverType + "." + method + Arrays.toString(argumentTypes);
-        }
         boolean matches(Method m) {
             return is(method, m.getName()) && getName(m.getDeclaringClass()).equals(receiverType) && Arrays.equals(argumentTypes(m.getParameterTypes()), argumentTypes);
         }
+        @Override public String toString() {
+            return "method " + signaturePart();
+        }
+        @Override String signaturePart() {
+            return joinWithSpaces(new StringBuilder(receiverType).append(' ').append(method), argumentTypes).toString();
+        }
     }
 
-    public static final class NewSignature {
+    static class StaticMethodSignature extends MethodSignature {
+        StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
+            super(receiverType, method, argumentTypes);
+        }
+        @Override public String toString() {
+            return "staticMethod " + signaturePart();
+        }
+    }
+
+    public static final class NewSignature extends Signature  {
         private final String type;
         private final String[] argumentTypes;
         public NewSignature(String type, String[] argumentTypes) {
@@ -164,10 +198,16 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         boolean matches(Constructor c) {
             return getName(c.getDeclaringClass()).equals(type) && Arrays.equals(argumentTypes(c.getParameterTypes()), argumentTypes);
         }
+        @Override String signaturePart() {
+            return joinWithSpaces(new StringBuilder(type), argumentTypes).toString();
+        }
+        @Override public String toString() {
+            return "new " + signaturePart();
+        }
     }
 
-    public static final class FieldSignature {
-        private final String type, field;
+    public static class FieldSignature extends Signature {
+        final String type, field;
         public FieldSignature(String type, String field) {
             this.type = type;
             this.field = field;
@@ -177,6 +217,21 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         boolean matches(Field f) {
             return is(field, f.getName()) && getName(f.getDeclaringClass()).equals(type);
+        }
+        @Override String signaturePart() {
+            return type + ' ' + field;
+        }
+        @Override public String toString() {
+            return "field " + signaturePart();
+        }
+    }
+
+    static class StaticFieldSignature extends FieldSignature {
+        StaticFieldSignature(String type, String field) {
+            super(type, field);
+        }
+        @Override public String toString() {
+            return "staticField " + signaturePart();
         }
     }
 

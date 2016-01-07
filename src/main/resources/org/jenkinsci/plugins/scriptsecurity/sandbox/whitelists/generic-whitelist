@@ -1,80 +1,72 @@
+# Groovy:
+staticField groovy.lang.Closure DELEGATE_FIRST
+staticField groovy.lang.Closure DELEGATE_ONLY
+staticField groovy.lang.Closure OWNER_FIRST
+staticField groovy.lang.Closure OWNER_ONLY
+staticField groovy.lang.Closure TO_SELF
+method groovy.lang.Closure call java.lang.Object
+method groovy.lang.Closure getDelegate
+method groovy.lang.Closure getResolveStrategy
+method groovy.lang.Closure setDelegate java.lang.Object
+method groovy.lang.Closure setResolveStrategy int
+method groovy.lang.Script getBinding
+
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
 method java.io.PrintWriter print java.lang.String
 
 # Useful general stuff:
+new java.io.StringReader java.lang.String
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
-method java.lang.Object getClass
 method java.lang.Object equals java.lang.Object
+method java.lang.Object getClass
 method java.lang.Object toString
-staticMethod java.util.Arrays toString java.lang.Object[]
-method java.util.Collection add java.lang.Object
-method java.util.Collection size
-method java.util.Map get java.lang.Object
-method java.util.Map put java.lang.Object java.lang.Object
-method java.util.List get int
-new java.net.URL java.lang.String
 method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
 method java.lang.String indexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String
-method java.lang.String toLowerCase
-method java.lang.String trim
 method java.lang.String matches java.lang.String
+method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String split java.lang.String
 method java.lang.String startsWith java.lang.String
 method java.lang.String substring int int
-method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
-method java.util.Collection contains java.lang.Object
-method java.util.concurrent.Callable call
-new java.io.StringReader java.lang.String
-staticMethod java.util.Calendar getInstance
-method java.util.Calendar get int
-staticField java.util.Calendar ERA
-staticField java.util.Calendar YEAR
-staticField java.util.Calendar MONTH
-staticField java.util.Calendar WEEK_OF_YEAR
-staticField java.util.Calendar WEEK_OF_MONTH
+method java.lang.String toLowerCase
+method java.lang.String trim
+new java.net.URL java.lang.String
+staticMethod java.util.Arrays toString java.lang.Object[]
+staticField java.util.Calendar AM_PM
 staticField java.util.Calendar DATE
 staticField java.util.Calendar DAY_OF_MONTH
-staticField java.util.Calendar DAY_OF_YEAR
 staticField java.util.Calendar DAY_OF_WEEK
 staticField java.util.Calendar DAY_OF_WEEK_IN_MONTH
-staticField java.util.Calendar AM_PM
+staticField java.util.Calendar DAY_OF_YEAR
+staticField java.util.Calendar DST_OFFSET
+staticField java.util.Calendar ERA
+staticField java.util.Calendar FIELD_COUNT
 staticField java.util.Calendar HOUR
 staticField java.util.Calendar HOUR_OF_DAY
-staticField java.util.Calendar MINUTE
-staticField java.util.Calendar SECOND
 staticField java.util.Calendar MILLISECOND
+staticField java.util.Calendar MINUTE
+staticField java.util.Calendar MONTH
+staticField java.util.Calendar SECOND
+staticField java.util.Calendar WEEK_OF_MONTH
+staticField java.util.Calendar WEEK_OF_YEAR
+staticField java.util.Calendar YEAR
 staticField java.util.Calendar ZONE_OFFSET
-staticField java.util.Calendar DST_OFFSET
-staticField java.util.Calendar FIELD_COUNT
+method java.util.Calendar get int
+staticMethod java.util.Calendar getInstance
+method java.util.Collection add java.lang.Object
+method java.util.Collection contains java.lang.Object
+method java.util.Collection size
+method java.util.List get int
+method java.util.Map get java.lang.Object
+method java.util.Map put java.lang.Object java.lang.Object
+method java.util.concurrent.Callable call
 method java.util.regex.Matcher replaceFirst java.lang.String
 
-# Groovy:
-method groovy.lang.Script getBinding
-method groovy.lang.Closure call java.lang.Object
-staticField groovy.lang.Closure OWNER_FIRST
-staticField groovy.lang.Closure DELEGATE_FIRST
-staticField groovy.lang.Closure OWNER_ONLY
-staticField groovy.lang.Closure DELEGATE_ONLY
-staticField groovy.lang.Closure TO_SELF
-method groovy.lang.Closure getResolveStrategy
-method groovy.lang.Closure setResolveStrategy int
-method groovy.lang.Closure getDelegate
-method groovy.lang.Closure setDelegate java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThan java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThanEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareIdentical java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotIdentical java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+# More Groovy:
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
@@ -82,30 +74,39 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence int groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String int groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.StringBuffer java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size boolean[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size byte[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size char[]
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size int[]
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size float[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size double[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size float[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size int[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.StringBuffer
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Object[]
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.Character
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareIdentical java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThan java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThanEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotIdentical java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object

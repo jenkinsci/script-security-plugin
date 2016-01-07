@@ -1,11 +1,11 @@
+# Reflective access to Groovy is too open-ended. Approve only specific GroovyObject subclass methods.
+method groovy.lang.GroovyObject getMetaClass
+method groovy.lang.GroovyObject getProperty java.lang.String
+method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
+method groovy.lang.GroovyObject setMetaClass groovy.lang.MetaClass
+method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
+
 # Raw file operations could be used to compromise the Jenkins master.
 new java.io.File java.lang.String
 new java.io.File java.lang.String java.lang.String
 new java.io.File java.net.URI
-
-# Reflective access to Groovy is too open-ended. Approve only specific GroovyObject subclass methods.
-method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
-method groovy.lang.GroovyObject getProperty java.lang.String
-method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
-method groovy.lang.GroovyObject getMetaClass
-method groovy.lang.GroovyObject setMetaClass groovy.lang.MetaClass
