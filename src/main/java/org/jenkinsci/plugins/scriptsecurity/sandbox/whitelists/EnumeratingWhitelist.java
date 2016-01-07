@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
@@ -152,6 +153,17 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         @Override public int hashCode() {
             return toString().hashCode();
         }
+        abstract boolean exists() throws Exception;
+        final Class<?> type(String name) throws Exception {
+            return ClassUtils.getClass(name);
+        }
+        final Class<?>[] types(String[] names) throws Exception {
+            Class<?>[] r = new Class<?>[names.length];
+            for (int i = 0; i < names.length; i++) {
+                r[i] = type(names[i]);
+            }
+            return r;
+        }
     }
 
     public static class MethodSignature extends Signature {
@@ -173,6 +185,15 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override String signaturePart() {
             return joinWithSpaces(new StringBuilder(receiverType).append(' ').append(method), argumentTypes).toString();
+        }
+        @Override boolean exists() throws Exception {
+            try {
+                type(receiverType).getMethod(method, types(argumentTypes));
+                // TODO verify that it does not override/implement a method in a supertype (cf. GroovyCallSiteSelector.method)
+                return true;
+            } catch (NoSuchMethodException x) {
+                return false;
+            }
         }
     }
 
@@ -204,6 +225,14 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         @Override public String toString() {
             return "new " + signaturePart();
         }
+        @Override boolean exists() throws Exception {
+            try {
+                type(type).getConstructor(types(argumentTypes));
+                return true;
+            } catch (NoSuchMethodException x) {
+                return false;
+            }
+        }
     }
 
     public static class FieldSignature extends Signature {
@@ -223,6 +252,14 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override public String toString() {
             return "field " + signaturePart();
+        }
+        @Override boolean exists() throws Exception {
+            try {
+                type(type).getField(field);
+                return true;
+            } catch (NoSuchFieldException x) {
+                return false;
+            }
         }
     }
 

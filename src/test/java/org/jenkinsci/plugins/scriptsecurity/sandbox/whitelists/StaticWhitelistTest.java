@@ -63,7 +63,9 @@ public class StaticWhitelistTest {
             is.close();
         }
         assertEquals("entries in " + definition + " should be sorted and unique", new TreeSet<EnumeratingWhitelist.Signature>(sigs).toString(), sigs.toString());
-        // TODO check for existence of Java members
+        for (EnumeratingWhitelist.Signature sig : sigs) {
+            assertTrue(sig + " exists", sig.exists());
+        }
     }
 
     @Test public void sanity() throws Exception {
