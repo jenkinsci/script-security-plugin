@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
  * Whitelist based on a static file.
@@ -77,35 +76,50 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         this(asList(lines));
     }
 
-    private void add(String line) throws IOException {
+    static Signature parse(String line) throws IOException {
         String[] toks = line.split(" ");
         if (toks[0].equals("method")) {
             if (toks.length < 3) {
                 throw new IOException(line);
             }
-            methodSignatures.add(new MethodSignature(toks[1], toks[2], slice(toks, 3)));
+            return new MethodSignature(toks[1], toks[2], slice(toks, 3));
         } else if (toks[0].equals("new")) {
             if (toks.length < 2) {
                 throw new IOException(line);
             }
-            newSignatures.add(new NewSignature(toks[1], slice(toks, 2)));
+            return new NewSignature(toks[1], slice(toks, 2));
         } else if (toks[0].equals("staticMethod")) {
             if (toks.length < 3) {
                 throw new IOException(line);
             }
-            staticMethodSignatures.add(new MethodSignature(toks[1], toks[2], slice(toks, 3)));
+            return new StaticMethodSignature(toks[1], toks[2], slice(toks, 3));
         } else if (toks[0].equals("field")) {
             if (toks.length != 3) {
                 throw new IOException(line);
             }
-            fieldSignatures.add(new FieldSignature(toks[1], toks[2]));
+            return new FieldSignature(toks[1], toks[2]);
         } else if (toks[0].equals("staticField")) {
             if (toks.length != 3) {
                 throw new IOException(line);
             }
-            staticFieldSignatures.add(new FieldSignature(toks[1], toks[2]));
+            return new StaticFieldSignature(toks[1], toks[2]);
         } else {
             throw new IOException(line);
+        }
+    }
+
+    private void add(String line) throws IOException {
+        Signature s = parse(line);
+        if (s instanceof StaticMethodSignature) {
+            staticMethodSignatures.add((StaticMethodSignature) s);
+        } else if (s instanceof MethodSignature) {
+            methodSignatures.add((MethodSignature) s);
+        } else if (s instanceof StaticFieldSignature) {
+            staticFieldSignatures.add((StaticFieldSignature) s);
+        } else if (s instanceof FieldSignature) {
+            fieldSignatures.add((FieldSignature) s);
+        } else {
+            newSignatures.add((NewSignature) s);
         }
     }
 
@@ -116,7 +130,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return r;
     }
 
-    public static Whitelist from(URL definition) throws IOException {
+    public static StaticWhitelist from(URL definition) throws IOException {
         InputStream is = definition.openStream();
         try {
             return new StaticWhitelist(new InputStreamReader(is, "UTF-8"));

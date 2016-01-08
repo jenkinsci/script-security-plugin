@@ -25,6 +25,9 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -47,6 +50,19 @@ public class EnumeratingWhitelistTest {
         assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
         assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
         assertEquals(EnumeratingWhitelistTest.class.getName() + "$C", EnumeratingWhitelist.getName(C.class));
+    }
+
+    @Test public void methodExists() throws Exception {
+        assertTrue(new EnumeratingWhitelist.MethodSignature(Object.class, "equals", Object.class).exists());
+        assertFalse(new EnumeratingWhitelist.MethodSignature(String.class, "equals", Object.class).exists());
+        assertFalse(new EnumeratingWhitelist.MethodSignature(String.class, "compareTo", Object.class).exists());
+        /* TODO bridge methods should be considered to not exist, but this does not yet work:
+        assertFalse(new EnumeratingWhitelist.MethodSignature(String.class, "compareTo", String.class).exists());
+        */
+        assertTrue(new EnumeratingWhitelist.MethodSignature(String.class, "compareToIgnoreCase", String.class).exists());
+        assertFalse(new EnumeratingWhitelist.MethodSignature(LinkedHashMap.class, "size").exists());
+        assertFalse(new EnumeratingWhitelist.MethodSignature(HashMap.class, "size").exists());
+        assertTrue(new EnumeratingWhitelist.MethodSignature(Map.class, "size").exists());
     }
 
 }
