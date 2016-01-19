@@ -849,7 +849,7 @@ public class SecureGroovyScriptTest {
     /**
      * Get the form button having the specified text/caption.
      *
-     * TODO 1.627+ use standard version from HtmlFormUtil
+     * TODO 1.627+ or jenkins-test-harness 2.0+ use standard version from HtmlFormUtil
      *
      * @param htmlForm The form containing the button.
      * @param caption The button text/caption being searched for.

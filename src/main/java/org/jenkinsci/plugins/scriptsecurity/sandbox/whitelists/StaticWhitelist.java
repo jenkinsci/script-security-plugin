@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import static java.util.Arrays.asList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -82,17 +83,17 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             if (toks.length < 3) {
                 throw new IOException(line);
             }
-            return new MethodSignature(toks[1], toks[2], slice(toks, 3));
+            return new MethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
         } else if (toks[0].equals("new")) {
             if (toks.length < 2) {
                 throw new IOException(line);
             }
-            return new NewSignature(toks[1], slice(toks, 2));
+            return new NewSignature(toks[1], Arrays.copyOfRange(toks, 2, toks.length));
         } else if (toks[0].equals("staticMethod")) {
             if (toks.length < 3) {
                 throw new IOException(line);
             }
-            return new StaticMethodSignature(toks[1], toks[2], slice(toks, 3));
+            return new StaticMethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
         } else if (toks[0].equals("field")) {
             if (toks.length != 3) {
                 throw new IOException(line);
@@ -121,13 +122,6 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         } else {
             newSignatures.add((NewSignature) s);
         }
-    }
-
-    private static String[] slice(String[] toks, int from) {
-        // TODO Java 6: return Arrays.copyOfRange(toks, from, toks.length);
-        String[] r = new String[toks.length - from];
-        System.arraycopy(toks, from, r, 0, toks.length - from);
-        return r;
     }
 
     public static StaticWhitelist from(URL definition) throws IOException {
