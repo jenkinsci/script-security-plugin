@@ -11,6 +11,7 @@ staticMethod groovy.json.JsonOutput toJson java.util.Calendar
 staticMethod groovy.json.JsonOutput toJson java.util.Date
 staticMethod groovy.json.JsonOutput toJson java.util.Map
 staticMethod groovy.json.JsonOutput toJson java.util.UUID
+
 new groovy.json.JsonSlurper
 method groovy.json.JsonSlurper parseText java.lang.String
 
@@ -24,7 +25,34 @@ method groovy.lang.Closure getDelegate
 method groovy.lang.Closure getResolveStrategy
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
+method groovy.lang.GroovyObject getProperty java.lang.String
 method groovy.lang.Script getBinding
+
+new groovy.util.XmlSlurper
+method groovy.util.XmlSlurper parse java.lang.String
+method groovy.util.XmlSlurper parseText java.lang.String
+
+method groovy.util.slurpersupport.GPathResult children
+method groovy.util.slurpersupport.GPathResult find groovy.lang.Closure
+method groovy.util.slurpersupport.GPathResult findAll groovy.lang.Closure
+method groovy.util.slurpersupport.GPathResult getAt int
+method groovy.util.slurpersupport.GPathResult isEmpty
+method groovy.util.slurpersupport.GPathResult list
+method groovy.util.slurpersupport.GPathResult name
+method groovy.util.slurpersupport.GPathResult parent
+method groovy.util.slurpersupport.GPathResult parents
+method groovy.util.slurpersupport.GPathResult putAt int java.lang.Object
+method groovy.util.slurpersupport.GPathResult size
+method groovy.util.slurpersupport.GPathResult text
+method groovy.util.slurpersupport.GPathResult toBigDecimal
+method groovy.util.slurpersupport.GPathResult toBigInteger
+method groovy.util.slurpersupport.GPathResult toBoolean
+method groovy.util.slurpersupport.GPathResult toDouble
+method groovy.util.slurpersupport.GPathResult toFloat
+method groovy.util.slurpersupport.GPathResult toInteger
+method groovy.util.slurpersupport.GPathResult toLong
+method groovy.util.slurpersupport.GPathResult toURI
+method groovy.util.slurpersupport.GPathResult toURL
 
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
@@ -32,6 +60,21 @@ method java.io.PrintWriter print java.lang.String
 
 # Useful general stuff:
 new java.io.StringReader java.lang.String
+
+new java.io.StringWriter
+new java.io.StringWriter int
+
+# method java.io.Writer append char
+method java.io.Writer write char[]
+method java.io.Writer write char[] int int
+method java.io.Writer write int
+method java.io.Writer write java.lang.String
+method java.io.Writer write java.lang.String int int
+
+method java.lang.Appendable append char
+method java.lang.Appendable append java.lang.CharSequence
+method java.lang.Appendable append java.lang.CharSequence int int
+
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Object equals java.lang.Object
