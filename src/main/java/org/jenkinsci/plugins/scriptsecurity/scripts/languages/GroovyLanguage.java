@@ -46,7 +46,7 @@ import jenkins.model.Jenkins;
     }
 
     @Override public String getCodeMirrorMode() {
-        return "clike"; // TODO 1.560: "groovy"
+        return "groovy";
     }
 
 }
