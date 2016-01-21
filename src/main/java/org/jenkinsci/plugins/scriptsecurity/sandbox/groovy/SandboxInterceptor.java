@@ -163,6 +163,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m != null && whitelist.permitsMethod(m, receiver, args0)) {
             return super.onGetProperty(invoker, receiver, property);
         }
+        if (m == null) {
+            String booleanGetter = "is" + Functions.capitalize(property);
+            m = GroovyCallSiteSelector.method(receiver, booleanGetter, args0);
+            if (m != null && whitelist.permitsMethod(m, receiver, args0)) {
+                return super.onGetProperty(invoker, receiver, property);
+            }
+        }
+        System.out.println(m);
         Object[] args1 = new Object[] {property};
         Method m2 = GroovyCallSiteSelector.method(receiver, "getProperty", args1);
         if (m2 != null && whitelist.permitsMethod(m2, receiver, args1)) {
