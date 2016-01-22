@@ -221,7 +221,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         }
         String booleanGetter = "is" + Functions.capitalize(property);
         final Method booleanGetterMethod = GroovyCallSiteSelector.method(receiver, booleanGetter, noArgs);
-        if (booleanGetterMethod != null) {
+        if (booleanGetterMethod != null && booleanGetterMethod.getReturnType() == boolean.class) {
             if (whitelist.permitsMethod(booleanGetterMethod, receiver, noArgs)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
