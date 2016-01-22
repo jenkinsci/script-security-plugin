@@ -166,6 +166,8 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2"), "method " + clazz + " setProp2 java.lang.String", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " isProp3"), false, "new " + clazz + "().prop3");
         assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " isProp3", "new " + clazz + "().prop3");
+        assertEvaluate(new StaticWhitelist("staticMethod " + clazz + " isProp4"), true, clazz + ".prop4");
+        assertRejected(new StaticWhitelist(), "staticMethod " + clazz + " isProp4", clazz + ".prop4");
         try {
             assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent");
         } catch (RejectedAccessException x) {
@@ -234,6 +236,9 @@ public class SandboxInterceptorTest {
         }
         public void setProp3(boolean prop3) {
             this._prop3 = prop3;
+        }
+        public static boolean isProp4() {
+            return true;
         }
     }
 

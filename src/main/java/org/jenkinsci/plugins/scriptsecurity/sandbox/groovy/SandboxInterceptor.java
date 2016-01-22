@@ -271,6 +271,18 @@ final class SandboxInterceptor extends GroovyInterceptor {
                     };
                 }
             }
+            final Method staticBooleanGetterMethod = GroovyCallSiteSelector.staticMethod((Class) receiver, booleanGetter, noArgs);
+            if (staticBooleanGetterMethod != null) {
+                if (whitelist.permitsStaticMethod(staticBooleanGetterMethod, noArgs)) {
+                    return super.onGetProperty(invoker, receiver, property);
+                } else if (rejector == null) {
+                    rejector = new Rejector() {
+                        @Override public RejectedAccessException reject() {
+                            return StaticWhitelist.rejectStaticMethod(staticBooleanGetterMethod);
+                        }
+                    };
+                }
+            }
         }
         if (mpe != null) {
             throw mpe;
