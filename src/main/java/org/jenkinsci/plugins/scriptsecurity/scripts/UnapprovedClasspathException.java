@@ -27,7 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import java.net.URL;
 
 /**
- * Exception thrown by {@link ScriptApproval#using(URL)}.
+ * Exception thrown by {@link ScriptApproval#using(ClasspathEntry)}.
  */
 public final class UnapprovedClasspathException extends SecurityException {
 

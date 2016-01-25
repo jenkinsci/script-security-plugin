@@ -93,7 +93,7 @@ public class GroovySandbox {
      * Runs a function in the sandbox.
      * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
      * Use {@link #run} instead whenever possible.
-     * @param r a block of code during whose execution all calls are intercepted
+     * @param c a block of code during whose execution all calls are intercepted
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @return the return value of the block
      * @throws RejectedAccessException in case an attempted call was not whitelisted
