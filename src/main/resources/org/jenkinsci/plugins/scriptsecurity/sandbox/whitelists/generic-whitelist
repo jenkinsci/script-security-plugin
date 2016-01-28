@@ -47,6 +47,9 @@ method java.lang.String split java.lang.String
 method java.lang.String startsWith java.lang.String
 method java.lang.String substring int int
 method java.lang.String toLowerCase
+method java.lang.String toLowerCase java.util.Locale
+method java.lang.String toUpperCase
+method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
 new java.net.URL java.lang.String
 staticMethod java.util.Arrays toString java.lang.Object[]
@@ -75,6 +78,25 @@ method java.util.Collection add java.lang.Object
 method java.util.Collection contains java.lang.Object
 method java.util.Collection size
 method java.util.List get int
+staticField java.util.Locale CANADA
+staticField java.util.Locale CANADA_FRENCH
+staticField java.util.Locale CHINESE
+staticField java.util.Locale ENGLISH
+staticField java.util.Locale FRANCE
+staticField java.util.Locale FRENCH
+staticField java.util.Locale GERMAN
+staticField java.util.Locale GERMANY
+staticField java.util.Locale ITALIAN
+staticField java.util.Locale ITALY
+staticField java.util.Locale JAPAN
+staticField java.util.Locale JAPANESE
+staticField java.util.Locale KOREA
+staticField java.util.Locale KOREAN
+staticField java.util.Locale ROOT
+staticField java.util.Locale SIMPLIFIED_CHINESE
+staticField java.util.Locale TRADITIONAL_CHINESE
+staticField java.util.Locale UK
+staticField java.util.Locale US
 method java.util.Map get java.lang.Object
 method java.util.Map put java.lang.Object java.lang.Object
 method java.util.concurrent.Callable call
