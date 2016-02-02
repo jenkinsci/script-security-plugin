@@ -93,6 +93,7 @@ public class SecureGroovyScriptTest {
         HtmlForm config = page.getFormByName("config");
         getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
         script.setText(groovy);
@@ -156,6 +157,7 @@ public class SecureGroovyScriptTest {
         HtmlForm config = page.getFormByName("config");
         getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
         script.setText(groovy);
@@ -194,6 +196,7 @@ public class SecureGroovyScriptTest {
         HtmlForm config = page.getFormByName("config");
         getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
         String groovy = "build.externalizableId";
         script.setText(groovy);
