@@ -80,6 +80,8 @@ method java.util.Collection size
 method java.util.List get int
 method java.util.Map get java.lang.Object
 method java.util.Map put java.lang.Object java.lang.Object
+method java.util.Map$Entry getKey
+method java.util.Map$Entry getValue
 method java.util.concurrent.Callable call
 method java.util.regex.Matcher replaceFirst java.lang.String
 
