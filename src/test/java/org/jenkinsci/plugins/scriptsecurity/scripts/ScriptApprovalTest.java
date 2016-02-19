@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -33,6 +34,7 @@ import com.gargoylesoftware.htmlunit.ConfirmHandler;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.Util;
+import java.io.IOException;
 import java.net.URL;
 import java.util.TreeSet;
 import org.jvnet.hudson.test.WithoutJenkins;
@@ -119,9 +121,8 @@ public class ScriptApprovalTest {
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
         
         // approve a classpath
-        page.getElementById(String.format("pcp-%s", CLASSPATH_HASH3))
-            .getElementsByAttribute("button", "class", "approve").get(0).click();
-        
+        click(page, String.format("pcp-%s", CLASSPATH_HASH3), "approve");
+
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH2)));
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH3)));
@@ -134,8 +135,7 @@ public class ScriptApprovalTest {
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
         
         // deny a classpath
-        page.getElementById(String.format("pcp-%s", CLASSPATH_HASH4))
-            .getElementsByAttribute("button", "class", "deny").get(0).click();
+        click(page, String.format("pcp-%s", CLASSPATH_HASH4), "deny");
         
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH2)));
@@ -149,9 +149,8 @@ public class ScriptApprovalTest {
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
         
         // delete a classpath
-        page.getElementById(String.format("acp-%s", CLASSPATH_HASH1))
-            .getElementsByAttribute("button", "class", "delete").get(0).click();
-        
+        click(page, String.format("acp-%s", CLASSPATH_HASH1), "delete");
+
         assertNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH2)));
         assertNotNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH3)));
@@ -164,8 +163,8 @@ public class ScriptApprovalTest {
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
         
         // clear all classpaths
-        page.getElementById("approvedClasspathEntries-clear")
-            .getElementsByTagName("button").get(0).click();
+        clickAndWait(page.getElementById("approvedClasspathEntries-clear")
+            .getElementsByTagName("button").get(0));
         
         assertNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH1)));
         assertNull(page.getElementById(String.format("acp-%s", CLASSPATH_HASH2)));
@@ -177,6 +176,21 @@ public class ScriptApprovalTest {
         assertNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH3)));
         assertNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH4)));
         assertNotNull(page.getElementById(String.format("pcp-%s", CLASSPATH_HASH5)));
+    }
+
+    private void clickAndWait(HtmlElement e) throws IOException {
+        e.click();
+        e.getPage().getWebClient().waitForBackgroundJavaScript(10000);
+    }
+
+    private void click(HtmlPage page, String id, String value) throws IOException {
+        for (HtmlElement e : page.getElementById(id).getElementsByTagName("button")) {
+            if (e.hasAttribute("class") && value.equals(e.getAttribute("class"))) {
+                clickAndWait(e);
+                return;
+            }
+        }
+        throw new AssertionError(String.format("Unable to find button with class [%s] in element [%s]", value, id));
     }
 
 }
