@@ -9,3 +9,15 @@ method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
 new java.io.File java.lang.String
 new java.io.File java.lang.String java.lang.String
 new java.io.File java.net.URI
+
+# Same for local process execution.
+staticMethod java.lang.Runtime getRuntime
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String java.lang.String[] java.io.File
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String java.util.List java.io.File
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String[] java.lang.String[] java.io.File
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.String[] java.util.List java.io.File
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.lang.String[] java.io.File
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.util.List java.io.File
