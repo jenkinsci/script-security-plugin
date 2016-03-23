@@ -80,6 +80,7 @@ staticMethod java.util.Calendar getInstance
 method java.util.Collection add java.lang.Object
 method java.util.Collection contains java.lang.Object
 method java.util.Collection size
+new java.util.Date long
 method java.util.List get int
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
@@ -104,11 +105,15 @@ method java.util.Map get java.lang.Object
 method java.util.Map put java.lang.Object java.lang.Object
 method java.util.Map$Entry getKey
 method java.util.Map$Entry getValue
+staticMethod java.util.TimeZone getTimeZone java.lang.String
 method java.util.concurrent.Callable call
 method java.util.regex.Matcher replaceFirst java.lang.String
 
 # More Groovy:
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String java.util.TimeZone
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
@@ -137,6 +142,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Str
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.StringBuffer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
