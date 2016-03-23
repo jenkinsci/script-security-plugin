@@ -121,7 +121,9 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence int groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String int groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isNumber java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List

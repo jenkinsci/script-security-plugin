@@ -284,13 +284,11 @@ public class SandboxInterceptorTest {
         */
         // cover others from DgmConverter:
         assertEvaluate(new GenericWhitelist(), "1970", "new Date(0).format('yyyy', TimeZone.getTimeZone('GMT'))");
-        /* TODO not yet implemented
         // cover get* and is* methods:
-        assertEvaluate(new StaticWhitelist(), 5, "'hello'.chars.length");
-        assertEvaluate(new StaticWhitelist(), true, "'42'.number");
+        assertEvaluate(new GenericWhitelist(), 5, "'hello'.chars.length");
+        assertEvaluate(new GenericWhitelist(), true, "'42'.number");
         // TODO should also cover set* methods, though these seem rare
-        */
-        // TODO check DefaultGroovyStaticMethods also
+        // TODO check DefaultGroovyStaticMethods also (though there are few useful & safe calls there)
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {

@@ -252,6 +252,36 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 };
             }
         }
+        // look for GDK methods
+        Object[] selfArgs = new Object[] {receiver};
+        for (Class<?> dgmClass : DGM_CLASSES) {
+            final Method dgmGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, getter, selfArgs);
+            if (dgmGetterMethod != null) {
+                if (whitelist.permitsStaticMethod(dgmGetterMethod, selfArgs)) {
+                    return super.onGetProperty(invoker, receiver, property);
+                } else if (rejector == null) {
+                    rejector = new Rejector() {
+                        @Override
+                        public RejectedAccessException reject() {
+                            return StaticWhitelist.rejectStaticMethod(dgmGetterMethod);
+                        }
+                    };
+                }
+            }
+            final Method dgmBooleanGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, booleanGetter, selfArgs);
+            if (dgmBooleanGetterMethod != null && dgmBooleanGetterMethod.getReturnType() == boolean.class) {
+                if (whitelist.permitsStaticMethod(dgmBooleanGetterMethod, selfArgs)) {
+                    return super.onGetProperty(invoker, receiver, property);
+                } else if (rejector == null) {
+                    rejector = new Rejector() {
+                        @Override
+                        public RejectedAccessException reject() {
+                            return StaticWhitelist.rejectStaticMethod(dgmBooleanGetterMethod);
+                        }
+                    };
+                }
+            }
+        }
         // GroovyObject property access
         Object[] propertyArg = new Object[] {property};
         final Method getPropertyMethod = GroovyCallSiteSelector.method(receiver, "getProperty", propertyArg);
