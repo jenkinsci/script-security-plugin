@@ -43,8 +43,10 @@ import hudson.util.IOUtils;
 
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -284,6 +286,7 @@ public class SandboxInterceptorTest {
         */
         // cover others from DgmConverter:
         assertEvaluate(new GenericWhitelist(), "1970", "new Date(0).format('yyyy', TimeZone.getTimeZone('GMT'))");
+        assertEvaluate(new GenericWhitelist(), /* actual value sensitive to local TZ */ DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(0)), "new Date(0).dateTimeString");
         // cover get* and is* methods:
         assertEvaluate(new GenericWhitelist(), 5, "'hello'.chars.length");
         assertEvaluate(new GenericWhitelist(), true, "'42'.number");

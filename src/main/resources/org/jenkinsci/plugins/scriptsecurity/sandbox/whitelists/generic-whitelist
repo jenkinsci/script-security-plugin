@@ -112,6 +112,7 @@ method java.util.regex.Matcher replaceFirst java.lang.String
 # More Groovy:
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String java.util.TimeZone
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString java.util.Date
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
