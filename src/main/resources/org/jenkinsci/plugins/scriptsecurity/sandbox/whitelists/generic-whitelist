@@ -20,8 +20,10 @@ staticField groovy.lang.Closure OWNER_FIRST
 staticField groovy.lang.Closure OWNER_ONLY
 staticField groovy.lang.Closure TO_SELF
 method groovy.lang.Closure call java.lang.Object
+method groovy.lang.Closure curry java.lang.Object
 method groovy.lang.Closure getDelegate
 method groovy.lang.Closure getResolveStrategy
+method groovy.lang.Closure ncurry int java.lang.Object
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.Script getBinding
@@ -32,6 +34,7 @@ method java.io.PrintWriter print java.lang.String
 
 # Useful general stuff:
 new java.io.StringReader java.lang.String
+method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Object equals java.lang.Object
