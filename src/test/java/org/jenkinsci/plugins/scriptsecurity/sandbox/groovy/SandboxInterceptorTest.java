@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -157,11 +158,11 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop"), "default", "new " + clazz + "().prop");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp"), "default", "new " + clazz + "().prop");
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop", "method " + clazz + " getProp"), "default", "new " + clazz + "().prop");
-        assertRejected(new StaticWhitelist("new " + clazz), "field " + clazz + " prop", "new " + clazz + "().prop");
+        assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp", "new " + clazz + "().prop");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "method " + clazz + " setProp java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp", "field " + clazz + " prop", "method " + clazz + " setProp java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
-        assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp"), "field " + clazz + " prop", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
+        assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp"), "method " + clazz + " setProp java.lang.String", "def c = new " + clazz + "(); c.prop = 'edited'; c.getProp()");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2"), "default", "new " + clazz + "().prop2");
         assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp2", "new " + clazz + "().prop2");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp2", "method " + clazz + " setProp2 java.lang.String"), "edited", "def c = new " + clazz + "(); c.prop2 = 'edited'; c.getProp2()");
@@ -182,6 +183,10 @@ public class SandboxInterceptorTest {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
         }
+        assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp5", "new " + clazz + "().prop5");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "DEFAULT", "new " + clazz + "().prop5");
+        assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "method " + clazz + " setProp5 java.lang.String", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "method " + clazz + " setProp5 java.lang.String", "method " + clazz + " rawProp5"), "EDITEDedited", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5 + c.rawProp5()");
     }
 
     @Test public void syntheticMethods() throws Exception {
@@ -241,6 +246,16 @@ public class SandboxInterceptorTest {
         }
         public static boolean isProp4() {
             return true;
+        }
+        private String prop5 = "default";
+        public String getProp5() {
+            return prop5.toUpperCase(Locale.ENGLISH);
+        }
+        public void setProp5(String value) {
+            prop5 = value.toLowerCase(Locale.ENGLISH);
+        }
+        public String rawProp5() {
+            return prop5;
         }
     }
 
@@ -387,7 +402,7 @@ public class SandboxInterceptorTest {
                             "c.delegate = new Dummy();",
                             "return c();"
                     ), "\n"));
-            assertRejected(rules, "field java.awt.Point x",
+            assertRejected(rules, "method java.awt.geom.Point2D getX",
                     StringUtils.join(Arrays.asList(
                             "def c = { -> x };",
                             "c.resolveStrategy = Closure.DELEGATE_ONLY;",
