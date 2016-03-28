@@ -348,13 +348,87 @@ final class SandboxInterceptor extends GroovyInterceptor {
         @Nonnull RejectedAccessException reject();
     }
 
-    // TODO consider whether it is useful to override onGet/SetArray/Attribute
+    @Override public Object onGetAttribute(Invoker invoker, Object receiver, String attribute) throws Throwable {
+        Field field = GroovyCallSiteSelector.field(receiver, attribute);
+        if (field == null) {
+            throw unclassifiedField(receiver, attribute);
+        } else if (whitelist.permitsFieldGet(field, receiver)) {
+            return super.onGetAttribute(invoker, receiver, attribute);
+        } else {
+            throw StaticWhitelist.rejectField(field);
+        }
+    }
+
+    @Override public Object onSetAttribute(Invoker invoker, Object receiver, String attribute, Object value) throws Throwable {
+        Field field = GroovyCallSiteSelector.field(receiver, attribute);
+        if (field == null) {
+            throw unclassifiedField(receiver, attribute);
+        } else if (whitelist.permitsFieldSet(field, receiver, value)) {
+            return super.onSetAttribute(invoker, receiver, attribute, value);
+        } else {
+            throw StaticWhitelist.rejectField(field);
+        }
+    }
+
+    @Override public Object onGetArray(Invoker invoker, Object receiver, Object index) throws Throwable {
+        if (receiver.getClass().isArray() && index instanceof Integer) {
+            return super.onGetArray(invoker, receiver, index);
+        }
+        Object[] args = new Object[] {index};
+        Method method = GroovyCallSiteSelector.method(receiver, "getAt", args);
+        if (method != null) {
+            if (whitelist.permitsMethod(method, receiver, args)) {
+                return super.onGetArray(invoker, receiver, index);
+            } else {
+                throw StaticWhitelist.rejectMethod(method);
+            }
+        }
+        args = new Object[] {receiver, index};
+        for (Class<?> dgm : DGM_CLASSES) {
+            method = GroovyCallSiteSelector.staticMethod(dgm, "getAt", args);
+            if (method != null) {
+                if (whitelist.permitsStaticMethod(method, args)) {
+                    return super.onGetArray(invoker, receiver, index);
+                } else {
+                    throw StaticWhitelist.rejectStaticMethod(method);
+                }
+            }
+        }
+        throw new RejectedAccessException("unclassified getAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]");
+    }
+
+    @Override public Object onSetArray(Invoker invoker, Object receiver, Object index, Object value) throws Throwable {
+        if (receiver.getClass().isArray() && index instanceof Integer) {
+            return super.onSetArray(invoker, receiver, index, value);
+        }
+        Object[] args = new Object[] {index, value};
+        Method method = GroovyCallSiteSelector.method(receiver, "putAt", args);
+        if (method != null) {
+            if (whitelist.permitsMethod(method, receiver, args)) {
+                return super.onSetArray(invoker, receiver, index, value);
+            } else {
+                throw StaticWhitelist.rejectMethod(method);
+            }
+        }
+        args = new Object[] {receiver, index, value};
+        for (Class<?> dgm : DGM_CLASSES) {
+            method = GroovyCallSiteSelector.staticMethod(dgm, "putAt", args);
+            if (method != null) {
+                if (whitelist.permitsStaticMethod(method, args)) {
+                    return super.onSetArray(invoker, receiver, index, value);
+                } else {
+                    throw StaticWhitelist.rejectStaticMethod(method);
+                }
+            }
+        }
+        throw new RejectedAccessException("unclassified putAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]=" + EnumeratingWhitelist.getName(value));
+    }
 
     private static String printArgumentTypes(Object[] args) {
         StringBuilder b = new StringBuilder();
         for (Object arg : args) {
             b.append(' ');
-            b.append(arg == null ? "null" : EnumeratingWhitelist.getName(arg.getClass()));
+            b.append(EnumeratingWhitelist.getName(arg));
         }
         return b.toString();
     }
