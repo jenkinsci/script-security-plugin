@@ -43,8 +43,10 @@ import hudson.util.IOUtils;
 
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -274,14 +276,22 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Issue("JENKINS-25119")
+    @Issue({"JENKINS-25119", "JENKINS-27725"})
     @Test public void defaultGroovyMethods() throws Exception {
         assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
-        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String"), 123, "'123'.toInteger();");
-        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
-        /* TODO No such property: it for class: groovy.lang.Binding:
-        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure"), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
+        assertEvaluate(new GenericWhitelist(), 123, "'123'.toInteger();");
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
+        /* TODO JENKINS-33468 No such property: it for class: groovy.lang.Binding:
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
         */
+        // cover others from DgmConverter:
+        assertEvaluate(new GenericWhitelist(), "1970", "new Date(0).format('yyyy', TimeZone.getTimeZone('GMT'))");
+        assertEvaluate(new GenericWhitelist(), /* actual value sensitive to local TZ */ DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(0)), "new Date(0).dateTimeString");
+        // cover get* and is* methods:
+        assertEvaluate(new GenericWhitelist(), 5, "'hello'.chars.length");
+        assertEvaluate(new GenericWhitelist(), true, "'42'.number");
+        // TODO should also cover set* methods, though these seem rare
+        // TODO check DefaultGroovyStaticMethods also (though there are few useful & safe calls there)
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
@@ -527,6 +537,11 @@ public class SandboxInterceptorTest {
             actual = actual.toString(); // for ease of comparison
         }
         assertEquals(expected, actual);
+        actual = new GroovyShell().evaluate(script);
+        if (actual instanceof GString) {
+            actual = actual.toString();
+        }
+        assertEquals("control case", expected, actual);
     }
 
     private static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {

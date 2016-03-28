@@ -31,7 +31,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import javax.annotation.Nonnull;
+import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.EncodingGroovyMethods;
+import org.codehaus.groovy.runtime.ProcessGroovyMethods;
+import org.codehaus.groovy.runtime.SqlGroovyMethods;
+import org.codehaus.groovy.runtime.SwingGroovyMethods;
+import org.codehaus.groovy.runtime.XmlGroovyMethods;
+import org.codehaus.groovy.tools.DgmConverter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
@@ -47,6 +54,17 @@ final class SandboxInterceptor extends GroovyInterceptor {
         this.whitelist = whitelist;
     }
 
+    /** should be synchronized with {@link DgmConverter} */
+    private static final Class<?>[] DGM_CLASSES = {
+        DefaultGroovyMethods.class,
+        SwingGroovyMethods.class,
+        SqlGroovyMethods.class,
+        XmlGroovyMethods.class,
+        EncodingGroovyMethods.class,
+        DateGroovyMethods.class,
+        ProcessGroovyMethods.class,
+    };
+
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
@@ -59,8 +77,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
             Object[] selfArgs = new Object[args.length + 1];
             selfArgs[0] = receiver;
             System.arraycopy(args, 0, selfArgs, 1, args.length);
-            if (GroovyCallSiteSelector.staticMethod(DefaultGroovyMethods.class, method, selfArgs) != null) {
-                return onStaticCall(invoker, DefaultGroovyMethods.class, method, selfArgs);
+            for (Class<?> dgmClass : DGM_CLASSES) {
+                if (GroovyCallSiteSelector.staticMethod(dgmClass, method, selfArgs) != null) {
+                    return onStaticCall(invoker, dgmClass, method, selfArgs);
+                }
             }
 
             // if no matching method, look for catchAll "invokeMethod"
@@ -230,6 +250,36 @@ final class SandboxInterceptor extends GroovyInterceptor {
                         return StaticWhitelist.rejectMethod(booleanGetterMethod);
                     }
                 };
+            }
+        }
+        // look for GDK methods
+        Object[] selfArgs = new Object[] {receiver};
+        for (Class<?> dgmClass : DGM_CLASSES) {
+            final Method dgmGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, getter, selfArgs);
+            if (dgmGetterMethod != null) {
+                if (whitelist.permitsStaticMethod(dgmGetterMethod, selfArgs)) {
+                    return super.onGetProperty(invoker, receiver, property);
+                } else if (rejector == null) {
+                    rejector = new Rejector() {
+                        @Override
+                        public RejectedAccessException reject() {
+                            return StaticWhitelist.rejectStaticMethod(dgmGetterMethod);
+                        }
+                    };
+                }
+            }
+            final Method dgmBooleanGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, booleanGetter, selfArgs);
+            if (dgmBooleanGetterMethod != null && dgmBooleanGetterMethod.getReturnType() == boolean.class) {
+                if (whitelist.permitsStaticMethod(dgmBooleanGetterMethod, selfArgs)) {
+                    return super.onGetProperty(invoker, receiver, property);
+                } else if (rejector == null) {
+                    rejector = new Rejector() {
+                        @Override
+                        public RejectedAccessException reject() {
+                            return StaticWhitelist.rejectStaticMethod(dgmBooleanGetterMethod);
+                        }
+                    };
+                }
             }
         }
         // GroovyObject property access
