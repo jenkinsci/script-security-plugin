@@ -412,6 +412,13 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("JENKINS-28277")
+    @Test public void curry() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 'h', "def charAt = {idx, str -> str.charAt(idx)}; def firstChar = charAt.curry(0); firstChar 'hello'");
+        assertEvaluate(new GenericWhitelist(), 'h', "def charOfHello = 'hello'.&charAt; def firstCharOfHello = charOfHello.curry(0); firstCharOfHello()");
+        assertEvaluate(new GenericWhitelist(), 'h', "def charAt = {str, idx -> str.charAt(idx)}; def firstChar = charAt.ncurry(1, 0); firstChar 'hello'");
+    }
+
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
