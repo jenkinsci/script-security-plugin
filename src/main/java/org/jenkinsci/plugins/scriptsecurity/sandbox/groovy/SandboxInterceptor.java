@@ -24,12 +24,18 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaMethod;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.Functions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -38,6 +44,7 @@ import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.tools.DgmConverter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -47,6 +54,8 @@ import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 
 @SuppressWarnings("rawtypes")
 final class SandboxInterceptor extends GroovyInterceptor {
+
+    private static final Logger LOGGER = Logger.getLogger(SandboxInterceptor.class.getName());
 
     private final Whitelist whitelist;
     
@@ -89,6 +98,11 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return onMethodCall(invoker,receiver,"invokeMethod",method,args);
             } catch (NoSuchMethodException e) {
                 // fall through
+            }
+
+            MetaMethod metaMethod = findMetaMethod(receiver, method, args);
+            if (metaMethod instanceof ClosureMetaMethod) {
+                return super.onMethodCall(invoker, receiver, method, args);
             }
 
             throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
@@ -295,6 +309,11 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 };
             }
         }
+        MetaMethod metaMethod = findMetaMethod(receiver, getter, noArgs);
+        if (metaMethod instanceof ClosureMetaMethod) {
+            return super.onGetProperty(invoker, receiver, property);
+        }
+        // TODO similar metaclass handling for isXXX, static methods (if possible?), setters
         if (receiver instanceof Class) {
             final Method staticGetterMethod = GroovyCallSiteSelector.staticMethod((Class) receiver, getter, noArgs);
             if (staticGetterMethod != null) {
@@ -357,6 +376,20 @@ final class SandboxInterceptor extends GroovyInterceptor {
             b.append(arg == null ? "null" : EnumeratingWhitelist.getName(arg.getClass()));
         }
         return b.toString();
+    }
+
+    private static @CheckForNull MetaMethod findMetaMethod(@Nonnull Object receiver, @Nonnull String method, @Nonnull Object[] args) {
+        Class<?>[] types = new Class[args.length];
+        for (int i = 0; i < types.length; i++) {
+            Object arg = args[i];
+            types[i] = arg == null ? /* is this right? */void.class : arg.getClass();
+        }
+        try {
+            return DefaultGroovyMethods.getMetaClass(receiver).pickMethod(method, types);
+        } catch (GroovyRuntimeException x) { // ambiguous call, supposedly
+            LOGGER.log(Level.FINE, "could not find metamethod for " + receiver.getClass() + "." + method + Arrays.toString(types), x);
+            return null;
+        }
     }
 
 }

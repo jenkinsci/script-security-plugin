@@ -412,6 +412,12 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test public void metaClassDelegate() throws Exception {
+        new GroovyShell().evaluate("String.metaClass.getAnswer = {-> return 42}"); // privileged operation
+        assertEvaluate(new StaticWhitelist(), 42, "'existence'.getAnswer()");
+        assertEvaluate(new StaticWhitelist(), 42, "'existence'.answer");
+    }
+
     @Issue("JENKINS-28277")
     @Test public void curry() throws Exception {
         assertEvaluate(new GenericWhitelist(), 'h', "def charAt = {idx, str -> str.charAt(idx)}; def firstChar = charAt.curry(0); firstChar 'hello'");
