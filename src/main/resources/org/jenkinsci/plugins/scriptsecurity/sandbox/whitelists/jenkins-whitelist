@@ -2,6 +2,7 @@
 new hudson.EnvVars
 method hudson.model.AbstractBuild getEnvironments
 staticMethod hudson.model.Environment create hudson.EnvVars
+method hudson.model.Item getParent
 method hudson.model.ModelObject getDisplayName
 method hudson.model.Run getFullDisplayName
 method hudson.tools.ToolInstallation getHome
