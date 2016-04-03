@@ -1,3 +1,6 @@
+# groovy-cps
+staticMethod com.cloudbees.groovy.cps.CpsDefaultGroovyMethods each java.util.Iterator groovy.lang.Closure
+
 # Groovy:
 staticMethod groovy.json.JsonOutput prettyPrint java.lang.String
 staticMethod groovy.json.JsonOutput toJson groovy.lang.Closure
@@ -84,6 +87,8 @@ method java.util.Collection add java.lang.Object
 method java.util.Collection contains java.lang.Object
 method java.util.Collection size
 new java.util.Date long
+method java.util.Iterator hasNext
+method java.util.Iterator next
 method java.util.List get int
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
@@ -153,6 +158,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
