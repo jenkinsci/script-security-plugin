@@ -96,7 +96,8 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             // If the URL is a file but does not exist we fallback to default behaviour
             // as non existence will be dealt with when trying to use it.
         }
-        return url.toExternalForm().endsWith("/");
+        String u = url.toExternalForm();
+        return u.endsWith("/") && !u.startsWith("jar:");
     }
 
     /**

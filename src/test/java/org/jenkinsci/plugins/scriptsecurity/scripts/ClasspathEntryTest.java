@@ -44,7 +44,7 @@ public class ClasspathEntryTest {
         } else {
             assertRoundTrip("C:\\tmp\\x.jar", "file:/C:/tmp/x.jar");
         }
-        assertEquals("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
+        assertRoundTrip("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
     }
 
     private static void assertRoundTrip(String path, String url) throws Exception {
