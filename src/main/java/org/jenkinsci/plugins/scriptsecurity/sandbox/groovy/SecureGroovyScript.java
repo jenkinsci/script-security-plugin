@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import hudson.Extension;
@@ -139,6 +140,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedUsageException in case of a non-sandbox issue
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
+    @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
     public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
@@ -173,6 +175,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
+        // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
+        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
             try {
                 new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader).parse(value);

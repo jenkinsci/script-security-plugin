@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
@@ -67,6 +68,7 @@ public class GroovySandbox {
      *
      * See {@link #createSecureCompilerConfiguration()} for the discussion.
      */
+    @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Should be managed by the caller.")
     public static @Nonnull ClassLoader createSecureClassLoader(ClassLoader base) {
         return new SandboxResolvingClassLoader(base);
     }

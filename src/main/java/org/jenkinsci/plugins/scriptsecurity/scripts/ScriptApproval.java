@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
@@ -534,6 +535,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @param language the language in which it is written
      * @return a warning in case the script is not yet approved and this user lacks {@link Jenkins#RUN_SCRIPTS}, else {@link FormValidation#ok()}
      */
+    // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
     public synchronized FormValidation checking(@Nonnull String script, @Nonnull Language language) {
         if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedScriptHashes.contains(hash(script, language.getName()))) {
             return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used.");
