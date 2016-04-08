@@ -46,6 +46,7 @@ import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import java.io.File;
+import java.io.FileFilter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -609,6 +610,25 @@ public class SecureGroovyScriptTest {
             FreeStyleBuild b = p.scheduleBuild2(0).get();
             r.assertBuildStatusSuccess(b);
             assertEquals(testingDisplayName, b.getDisplayName());
+        }
+        
+        // add a new file in a subdirectory of the tmpDir.
+        {
+            File f = tmpFolderRule.newFile();
+            File targetDir = tmpDir.listFiles(new FileFilter(){
+                public boolean accept(File pathname) {
+                    return pathname.isDirectory();
+                }
+                
+            })[0];
+            FileUtils.copyFileToDirectory(f, targetDir);
+        }
+        
+        // Should fail as the class directory is updated.
+        {
+            FreeStyleBuild b = p.scheduleBuild2(0).get();
+            r.assertBuildStatus(Result.FAILURE, b);
+            assertNotEquals(testingDisplayName, b.getDisplayName());
         }
     }
     
