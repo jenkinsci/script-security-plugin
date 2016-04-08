@@ -25,11 +25,18 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import hudson.Functions;
+
+import java.io.File;
 import java.net.URL;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import static org.junit.Assert.*;
 
 public class ClasspathEntryTest {
+    @Rule public TemporaryFolder rule = new TemporaryFolder();
     
     @Test public void pathURLConversion() throws Exception {
         if (!Functions.isWindows()) {
@@ -39,9 +46,23 @@ public class ClasspathEntryTest {
         }
         assertEquals("jar:file:/tmp/x.jar!/subjar.jar", "jar:file:/tmp/x.jar!/subjar.jar");
     }
+
     private static void assertRoundTrip(String path, String url) throws Exception {
         assertEquals(path, ClasspathEntry.urlToPath(new URL(url)));
         assertEquals(url, ClasspathEntry.pathToURL(path).toString());
+    }
+
+    @Test public void classDirDetected() throws Exception {
+        final File tmpDir = rule.newFolder();
+        assertTrue("Existing directory must be detected", ClasspathEntry.isClassDirectoryURL(tmpDir.toURI().toURL()));
+        tmpDir.delete();
+        final File notExisting = new File(tmpDir, "missing");
+        final URL missing = tmpDir.toURI().toURL();
+        assertFalse("Non-existing file is not considered class directory", ClasspathEntry.isClassDirectoryURL(missing));
+        final URL oneDir = new URL(missing.toExternalForm() + "/");
+        assertTrue("Non-existing file is considered class directory if ending in /", ClasspathEntry.isClassDirectoryURL(oneDir));
+        assertTrue("Generic URLs ending in / are considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/folder/")));
+        assertFalse("Generic URLs ending in / are not considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/file")));
     }
 
 }

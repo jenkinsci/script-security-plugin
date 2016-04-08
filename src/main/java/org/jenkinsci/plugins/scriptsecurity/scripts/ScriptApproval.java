@@ -124,6 +124,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         public URL getURL() {
             return url;
         }
+
+        /**
+         * Checks whether the entry would be considered a class directory.
+         * @see ClasspathEntry#isClassDirectoryURL(URL)
+         */
+        boolean isClassDirectory() {
+            return ClasspathEntry.isClassDirectoryURL(url);
+        }
+
+
         @Override public int hashCode() {
             return hash.hashCode();
         }
@@ -328,6 +338,21 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (pendingClasspathEntries == null) {
             pendingClasspathEntries = new TreeSet<PendingClasspathEntry>();
         }
+        // Check for loaded class directories
+        boolean changed = false;
+        for (Iterator<ApprovedClasspathEntry> i = approvedClasspathEntries.iterator(); i.hasNext();) {
+            if (i.next().isClassDirectory()) {
+                i.remove();
+                changed = true;
+            }
+        }
+        if (changed) {
+            try {
+                save();
+            } catch (IOException x) {
+                LOG.log(Level.WARNING, "Unable to save changes after cleaning accepted class directories", x);
+            }
+        }
     }
 
     private static String hash(String script, String language) {
@@ -439,6 +464,15 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
     public synchronized void configuring(@Nonnull ClasspathEntry entry, @Nonnull ApprovalContext context) {
+        // In order to try to minimize changes for existing class directories that could be saved
+        // - Class directories are ignored here (issuing a warning)
+        // - When trying to use them, the job will fail
+        // - Going to the configuration page you'll have the validation error in the classpath entry
+        if (entry.isClassDirectory()) {
+            LOG.log(Level.WARNING, "{0} is a class directory, which are not allowed. Ignored in configuration, use will be rejected",
+                    entry.getURL());
+            return;
+        }
         //TODO: better error propagation
         final Jenkins jenkins = getActiveJenkinsInstance();
         URL url = entry.getURL();
@@ -486,6 +520,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
         //TODO: better error propagation
         final Jenkins jenkins = getActiveJenkinsInstance();
+        if (entry.isClassDirectory()) {
+            return FormValidation.error(Messages.ClasspathEntry_path_noDirsAllowed());
+        }
         URL url = entry.getURL();
         try {
             if (!jenkins.hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
@@ -512,14 +549,19 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         String hash = hashClasspathEntry(url);
         
         if (!approvedClasspathEntries.contains(new ApprovedClasspathEntry(hash, url))) {
-            // Never approve classpath here.
-            ApprovalContext context = ApprovalContext.create();
-            if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
-                LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
-                try {
-                    save();
-                } catch (IOException x) {
-                    LOG.log(Level.WARNING, null, x);
+            // Don't add it to pending if it is a class directory
+            if (entry.isClassDirectory()) {
+                LOG.log(Level.WARNING, "{0} ({1}) is a class directory, which are not allowed.", new Object[] {url, hash});
+            } else {
+                // Never approve classpath here.
+                ApprovalContext context = ApprovalContext.create();
+                if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
+                    LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
+                    try {
+                        save();
+                    } catch (IOException x) {
+                        LOG.log(Level.WARNING, null, x);
+                    }
                 }
             }
             throw new UnapprovedClasspathException(url, hash);
