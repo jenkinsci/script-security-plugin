@@ -42,6 +42,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 
 /**
@@ -192,24 +194,31 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     private static final Set<String> BLACKLIST;
+
+    @SuppressFBWarnings(value = "OS_OPEN_STREAM", justification = "https://sourceforge.net/p/findbugs/bugs/786/")
+    private static Set<String> loadBlacklist() throws IOException {
+        InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist");
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, "US-ASCII"));
+            Set<String> blacklist = new HashSet<String>();
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                // TODO could consider trying to load the AccessibleObject, assuming the defining Class is accessible, as a defense against typos
+                blacklist.add(line);
+            }
+            return blacklist;
+        } finally {
+            is.close();
+        }
+    }
+
     static {
         try {
-            InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist");
-            try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, "US-ASCII"));
-                BLACKLIST = new HashSet<String>();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) {
-                        continue;
-                    }
-                    // TODO could consider trying to load the AccessibleObject, assuming the defining Class is accessible, as a defense against typos
-                    BLACKLIST.add(line);
-                }
-            } finally {
-                is.close();
-            }
+            BLACKLIST = loadBlacklist();
         } catch (IOException x) {
             throw new ExceptionInInitializerError(x);
         }
