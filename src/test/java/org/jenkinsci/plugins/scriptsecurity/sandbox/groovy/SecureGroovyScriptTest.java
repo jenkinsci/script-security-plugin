@@ -46,6 +46,8 @@ import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -239,6 +241,25 @@ public class SecureGroovyScriptTest {
         }
         
         return ret;
+    }
+
+    private List<File> copy2TempDir(Iterable<File> files) throws IOException {
+        final File tempDir = tmpFolderRule.newFolder();
+        final List copies = new ArrayList<File>();
+        for (File f: files) {
+            final File copy = new File(tempDir, f.getName());
+            FileUtils.copyFile(f, copy);
+            copies.add(copy);
+        }
+        return copies;
+    }
+
+    private List<ClasspathEntry> files2entries(Iterable<File> files) throws IOException {
+        final List entries = new ArrayList<ClasspathEntry>();
+        for (File f: files) {
+            entries.add(new ClasspathEntry(f.toURI().toURL().toExternalForm()));
+        }
+        return entries;
     }
 
     private List<File> getAllUpdatedJarFiles() throws URISyntaxException {
@@ -566,49 +587,10 @@ public class SecureGroovyScriptTest {
             assertNotEquals(testingDisplayName, b.getDisplayName());
         }
         
-        // Approve classpath.
+        // Unable to approve classpath.
         {
             List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
-                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
-            }
-        }
-        
-        // Success as approved.
-        {
-            FreeStyleBuild b = p.scheduleBuild2(0).get();
-            r.assertBuildStatusSuccess(b);
-            assertEquals(testingDisplayName, b.getDisplayName());
-        }
-        
-        // add new file in tmpDir.
-        {
-            File f = tmpFolderRule.newFile();
-            FileUtils.copyFileToDirectory(f, tmpDir);
-        }
-        
-        // Fail as the class directory is updated.
-        {
-            FreeStyleBuild b = p.scheduleBuild2(0).get();
-            r.assertBuildStatus(Result.FAILURE, b);
-            assertNotEquals(testingDisplayName, b.getDisplayName());
-        }
-        
-        // Approve classpath.
-        {
-            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertNotEquals(0, pcps.size());
-            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
-                ScriptApproval.get().approveClasspathEntry(pcp.getHash());
-            }
-        }
-        
-        // Success as approved.
-        {
-            FreeStyleBuild b = p.scheduleBuild2(0).get();
-            r.assertBuildStatusSuccess(b);
-            assertEquals(testingDisplayName, b.getDisplayName());
+            assertEquals(0, pcps.size());
         }
     }
     
@@ -623,17 +605,7 @@ public class SecureGroovyScriptTest {
         
         final String testingDisplayName = "TESTDISPLAYNAME";
         
-        File tmpDir1 = tmpFolderRule.newFolder();
-        
-        for (File jarfile: getAllJarFiles()) {
-            Expand e = new Expand();
-            e.setSrc(jarfile);
-            e.setDest(tmpDir1);
-            e.execute();
-        }
-        
-        List<ClasspathEntry> classpath1 = new ArrayList<ClasspathEntry>();
-        classpath1.add(new ClasspathEntry(tmpDir1.getAbsolutePath()));
+        final List<File> jars = getAllJarFiles();
         
         FreeStyleProject p1 = r.createFreeStyleProject();
         p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
@@ -642,7 +614,7 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpath1
+                files2entries(jars)
         )));
         
         // Fail as the classpath is not approved.
@@ -668,32 +640,7 @@ public class SecureGroovyScriptTest {
             assertEquals(testingDisplayName, b.getDisplayName());
         }
         
-        File tmpDir2 = tmpFolderRule.newFolder();
-        
-        for (File jarfile: getAllJarFiles()) {
-            Expand e = new Expand();
-            e.setSrc(jarfile);
-            e.setDest(tmpDir2);
-            e.execute();
-        }
-        
-        // touch all files.
-        {
-            DirectoryScanner ds = new DirectoryScanner();
-            ds.setBasedir(tmpDir2);
-            ds.setIncludes(new String[]{ "**" });
-            ds.scan();
-            
-            for (String relpath: ds.getIncludedFiles()) {
-                Touch t = new Touch();
-                t.setFile(new File(tmpDir2, relpath));
-                t.execute();
-            }
-        }
-        
-        List<ClasspathEntry> classpath2 = new ArrayList<ClasspathEntry>();
-        classpath2.add(new ClasspathEntry(tmpDir2.getAbsolutePath()));
-        
+        // New job with jars in other places.
         FreeStyleProject p2 = r.createFreeStyleProject();
         p2.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 String.format(
@@ -701,7 +648,7 @@ public class SecureGroovyScriptTest {
                         + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
                         + "\"\"", testingDisplayName),
                 true,
-                classpath2
+                files2entries(copy2TempDir(jars))
         )));
         
         // Success as approved.

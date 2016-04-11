@@ -65,15 +65,47 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
         }
     }
 
-    static String urlToPath(URL url) {
+    /** Returns {@code null} if another protocol or unable to perform the conversion. */
+    private static File urlToFile(@Nonnull URL url) {
         if (url.getProtocol().equals("file")) {
             try {
-                return new File(url.toURI()).getAbsolutePath();
+                return new File(url.toURI());
             } catch (URISyntaxException x) {
                 // ?
             }
         }
-        return url.toString();
+        return null;
+    }
+
+    static String urlToPath(URL url) {
+        final File file = urlToFile(url);
+        return file != null ? file.getAbsolutePath() : url.toString();
+    }
+
+    /**
+     * Checks whether an URL would be considered a class directory by {@link java.net.URLClassLoader}.
+     * According to its <a href="http://docs.oracle.com/javase/6/docs/api/java/net/URLClassLoader.html"specification</a>
+     * an URL will be considered an class directory if it ends with /.
+     * In the case the URL uses a {@code file:} protocol a check is performed to see if it is a directory as an additional guard
+     * in case a different class loader is used by other {@link Language} implementation.
+     */
+    static boolean isClassDirectoryURL(@Nonnull URL url) {
+        final File file = urlToFile(url);
+        if (file != null && file.isDirectory()) {
+            return true;
+            // If the URL is a file but does not exist we fallback to default behaviour
+            // as non existence will be dealt with when trying to use it.
+        }
+        String u = url.toExternalForm();
+        return u.endsWith("/") && !u.startsWith("jar:");
+    }
+
+    /**
+     * Checks whether the entry would be considered a class directory.
+     * @see #isClassDirectoryURL(URL)
+     */
+    public boolean isClassDirectory() {
+        return isClassDirectoryURL(url);
     }
     
     public @Nonnull String getPath() {
@@ -83,7 +115,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
     public @Nonnull URL getURL() {
         return url;
     }
-    
+
     private @CheckForNull URI getURI() {
         try {
             return url.toURI();

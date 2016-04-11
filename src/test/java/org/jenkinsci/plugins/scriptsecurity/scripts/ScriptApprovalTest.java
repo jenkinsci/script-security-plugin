@@ -29,11 +29,14 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 import com.gargoylesoftware.htmlunit.ConfirmHandler;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.Util;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.TreeSet;
@@ -42,6 +45,8 @@ import org.jvnet.hudson.test.WithoutJenkins;
 public class ScriptApprovalTest {
 
     @Rule public JenkinsRule r = new JenkinsRule();
+
+    @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
     @Test public void emptyScript() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
@@ -60,6 +65,41 @@ public class ScriptApprovalTest {
     private void configureAndUse(String groovy) {
         ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ApprovalContext.create());
         assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+    }
+
+    private ClasspathEntry entry(File f) throws Exception {
+        return new ClasspathEntry(f.toURI().toURL().toExternalForm());
+    }
+
+    private void configure(ClasspathEntry entry) {
+        ScriptApproval.get().configuring(entry, ApprovalContext.create());
+    }
+
+    private void configureAndUse(ClasspathEntry entry) throws Exception {
+        configure(entry);
+        ScriptApproval.get().using(entry);
+    }
+
+    /** Returns the number of entries the pending list have been increased. */
+    private int configureButCantUse(ClasspathEntry entry) throws Exception {
+        final int initialSize = ScriptApproval.get().getPendingClasspathEntries().size();
+        configure(entry);
+        try {
+            configureAndUse(entry);
+        } catch(UnapprovedClasspathException e) {
+            return ScriptApproval.get().getPendingClasspathEntries().size() - initialSize;
+        }
+        fail("Classpath entry " + entry.getURL() + " should have been rejected");
+        return 0;
+    }
+
+    @Test public void classPathEntryWithNoSecurity() throws Exception {
+        configureAndUse(entry(tmpFolderRule.newFile()));
+    }
+
+    @Test public void classPathEntryRejectedEvenWithNoSecurity() throws Exception {
+        // It does not go to the pending list.
+        assertEquals(0, configureButCantUse(entry(tmpFolderRule.newFolder())));
     }
 
     // http://stackoverflow.com/a/25393190/12916
