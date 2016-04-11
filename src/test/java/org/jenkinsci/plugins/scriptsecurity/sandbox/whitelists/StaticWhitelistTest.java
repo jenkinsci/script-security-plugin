@@ -64,7 +64,11 @@ public class StaticWhitelistTest {
         }
         assertEquals("entries in " + definition + " should be sorted and unique", new TreeSet<EnumeratingWhitelist.Signature>(sigs).toString(), sigs.toString());
         for (EnumeratingWhitelist.Signature sig : sigs) {
-            assertTrue(sig + " does not exist (or is an override)", sig.exists());
+            try {
+                assertTrue(sig + " does not exist (or is an override)", sig.exists());
+            } catch (ClassNotFoundException x) {
+                System.err.println("Cannot check validity of `" + sig + "` since the class is not loadable");
+            }
         }
     }
 

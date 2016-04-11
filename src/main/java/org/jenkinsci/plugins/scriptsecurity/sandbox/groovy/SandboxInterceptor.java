@@ -78,8 +78,13 @@ final class SandboxInterceptor extends GroovyInterceptor {
             selfArgs[0] = receiver;
             System.arraycopy(args, 0, selfArgs, 1, args.length);
             for (Class<?> dgmClass : DGM_CLASSES) {
-                if (GroovyCallSiteSelector.staticMethod(dgmClass, method, selfArgs) != null) {
-                    return onStaticCall(invoker, dgmClass, method, selfArgs);
+                Method dgmMethod = GroovyCallSiteSelector.staticMethod(dgmClass, method, selfArgs);
+                if (dgmMethod != null) {
+                    if (whitelist.permitsStaticMethod(dgmMethod, selfArgs)) {
+                        return super.onMethodCall(invoker, receiver, method, args);
+                    } else {
+                        throw StaticWhitelist.rejectStaticMethod(dgmMethod);
+                    }
                 }
             }
 
