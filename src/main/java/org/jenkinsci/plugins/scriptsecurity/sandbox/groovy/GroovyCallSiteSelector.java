@@ -140,10 +140,28 @@ class GroovyCallSiteSelector {
         return findMatchingMethod(receiver, method, args);
     }
 
+    private static boolean isEnumInitializer(Method m) {
+        if (!m.getDeclaringClass().isEnum()) {
+            return false;
+        }
+        if (!m.getName().equals("$INIT")) {
+            return false;
+        }
+        final Class<?>[] parameterTypes = m.getParameterTypes();
+        if (parameterTypes.length != 1) {
+            return false;
+        }
+        final Class<?> type = parameterTypes[0];
+        if (!type.isArray()) {
+            return false;
+        }
+        return type.getComponentType().equals(Object.class);
+    }
+
     private static Method findMatchingMethod(Class<?> receiver, String method, Object[] args) {
         Method candidate = null;
         for (Method m : receiver.getDeclaredMethods()) {
-            if (m.getName().equals(method) && matches(m.getParameterTypes(), args)) {
+            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args) || isEnumInitializer(m))) {
                 if (candidate == null || isMoreSpecific(m, candidate)) {
                     candidate = m;
                 }

@@ -556,6 +556,20 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.tokenize('ba').size()");
     }
 
+    @Issue("JENKINS-33023")
+    @Test public void enums() throws Exception {
+        String script = "enum Thing {\n"
+            + "  FIRST(\"The first thing\");\n"
+            + "  String description;\n"
+            + "  public Thing(String description) {\n"
+            + "    this.description = description;\n"
+            + "  }\n"
+            + "}\n"
+            + "Thing.values()[0].description\n";
+        String expected = "The first thing";
+        assertEvaluate(new BlanketWhitelist(), expected, script);
+    }
+
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
