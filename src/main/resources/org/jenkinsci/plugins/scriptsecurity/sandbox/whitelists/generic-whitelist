@@ -131,6 +131,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String int groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.List int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Map java.lang.Object
