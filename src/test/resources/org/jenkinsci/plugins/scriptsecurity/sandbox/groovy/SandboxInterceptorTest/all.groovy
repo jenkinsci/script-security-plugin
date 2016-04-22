@@ -32,6 +32,7 @@ assert 0 == [1:0][1];
 assert "asdf" =~ /sd/
 assert "asdf" ==~ /asdf/
 assert ~/asdf/ instanceof java.util.regex.Pattern
+assert 'asdf'[0..2] == 'asd'
 
 assert 1 < 2 && 1 <= 2
 assert 2 > 1 && 2 >= 1
