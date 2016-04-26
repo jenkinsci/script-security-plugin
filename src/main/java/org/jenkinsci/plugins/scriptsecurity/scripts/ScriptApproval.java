@@ -370,8 +370,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
     }
 
-    /** Creates digest of JAR contents. */
-    private static String hashClasspathEntry(URL entry) throws IOException {
+    /**
+     * Creates digest of JAR contents.
+     * Package visibility to be used in tests.
+     */
+    static String hashClasspathEntry(URL entry) throws IOException {
         InputStream is = entry.openStream();
         try {
             DigestInputStream input = null;
@@ -455,6 +458,11 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             throw new UnapprovedUsageException(hash);
         }
         return script;
+    }
+
+    // Only for testing
+    synchronized boolean isScriptHashApproved(String hash) {
+        return approvedScriptHashes.contains(hash);
     }
 
     /**

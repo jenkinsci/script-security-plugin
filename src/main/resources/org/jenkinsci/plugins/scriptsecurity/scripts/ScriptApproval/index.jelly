@@ -30,7 +30,7 @@ THE SOFTWARE.
             <script>
                 var mgr = <st:bind value="${it}"/>;
                 function hideScript(hash) {
-                    $('ps-' + hash).style.display = 'none';
+                    $('ps-' + hash).remove();
                 }
                 function approveScript(hash) {
                     mgr.approveScript(hash);
@@ -185,7 +185,7 @@ THE SOFTWARE.
                     <j:forEach var="ps" items="${it.pendingScripts}">
                         <div id="ps-${ps.hash}" class="pending-script">
                             <p class="ps-context">
-                                <button onclick="approveScript('${ps.hash}')">Approve</button> / <button onclick="denyScript('${ps.hash}')">Deny</button> ${ps.language.displayName} script
+                                <button class="approve" onclick="approveScript('${ps.hash}')">Approve</button> / <button class="deny" onclick="denyScript('${ps.hash}')">Deny</button> ${ps.language.displayName} script
                                 <st:include it="${ps.context}" page="index.jelly"/>:
                             </p>
                             <f:textarea readonly="readonly" codemirror-mode="${ps.language.codeMirrorMode}" codemirror-config='"readOnly": true' rows="10" cols="80" value="${ps.script}"/>
@@ -193,7 +193,7 @@ THE SOFTWARE.
                     </j:forEach>
                 </j:otherwise>
             </j:choose>
-            <p>
+            <p id="approvedScripts-clear">
                 You can also remove all previous script approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
             </p>
