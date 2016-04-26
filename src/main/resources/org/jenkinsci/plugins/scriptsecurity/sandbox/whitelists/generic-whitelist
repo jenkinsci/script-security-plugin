@@ -164,13 +164,13 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Str
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList boolean[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList byte[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList char[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList double[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList float[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList int[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Enumeration
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Iterator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList long[]
