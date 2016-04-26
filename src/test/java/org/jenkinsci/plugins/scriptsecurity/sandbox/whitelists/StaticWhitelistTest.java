@@ -67,7 +67,7 @@ public class StaticWhitelistTest {
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
             } catch (ClassNotFoundException x) {
-                System.err.println("Cannot check validity of `" + sig + "` since the class is not loadable");
+                System.err.println("Cannot check validity of `" + sig + "` due to " + x);
             }
         }
     }
