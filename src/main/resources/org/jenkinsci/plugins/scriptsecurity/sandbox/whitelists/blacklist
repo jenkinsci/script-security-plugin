@@ -9,6 +9,7 @@ method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
 new java.io.File java.lang.String
 new java.io.File java.lang.String java.lang.String
 new java.io.File java.net.URI
+new java.io.FileInputStream java.lang.String
 
 # Same for local process execution.
 staticMethod java.lang.Runtime getRuntime
