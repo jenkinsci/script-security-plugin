@@ -53,8 +53,8 @@ public class StaticWhitelistTest {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             String line;
             while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) {
+                line = StaticWhitelist.filter(line);
+                if (line == null) {
                     continue;
                 }
                 sigs.add(StaticWhitelist.parse(line));

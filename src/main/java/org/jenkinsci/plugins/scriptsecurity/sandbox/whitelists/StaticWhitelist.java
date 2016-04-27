@@ -44,12 +44,15 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.lang.GroovySystem;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 
 /**
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
+    private static final String G2_PREFIX = "g2";
+    private static final boolean GROOVY2 = GroovySystem.getVersion().startsWith("2.");
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
@@ -61,11 +64,10 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         BufferedReader br = new BufferedReader(definition);
         String line;
         while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
+            line = filter(line);
+            if (line != null) {
+                add(line);
             }
-            add(line);
         }
     }
 
@@ -77,6 +79,30 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     public StaticWhitelist(String... lines) throws IOException {
         this(asList(lines));
+    }
+
+    /**
+     * Filters a line, returning the content that must be processed.
+     * @param line Line to filter.
+     * @return {@code null} if the like must be skipped or the content to process if not.
+     */
+    static String filter(String line) {
+        if (line == null) {
+            return null;
+        }
+        line = line.trim();
+        if (line.isEmpty() || line.startsWith("#")) {
+            return null;
+        }
+        if (line.startsWith(G2_PREFIX)) {
+            if (GROOVY2) {
+                return line.substring(G2_PREFIX.length()).trim();
+                // If empty or malformed after the prefix, we'll leave the parsing fail.
+            } else {
+                return null; // skip
+            }
+        }
+        return line;
     }
 
     static Signature parse(String line) throws IOException {

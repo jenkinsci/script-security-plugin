@@ -127,7 +127,14 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lan
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Collection groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Iterator groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.List groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Map groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Set groovy.lang.Closure
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.SortedSet groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence int groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
@@ -145,6 +152,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Col
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Collection java.lang.Object
+g2 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String

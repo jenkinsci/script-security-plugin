@@ -39,13 +39,9 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
         create().use();
     }
 
-    @Test public void withSecurityRejected() throws Exception {
+    @Test public void withSecurity() throws Exception {
         configureSecurity();
-        create().assertCannotUse();
-    }
-
-    @Test public void withSecurityAccepted() throws Exception {
-        configureSecurity();
+        // Cannot use until approved
         create().assertCannotUse().approve().use();
     }
 

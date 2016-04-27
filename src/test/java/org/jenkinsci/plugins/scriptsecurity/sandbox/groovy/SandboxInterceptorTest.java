@@ -32,7 +32,9 @@ import groovy.json.JsonDelegate;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
@@ -65,6 +67,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import org.junit.AssumptionViolatedException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -492,10 +495,28 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("method java.lang.CharSequence charAt int"), '2', "'123'.charAt(1);");
     }
 
-    @Test public void ambiguousOverloads() {
-        // Groovy selects one of these. How, I do not know.
-        assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+    @Test public void ambiguousOverloads18() {
+        if (GroovySystem.getVersion().startsWith("1.")) {
+            // In 1.8.9 Groovy selects one of these. How, I do not know.
+            assertAmbiguity("null");
+        } else {
+            throw new AssumptionViolatedException("Not using Groovy 1.x");
+        }
     }
+
+    @Test(expected = GroovyRuntimeException.class) public void ambiguousOverloads24() {
+        if (GroovySystem.getVersion().startsWith("2.")) {
+            // Cannot resolve ambiguity, even with casting
+            assertAmbiguity("(java.lang.String)null");
+        } else {
+            throw new AssumptionViolatedException("Not using Groovy 2.x");
+        }
+    }
+
+    private void assertAmbiguity(String arg) {
+        assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(" + arg +")");
+    }
+
     public static final class Ambiguity {
         @Whitelisted public static boolean m(String x) {return true;}
         @Whitelisted public static boolean m(URL x) {return true;}
