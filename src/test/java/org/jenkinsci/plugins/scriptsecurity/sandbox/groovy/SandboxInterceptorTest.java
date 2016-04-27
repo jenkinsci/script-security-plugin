@@ -574,7 +574,7 @@ public class SandboxInterceptorTest {
             + "}\n"
             + "Thing.values()[0].description\n";
         String expected = "The first thing";
-        assertEvaluate(new BlanketWhitelist(), expected, script);
+        assertEvaluate(new GenericWhitelist(), expected, script);
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {

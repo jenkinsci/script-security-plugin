@@ -208,7 +208,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
                 }
             }
             try {
-                c.getMethod(method, types(argumentTypes));
+                c.getDeclaredMethod(method, types(argumentTypes));
                 return true;
             } catch (NoSuchMethodException x) {
                 return false;

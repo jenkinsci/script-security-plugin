@@ -40,6 +40,7 @@ new java.io.StringReader java.lang.String
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
 method java.lang.Comparable compareTo java.lang.Object
+method java.lang.Object clone
 method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
 method java.lang.Object toString
