@@ -117,6 +117,7 @@ method java.util.Map$Entry getValue
 staticMethod java.util.TimeZone getTimeZone java.lang.String
 staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
+method java.util.regex.Matcher replaceAll java.lang.String
 method java.util.regex.Matcher replaceFirst java.lang.String
 
 # More Groovy:
