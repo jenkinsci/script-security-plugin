@@ -144,7 +144,7 @@ class GroovyCallSiteSelector {
         if (!m.getDeclaringClass().isEnum()) {
             return false;
         }
-        if (!m.getName().equals("$INIT")) {
+        if (!m.isSynthetic()) {
             return false;
         }
         final Class<?>[] parameterTypes = m.getParameterTypes();
