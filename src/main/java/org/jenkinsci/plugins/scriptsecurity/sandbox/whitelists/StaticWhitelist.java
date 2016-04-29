@@ -43,16 +43,17 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GroovySystem;
+import hudson.util.VersionNumber;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 
 /**
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
-    private static final String G2_PREFIX = "g2";
-    private static final boolean GROOVY2 = GroovySystem.getVersion().startsWith("2.");
+    static final boolean GROOVY2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2")) >= 0;
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
@@ -86,21 +87,10 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @param line Line to filter.
      * @return {@code null} if the like must be skipped or the content to process if not.
      */
-    static String filter(String line) {
-        if (line == null) {
-            return null;
-        }
+    static @CheckForNull String filter(@Nonnull String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#")) {
             return null;
-        }
-        if (line.startsWith(G2_PREFIX)) {
-            if (GROOVY2) {
-                return line.substring(G2_PREFIX.length()).trim();
-                // If empty or malformed after the prefix, we'll leave the parsing fail.
-            } else {
-                return null; // skip
-            }
         }
         return line;
     }

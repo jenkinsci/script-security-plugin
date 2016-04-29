@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import groovy.json.JsonBuilder;
@@ -54,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import hudson.util.VersionNumber;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
@@ -495,26 +497,15 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("method java.lang.CharSequence charAt int"), '2', "'123'.charAt(1);");
     }
 
-    @Test public void ambiguousOverloads18() {
-        if (GroovySystem.getVersion().startsWith("1.")) {
+    @Test public void ambiguousOverloads() {
+        final boolean groovy2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2.0")) >= 0;
+        try {
             // In 1.8.9 Groovy selects one of these. How, I do not know.
-            assertAmbiguity("null");
-        } else {
-            throw new AssumptionViolatedException("Not using Groovy 1.x");
+            assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+            assertFalse("Ambiguous overload non-deterministically resolved in Groovy 1", groovy2);
+        } catch(GroovyRuntimeException e) {
+            assertTrue("Ambiguous overload is an error in Groovy 2", groovy2);
         }
-    }
-
-    @Test(expected = GroovyRuntimeException.class) public void ambiguousOverloads24() {
-        if (GroovySystem.getVersion().startsWith("2.")) {
-            // Cannot resolve ambiguity, even with casting
-            assertAmbiguity("(java.lang.String)null");
-        } else {
-            throw new AssumptionViolatedException("Not using Groovy 2.x");
-        }
-    }
-
-    private void assertAmbiguity(String arg) {
-        assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(" + arg +")");
     }
 
     public static final class Ambiguity {

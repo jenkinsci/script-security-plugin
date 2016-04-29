@@ -1,0 +1,9 @@
+# Groovy 2 additional overloads
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Iterable groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Collection groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Iterator groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.List groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.Set groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.util.SortedSet groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.List java.lang.Object

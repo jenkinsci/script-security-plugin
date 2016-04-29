@@ -45,7 +45,7 @@ public class StaticWhitelistTest {
         assertTrue(StaticWhitelist.rejectMethod(GroovyObject.class.getMethod("invokeMethod", String.class, Object.class)).isDangerous());
     }
 
-    static void sanity(URL definition) throws Exception {
+    static void sanity(URL definition, boolean checkExists) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
         List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
         InputStream is = definition.openStream();
@@ -63,17 +63,19 @@ public class StaticWhitelistTest {
             is.close();
         }
         assertEquals("entries in " + definition + " should be sorted and unique", new TreeSet<EnumeratingWhitelist.Signature>(sigs).toString(), sigs.toString());
-        for (EnumeratingWhitelist.Signature sig : sigs) {
-            try {
-                assertTrue(sig + " does not exist (or is an override)", sig.exists());
-            } catch (ClassNotFoundException x) {
-                System.err.println("Cannot check validity of `" + sig + "` due to " + x);
+        if (checkExists) {
+            for (EnumeratingWhitelist.Signature sig : sigs) {
+                try {
+                    assertTrue(sig + " does not exist (or is an override)", sig.exists());
+                } catch (ClassNotFoundException x) {
+                    System.err.println("Cannot check validity of `" + sig + "` due to " + x);
+                }
             }
         }
     }
 
     @Test public void sanity() throws Exception {
-        sanity(StaticWhitelist.class.getResource("blacklist"));
+        sanity(StaticWhitelist.class.getResource("blacklist"), true);
     }
 
 }
