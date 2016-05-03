@@ -133,6 +133,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence int groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.String int groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String java.util.Collection
