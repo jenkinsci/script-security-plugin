@@ -43,13 +43,17 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.lang.GroovySystem;
+import hudson.util.VersionNumber;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 
 /**
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
+    static final boolean GROOVY2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2")) >= 0;
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
@@ -61,11 +65,10 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         BufferedReader br = new BufferedReader(definition);
         String line;
         while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
+            line = filter(line);
+            if (line != null) {
+                add(line);
             }
-            add(line);
         }
     }
 
@@ -77,6 +80,19 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     public StaticWhitelist(String... lines) throws IOException {
         this(asList(lines));
+    }
+
+    /**
+     * Filters a line, returning the content that must be processed.
+     * @param line Line to filter.
+     * @return {@code null} if the like must be skipped or the content to process if not.
+     */
+    static @CheckForNull String filter(@Nonnull String line) {
+        line = line.trim();
+        if (line.isEmpty() || line.startsWith("#")) {
+            return null;
+        }
+        return line;
     }
 
     static Signature parse(String line) throws IOException {

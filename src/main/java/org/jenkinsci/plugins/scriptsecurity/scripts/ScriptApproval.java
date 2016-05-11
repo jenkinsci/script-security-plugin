@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -756,6 +757,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return pendingSignatures;
     }
 
+    // Added to account for new findbugs annotations in ExtensionList#get (PCT scenario)
+    private String[][] reconfigure(@NonNull Jenkins jenkins) throws IOException {
+        final ApprovedWhitelist awl = jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class);
+        if (awl != null) {
+            return awl.reconfigure();
+        } else {
+            return new String[][] {new String[0], new String[0]};
+        }
+    }
+
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] approveSignature(String signature) throws IOException {
         final Jenkins jenkins = getJenkins();
@@ -763,7 +774,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         approvedSignatures.add(signature);
         save();
-        return jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
+        return reconfigure(jenkins);
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
@@ -773,7 +784,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         aclApprovedSignatures.add(signature);
         save();
-        return jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
+        return reconfigure(jenkins);
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
@@ -793,7 +804,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         aclApprovedSignatures.clear();
         save();
         // Should be [[], []] but still returning it for consistency with approve methods.
-        return jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class).reconfigure();
+        return reconfigure(jenkins);
     }
 
     @Restricted(NoExternalUse.class)

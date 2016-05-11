@@ -29,7 +29,7 @@ import org.junit.Test;
 public class JenkinsWhitelistTest {
     
     @Test public void sanity() throws Exception {
-        StaticWhitelistTest.sanity(JenkinsWhitelist.class.getResource("jenkins-whitelist"));
+        StaticWhitelistTest.sanity(JenkinsWhitelist.class.getResource("jenkins-whitelist"), true);
     }
 
 }

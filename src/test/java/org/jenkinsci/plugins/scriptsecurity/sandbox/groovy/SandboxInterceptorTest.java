@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import groovy.json.JsonBuilder;
@@ -32,7 +33,9 @@ import groovy.json.JsonDelegate;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
@@ -52,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import hudson.util.VersionNumber;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
@@ -65,6 +69,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import org.junit.AssumptionViolatedException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -493,9 +498,16 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void ambiguousOverloads() {
-        // Groovy selects one of these. How, I do not know.
-        assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+        final boolean groovy2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2.0")) >= 0;
+        try {
+            // In 1.8.9 Groovy selects one of these. How, I do not know.
+            assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+            assertFalse("Ambiguous overload non-deterministically resolved in Groovy 1", groovy2);
+        } catch(GroovyRuntimeException e) {
+            assertTrue("Ambiguous overload is an error in Groovy 2", groovy2);
+        }
     }
+
     public static final class Ambiguity {
         @Whitelisted public static boolean m(String x) {return true;}
         @Whitelisted public static boolean m(URL x) {return true;}

@@ -35,8 +35,14 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Restricted(NoExternalUse.class)
 @Extension public final class GenericWhitelist extends ProxyWhitelist {
 
+    private static StaticWhitelist load(String name) throws IOException {
+        return StaticWhitelist.from(GenericWhitelist.class.getResource(name));
+    }
+
     public GenericWhitelist() throws IOException {
-        super(StaticWhitelist.from(GenericWhitelist.class.getResource("generic-whitelist")));
+        super(load("generic-whitelist"), load("generic-whitelist-groovy2"));
+        // it should be safe to load the Grrovy 2 at this, those signatures should not
+        // be reached if groovy 1 is in the classpath
     }
 
 }
