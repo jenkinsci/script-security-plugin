@@ -587,6 +587,26 @@ public class SandboxInterceptorTest {
             + "Thing.values()[0].description\n";
         String expected = "The first thing";
         assertEvaluate(new GenericWhitelist(), expected, script);
+        String e = E.class.getName();
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        assertEvaluate(wl, 2, e + ".TWO.getN()");
+        assertRejected(wl, "method " + e + " explode", e + ".TWO.explode()");
+        assertEvaluate(wl, "TWO", e + ".TWO.name()");
+        assertRejected(wl, "staticField " + e + " ONE", e + ".ONE.name()");
+    }
+    public enum E {
+        ONE(1),
+        @Whitelisted
+        TWO(2);
+        private final int n;
+        private E(int n) {
+            this.n = n;
+        }
+        @Whitelisted
+        public int getN() {
+            return n;
+        }
+        public void explode() {}
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
