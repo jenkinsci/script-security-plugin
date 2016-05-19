@@ -22,3 +22,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.lang.String[] java.io.File
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.util.List java.io.File
+
+# TODO do we need a @Blacklisted annotation?
+method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
