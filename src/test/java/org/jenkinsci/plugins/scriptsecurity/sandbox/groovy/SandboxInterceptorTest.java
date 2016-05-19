@@ -449,6 +449,8 @@ public class SandboxInterceptorTest {
         String uv = UsesVarargs.class.getName();
         assertEvaluate(wl, 0, uv + ".len(new String[0])");
         assertEvaluate(wl, 3, uv + ".len(['one', 'two', 'three'] as String[])");
+        assertEvaluate(wl, 0, uv + ".sum(new int[0])");
+        assertEvaluate(wl, 6, uv + ".sum([1, 2, 3] as int[])");
         assertEvaluate(wl, 3, uv + ".xlen(3, new String[0])");
         assertEvaluate(wl, 6, uv + ".xlen(3, ['one', 'two', 'three'] as String[])");
         assertEvaluate(wl, "one,two,three", uv + ".join(',', ['one', 'two', 'three'] as String[])");
@@ -459,6 +461,8 @@ public class SandboxInterceptorTest {
         assertEvaluate(wl, 3, "class UsesVarargs {static int len(String... vals) {vals.length}}; UsesVarargs.len('one', 'two', 'three')");
         assertEvaluate(wl, 0, uv + ".len()");
         assertEvaluate(wl, 3, uv + ".xlen(3)");
+        assertEvaluate(wl, 0, uv + ".sum()");
+        assertEvaluate(wl, 6, uv + ".sum(1, 2, 3)");
         assertEvaluate(wl, 3, uv + ".len('one', 'two', 'three')");
         assertEvaluate(wl, 6, uv + ".xlen(3, 'one', 'two', 'three')");
         assertEvaluate(wl, "one,two,three", uv + ".join(',', 'one', 'two', 'three')");
@@ -469,6 +473,14 @@ public class SandboxInterceptorTest {
         @Whitelisted
         public static int len(String... vals) {
             return vals.length;
+        }
+        @Whitelisted
+        public static int sum(int... numbers) {
+            int sum = 0;
+            for (int number : numbers) {
+                sum += number;
+            }
+            return sum;
         }
         @Whitelisted
         public static int xlen(int x, String... vals) {
