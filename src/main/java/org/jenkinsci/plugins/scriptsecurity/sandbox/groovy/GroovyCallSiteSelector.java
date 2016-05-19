@@ -46,24 +46,7 @@ class GroovyCallSiteSelector {
 
     private static boolean matches(@Nonnull Class<?>[] parameterTypes, @Nonnull Object[] parameters, boolean varargs) {
         if (varargs) {
-            int fixedLen = parameterTypes.length - 1;
-            Class<?> componentType = parameterTypes[fixedLen].getComponentType();
-            assert componentType != null;
-            int arrayLength = parameters.length - fixedLen;
-            if (arrayLength >= 0) {
-                if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
-                    // not a varargs call
-                } else {
-                    Object array = Array.newInstance(componentType, arrayLength);
-                    for (int i = 0; i < arrayLength; i++) {
-                        Array.set(array, i, parameters[fixedLen + i]);
-                    }
-                    Object[] parameters2 = new Object[fixedLen + 1];
-                    System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
-                    parameters2[fixedLen] = array;
-                    parameters = parameters2;
-                }
-            }
+            parameters = parametersForVarargs(parameterTypes, parameters);
         }
         if (parameters.length != parameterTypes.length) {
             return false;
@@ -99,6 +82,33 @@ class GroovyCallSiteSelector {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Translates a method parameter list with varargs possibly spliced into the end into the actual parameters to be passed to the JVM call.
+     */
+    private static Object[] parametersForVarargs(Class<?>[] parameterTypes, Object[] parameters) {
+        int fixedLen = parameterTypes.length - 1;
+        Class<?> componentType = parameterTypes[fixedLen].getComponentType();
+        assert componentType != null;
+        int arrayLength = parameters.length - fixedLen;
+        if (arrayLength >= 0) {
+            if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
+                // not a varargs call
+                return parameters;
+            } else {
+                Object array = Array.newInstance(componentType, arrayLength);
+                for (int i = 0; i < arrayLength; i++) {
+                    Array.set(array, i, parameters[fixedLen + i]);
+                }
+                Object[] parameters2 = new Object[fixedLen + 1];
+                System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
+                parameters2[fixedLen] = array;
+                return parameters2;
+            }
+        } else {
+            return parameters;
+        }
     }
 
     /**
