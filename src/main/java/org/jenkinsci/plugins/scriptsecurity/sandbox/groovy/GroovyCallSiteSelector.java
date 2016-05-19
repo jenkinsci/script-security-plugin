@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.primitives.Primitives;
 import groovy.lang.GString;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -43,7 +44,10 @@ import org.apache.commons.lang.ClassUtils;
  */
 class GroovyCallSiteSelector {
 
-    private static boolean matches(@Nonnull Class<?>[] parameterTypes, @Nonnull Object[] parameters) {
+    private static boolean matches(@Nonnull Class<?>[] parameterTypes, @Nonnull Object[] parameters, boolean varargs) {
+        if (varargs) {
+            parameters = parametersForVarargs(parameterTypes, parameters);
+        }
         if (parameters.length != parameterTypes.length) {
             return false;
         }
@@ -78,6 +82,33 @@ class GroovyCallSiteSelector {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Translates a method parameter list with varargs possibly spliced into the end into the actual parameters to be passed to the JVM call.
+     */
+    private static Object[] parametersForVarargs(Class<?>[] parameterTypes, Object[] parameters) {
+        int fixedLen = parameterTypes.length - 1;
+        Class<?> componentType = parameterTypes[fixedLen].getComponentType();
+        assert componentType != null;
+        int arrayLength = parameters.length - fixedLen;
+        if (arrayLength >= 0) {
+            if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
+                // not a varargs call
+                return parameters;
+            } else {
+                Object array = Array.newInstance(componentType, arrayLength);
+                for (int i = 0; i < arrayLength; i++) {
+                    Array.set(array, i, parameters[fixedLen + i]);
+                }
+                Object[] parameters2 = new Object[fixedLen + 1];
+                System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
+                parameters2[fixedLen] = array;
+                return parameters2;
+            }
+        } else {
+            return parameters;
+        }
     }
 
     /**
@@ -128,7 +159,7 @@ class GroovyCallSiteSelector {
 
     public static @CheckForNull Constructor<?> constructor(@Nonnull Class<?> receiver, @Nonnull Object[] args) {
         for (Constructor<?> c : receiver.getDeclaredConstructors()) {
-            if (matches(c.getParameterTypes(), args)) {
+            if (matches(c.getParameterTypes(), args, c.isVarArgs())) {
                 return c;
             }
         }
@@ -140,28 +171,10 @@ class GroovyCallSiteSelector {
         return findMatchingMethod(receiver, method, args);
     }
 
-    private static boolean isEnumInitializer(Method m) {
-        if (!m.getDeclaringClass().isEnum()) {
-            return false;
-        }
-        if (!m.isSynthetic()) {
-            return false;
-        }
-        final Class<?>[] parameterTypes = m.getParameterTypes();
-        if (parameterTypes.length != 1) {
-            return false;
-        }
-        final Class<?> type = parameterTypes[0];
-        if (!type.isArray()) {
-            return false;
-        }
-        return type.getComponentType().equals(Object.class);
-    }
-
     private static Method findMatchingMethod(Class<?> receiver, String method, Object[] args) {
         Method candidate = null;
         for (Method m : receiver.getDeclaredMethods()) {
-            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args) || isEnumInitializer(m))) {
+            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, m.isVarArgs()))) {
                 if (candidate == null || isMoreSpecific(m, candidate)) {
                     candidate = m;
                 }

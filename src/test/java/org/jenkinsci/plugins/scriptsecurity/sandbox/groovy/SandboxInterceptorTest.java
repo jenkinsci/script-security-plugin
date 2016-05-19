@@ -69,7 +69,6 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
-import org.junit.AssumptionViolatedException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -431,7 +430,7 @@ public class SandboxInterceptorTest {
         new GroovyShell().evaluate("String.metaClass.getAnswer = {-> return 42}"); // privileged operation
         assertEvaluate(new StaticWhitelist(), 42, "'existence'.getAnswer()");
         assertEvaluate(new StaticWhitelist(), 42, "'existence'.answer");
-        assertRejected(new StaticWhitelist("method groovy.lang.Closure call java.lang.Object"), "staticMethod java.lang.System exit int", "def c = System.&exit; c(1)");
+        assertRejected(new GenericWhitelist(), "staticMethod java.lang.System exit int", "def c = System.&exit; c(1)");
     }
 
     @Issue("JENKINS-28277")
@@ -439,6 +438,59 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), 'h', "def charAt = {idx, str -> str.charAt(idx)}; def firstChar = charAt.curry(0); firstChar 'hello'");
         assertEvaluate(new GenericWhitelist(), 'h', "def charOfHello = 'hello'.&charAt; def firstCharOfHello = charOfHello.curry(0); firstCharOfHello()");
         assertEvaluate(new GenericWhitelist(), 'h', "def charAt = {str, idx -> str.charAt(idx)}; def firstChar = charAt.ncurry(1, 0); firstChar 'hello'");
+    }
+
+    @Issue("JENKINS-34739")
+    @Test public void varargs() throws Exception {
+        // Control cases:
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        assertEvaluate(wl, 0, "class UsesVarargs {static int len(String... vals) {vals.length}}; UsesVarargs.len(new String[0])");
+        assertEvaluate(wl, 3, "class UsesVarargs {static int len(String... vals) {vals.length}}; UsesVarargs.len(['one', 'two', 'three'] as String[])");
+        String uv = UsesVarargs.class.getName();
+        assertEvaluate(wl, 0, uv + ".len(new String[0])");
+        assertEvaluate(wl, 3, uv + ".len(['one', 'two', 'three'] as String[])");
+        assertEvaluate(wl, 0, uv + ".sum(new int[0])");
+        assertEvaluate(wl, 6, uv + ".sum([1, 2, 3] as int[])");
+        assertEvaluate(wl, 3, uv + ".xlen(3, new String[0])");
+        assertEvaluate(wl, 6, uv + ".xlen(3, ['one', 'two', 'three'] as String[])");
+        assertEvaluate(wl, "one,two,three", uv + ".join(',', ['one', 'two', 'three'] as String[])");
+        assertRejected(wl, "staticMethod " + uv + " explode java.lang.String[]", uv + ".explode(new String[0])");
+        assertRejected(wl, "staticMethod " + uv + " explode java.lang.String[]", uv + ".explode(['one', 'two', 'three'] as String[])");
+        // Test cases:
+        assertEvaluate(wl, 0, "class UsesVarargs {static int len(String... vals) {vals.length}}; UsesVarargs.len()");
+        assertEvaluate(wl, 3, "class UsesVarargs {static int len(String... vals) {vals.length}}; UsesVarargs.len('one', 'two', 'three')");
+        assertEvaluate(wl, 0, uv + ".len()");
+        assertEvaluate(wl, 3, uv + ".xlen(3)");
+        assertEvaluate(wl, 0, uv + ".sum()");
+        assertEvaluate(wl, 6, uv + ".sum(1, 2, 3)");
+        assertEvaluate(wl, 3, uv + ".len('one', 'two', 'three')");
+        assertEvaluate(wl, 6, uv + ".xlen(3, 'one', 'two', 'three')");
+        assertEvaluate(wl, "one,two,three", uv + ".join(',', 'one', 'two', 'three')");
+        assertRejected(wl, "staticMethod " + uv + " explode java.lang.String[]", uv + ".explode()");
+        assertRejected(wl, "staticMethod " + uv + " explode java.lang.String[]", uv + ".explode('one', 'two', 'three')");
+    }
+    public static class UsesVarargs {
+        @Whitelisted
+        public static int len(String... vals) {
+            return vals.length;
+        }
+        @Whitelisted
+        public static int sum(int... numbers) {
+            int sum = 0;
+            for (int number : numbers) {
+                sum += number;
+            }
+            return sum;
+        }
+        @Whitelisted
+        public static int xlen(int x, String... vals) {
+            return x + vals.length;
+        }
+        @Whitelisted
+        public static String join(String sep, String... vals) {
+            return StringUtils.join(vals, sep);
+        }
+        public static void explode(String... vals) {}
     }
 
     @Test public void templates() throws Exception {
@@ -593,6 +645,26 @@ public class SandboxInterceptorTest {
             + "Thing.values()[0].description\n";
         String expected = "The first thing";
         assertEvaluate(new GenericWhitelist(), expected, script);
+        String e = E.class.getName();
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        assertEvaluate(wl, 2, e + ".TWO.getN()");
+        assertRejected(wl, "method " + e + " explode", e + ".TWO.explode()");
+        assertEvaluate(wl, "TWO", e + ".TWO.name()");
+        assertRejected(wl, "staticField " + e + " ONE", e + ".ONE.name()");
+    }
+    public enum E {
+        ONE(1),
+        @Whitelisted
+        TWO(2);
+        private final int n;
+        private E(int n) {
+            this.n = n;
+        }
+        @Whitelisted
+        public int getN() {
+            return n;
+        }
+        public void explode() {}
     }
 
     private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
