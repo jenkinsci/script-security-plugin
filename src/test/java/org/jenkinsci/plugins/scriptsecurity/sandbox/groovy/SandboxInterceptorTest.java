@@ -328,6 +328,12 @@ public class SandboxInterceptorTest {
         assertRejected(new AnnotatedWhitelist(), "staticMethod " + clazz + " explode", "C.m(); class C {static void m() {" + clazz + ".explode();}}");
     }
 
+    @Ignore("TODO RejectedAccessException: unclassified new C java.util.LinkedHashMap")
+    @Issue("JENKINS-34741")
+    @Test public void structConstructor() throws Exception {
+        assertEvaluate(new StaticWhitelist(), "ok", "class C {String f}; new C(f: 'ok').f");
+    }
+
     @Test public void defSyntax() throws Exception {
         String clazz = Unsafe.class.getName();
         Whitelist w = new ProxyWhitelist(new AnnotatedWhitelist(), /* for some reason def syntax triggers this */new StaticWhitelist("method java.util.Collection toArray"));
