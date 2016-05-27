@@ -150,6 +150,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.re
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isNumber java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.lang.Object[] java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
@@ -159,6 +160,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Cha
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.StringBuffer java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Map java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size boolean[]
