@@ -100,7 +100,9 @@ staticField java.util.Calendar ZONE_OFFSET
 method java.util.Calendar get int
 staticMethod java.util.Calendar getInstance
 method java.util.Collection add java.lang.Object
+method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
+method java.util.Collection isEmpty
 method java.util.Collection size
 new java.util.Date long
 method java.util.Iterator hasNext
@@ -125,9 +127,11 @@ staticField java.util.Locale SIMPLIFIED_CHINESE
 staticField java.util.Locale TRADITIONAL_CHINESE
 staticField java.util.Locale UK
 staticField java.util.Locale US
+method java.util.Map containsKey java.lang.Object
 method java.util.Map get java.lang.Object
 method java.util.Map keySet
 method java.util.Map put java.lang.Object java.lang.Object
+method java.util.Map putAll java.util.Map
 method java.util.Map values
 method java.util.Map$Entry getKey
 method java.util.Map$Entry getValue
