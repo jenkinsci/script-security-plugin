@@ -77,7 +77,6 @@ public abstract class Whitelist implements ExtensionPoint {
         }
         Whitelist all = allByJenkins.get(j);
         if (all == null) {
-            // TODO should check for dynamic changes in this list, e.g. from dynamically loaded plugins, and return a fresh aggregate
             all = new ProxyWhitelist(j.getExtensionList(Whitelist.class));
             allByJenkins.put(j, all);
         }
