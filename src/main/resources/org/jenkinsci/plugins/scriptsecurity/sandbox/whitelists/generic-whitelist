@@ -17,6 +17,7 @@ staticMethod groovy.json.JsonOutput toJson java.util.UUID
 new groovy.json.JsonSlurper
 method groovy.json.JsonSlurper parseText java.lang.String
 
+method groovy.lang.Binding hasVariable java.lang.String
 staticField groovy.lang.Closure DELEGATE_FIRST
 staticField groovy.lang.Closure DELEGATE_ONLY
 staticField groovy.lang.Closure OWNER_FIRST
