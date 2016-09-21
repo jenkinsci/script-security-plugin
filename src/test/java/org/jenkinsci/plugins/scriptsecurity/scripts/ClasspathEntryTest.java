@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import hudson.Functions;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.junit.Rule;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
+import org.jvnet.hudson.test.Issue;
 
 public class ClasspathEntryTest {
     @Rule public TemporaryFolder rule = new TemporaryFolder();
@@ -63,6 +65,31 @@ public class ClasspathEntryTest {
         assertTrue("Non-existing file is considered class directory if ending in /", ClasspathEntry.isClassDirectoryURL(oneDir));
         assertTrue("Generic URLs ending in / are considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/folder/")));
         assertFalse("Generic URLs ending in / are not considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/file")));
+    }
+
+    @Issue("JENKINS-37599")
+    @Test public void pathToURL() throws Exception {
+        ClasspathEntry ignore = new ClasspathEntry("http://nowhere.net/");
+        ignore = new ClasspathEntry(rule.newFile("x.jar").getAbsolutePath());
+        ignore = new ClasspathEntry(rule.newFolder().getAbsolutePath());
+        try {
+            ignore = new ClasspathEntry("");
+            fail();
+        } catch (MalformedURLException x) {
+            // good
+        }
+        try {
+            ignore = new ClasspathEntry(" ");
+            fail();
+        } catch (MalformedURLException x) {
+            // good
+        }
+        try {
+            ignore = new ClasspathEntry("relative");
+            fail();
+        } catch (MalformedURLException x) {
+            // good
+        }
     }
 
 }
