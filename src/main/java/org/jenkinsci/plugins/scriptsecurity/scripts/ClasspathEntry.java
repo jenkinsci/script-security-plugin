@@ -58,10 +58,18 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
     }
     
     static URL pathToURL(String path) throws MalformedURLException {
+        if (path.isEmpty()) {
+            throw new MalformedURLException("JENKINS-37599: empty classpath entries not allowed");
+        }
         try {
             return new URL(path);
         } catch (MalformedURLException x) {
-            return new File(path).toURI().toURL();
+            File f = new File(path);
+            if (f.isAbsolute()) {
+                return f.toURI().toURL();
+            } else {
+                throw new MalformedURLException("Classpath entry ‘" + path + "’ does not look like either a URL or an absolute file path");
+            }
         }
     }
 

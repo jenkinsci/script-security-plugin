@@ -28,7 +28,6 @@ import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
@@ -46,7 +45,6 @@ import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -57,7 +55,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.Expand;
-import org.apache.tools.ant.taskdefs.Touch;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import static org.junit.Assert.*;
@@ -287,20 +284,16 @@ public class SecureGroovyScriptTest {
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
-        
-        FreeStyleProject p = r.createFreeStyleProject();
-        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+        TestGroovyRecorder recorder = new TestGroovyRecorder(new SecureGroovyScript(
                 "whatever",
                 true,
                 classpath
-        )));
-        
-        JenkinsRule.WebClient wc = r.createWebClient();
-        r.submit(wc.getPage(p, "configure").getFormByName("config"));
-        
-        p = r.jenkins.getItemByFullName(p.getFullName(), FreeStyleProject.class);
-        TestGroovyRecorder recorder = (TestGroovyRecorder)p.getPublishersList().get(0);
-        assertEquals(classpath, recorder.getScript().getClasspath());
+        ));
+        TestGroovyRecorder recorder2 = r.configRoundtrip(recorder);
+        r.assertEqualDataBoundBeans(recorder, recorder2);
+        classpath.clear();
+        recorder2 = r.configRoundtrip(recorder);
+        r.assertEqualDataBoundBeans(recorder, recorder2);
     }
 
     @Test public void testClasspathInSandbox() throws Exception {
