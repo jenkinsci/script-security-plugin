@@ -68,7 +68,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             if (f.isAbsolute()) {
                 return f.toURI().toURL();
             } else {
-                throw new MalformedURLException("classpath entries must be URLs or absolute file paths");
+                throw new MalformedURLException("Classpath entry ‘" + path + "’ does not look like either a URL or an absolute file path");
             }
         }
     }
