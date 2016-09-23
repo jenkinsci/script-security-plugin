@@ -76,6 +76,7 @@ method java.lang.String toLowerCase java.util.Locale
 method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
+method java.lang.Throwable getMessage
 staticMethod java.lang.System currentTimeMillis
 new java.net.URL java.lang.String
 staticMethod java.util.Arrays toString java.lang.Object[]
