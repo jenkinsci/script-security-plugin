@@ -209,6 +209,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods xor java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
