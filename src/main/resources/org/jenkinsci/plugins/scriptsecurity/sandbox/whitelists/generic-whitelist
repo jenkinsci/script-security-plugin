@@ -136,6 +136,8 @@ method java.util.Map putAll java.util.Map
 method java.util.Map values
 method java.util.Map$Entry getKey
 method java.util.Map$Entry getValue
+staticMethod java.util.Objects requireNonNull java.lang.Object
+staticMethod java.util.Objects requireNonNull java.lang.Object java.lang.String
 staticMethod java.util.TimeZone getTimeZone java.lang.String
 staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
