@@ -224,7 +224,15 @@ class GroovyCallSiteSelector {
     private static boolean isMoreSpecific(Method more, Method less) {
         Class<?>[] moreParams = more.getParameterTypes();
         Class<?>[] lessParams = less.getParameterTypes();
-        assert moreParams.length == lessParams.length;
+        if (less.isVarArgs() && !more.isVarArgs()) {
+            return true; // main() vs. main(String...) on []
+        } else if (!less.isVarArgs() && more.isVarArgs()) {
+            return false;
+        }
+        // TODO what about passing [arg] to log(String...) vs. log(String, String...)?
+        if (moreParams.length != lessParams.length) {
+            throw new IllegalStateException("cannot compare " + more + " to " + less);
+        }
         for (int i = 0; i < moreParams.length; i++) {
             Class<?> moreParam = Primitives.wrap(moreParams[i]);
             Class<?> lessParam = Primitives.wrap(lessParams[i]);
