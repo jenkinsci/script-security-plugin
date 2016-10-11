@@ -378,7 +378,10 @@ public class SandboxInterceptorTest {
      * can be used safely.
      */
     @Test public void closureDelegate() throws Exception {
-        ProxyWhitelist rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.lang.Exception java.lang.String"));
+        ProxyWhitelist rules = new ProxyWhitelist(new StaticWhitelist(
+            "new java.lang.Exception java.lang.String",
+            "method java.util.concurrent.Callable call",
+            "method groovy.lang.Closure setDelegate java.lang.Object"));
         assertRejected(rules,
                 "method java.lang.Throwable getMessage",
                 "{-> delegate = new Exception('oops'); message}()"
