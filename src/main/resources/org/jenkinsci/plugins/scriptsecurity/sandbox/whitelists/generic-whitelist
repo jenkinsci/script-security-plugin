@@ -130,6 +130,7 @@ staticField java.util.Locale TRADITIONAL_CHINESE
 staticField java.util.Locale UK
 staticField java.util.Locale US
 method java.util.Map containsKey java.lang.Object
+method java.util.Map entrySet
 method java.util.Map get java.lang.Object
 method java.util.Map keySet
 method java.util.Map put java.lang.Object java.lang.Object
@@ -153,6 +154,7 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString jav
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods disjoint java.util.Collection java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods each java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachLine java.lang.CharSequence groovy.lang.Closure
