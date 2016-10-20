@@ -25,11 +25,14 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.io.NullOutputStream;
+import groovy.lang.Binding;
 import groovy.lang.GString;
+import groovy.lang.Script;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -69,6 +72,13 @@ public class GroovyCallSiteSelectorTest {
         public static void m1(long x) {}
         public static void m2(int x) {}
         public static void m2(long x) {}
+    }
+
+    @Issue("JENKINS-38908")
+    @Test public void main() throws Exception {
+        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding());
+        assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
+        assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
 
 }
