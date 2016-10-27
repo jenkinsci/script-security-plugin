@@ -48,6 +48,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GroovySystem;
 import hudson.util.VersionNumber;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * Whitelist based on a static file.
@@ -245,6 +247,11 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             x.setDangerous(true);
         }
         return x;
+    }
+
+    @Restricted(NoExternalUse.class) // ScriptApproval
+    public static boolean isBlacklisted(String signature) {
+        return BLACKLIST.contains(signature);
     }
 
 }

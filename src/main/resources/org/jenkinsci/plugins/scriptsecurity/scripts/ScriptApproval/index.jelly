@@ -47,6 +47,7 @@ THE SOFTWARE.
                     var both = r.responseObject();
                     $('approvedSignatures').value = both[0].join('\n');
                     $('aclApprovedSignatures').value = both[1].join('\n');
+                    $('dangerousApprovedSignatures').value = both[2].join('\n');
                 }
                 function approveSignature(signature, hash) {
                     mgr.approveSignature(signature, function(r) {
@@ -231,6 +232,13 @@ THE SOFTWARE.
             <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
+            <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
+            <j:if test="${!empty(dangerousApprovedSignatures)}">
+                <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
+                <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
+                    <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+                </textarea>
+            </j:if>
             <p>
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
