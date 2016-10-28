@@ -5,6 +5,9 @@ method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
 method groovy.lang.GroovyObject setMetaClass groovy.lang.MetaClass
 method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
 
+# Variant of Jenkins.getInstance, see below.
+staticMethod hudson.model.Hudson getInstance
+
 # Up to no good…
 staticMethod hudson.model.User current
 staticMethod hudson.model.User get java.lang.String

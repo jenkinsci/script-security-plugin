@@ -167,7 +167,6 @@ class GroovyCallSiteSelector {
     }
 
     public static @CheckForNull Method staticMethod(@Nonnull Class<?> receiver, @Nonnull String method, @Nonnull Object[] args) {
-        // TODO should we check for inherited static calls?
         return findMatchingMethod(receiver, method, args);
     }
 
