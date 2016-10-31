@@ -28,8 +28,10 @@ import com.google.common.io.NullOutputStream;
 import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
+import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
@@ -72,6 +74,11 @@ public class GroovyCallSiteSelectorTest {
         public static void m1(long x) {}
         public static void m2(int x) {}
         public static void m2(long x) {}
+    }
+
+    @Test public void staticMethodsCannotBeOverridden() throws Exception {
+        assertEquals(Jenkins.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Jenkins.class, "getInstance", new Object[0]));
+        assertEquals(Hudson.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Hudson.class, "getInstance", new Object[0]));
     }
 
     @Issue("JENKINS-38908")

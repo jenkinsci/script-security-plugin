@@ -61,6 +61,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         if (outstanding > 0) {
             message += " <strong>" + outstanding + " classpath entries pending approval.</strong>";
         }
+        int dangerous = ScriptApproval.get().getDangerousApprovedSignatures().length;
+        if (dangerous > 0) {
+            message += " <strong><font color='red'>" + dangerous + " dangerous signatures</font> previously approved which ought not have been.</strong>";
+        }
         return message;
     }
 

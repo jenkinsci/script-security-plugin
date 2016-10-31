@@ -646,6 +646,17 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
+    public synchronized String[] getDangerousApprovedSignatures() {
+        List<String> dangerous = new ArrayList<String>();
+        for (String sig : approvedSignatures) {
+            if (StaticWhitelist.isBlacklisted(sig)) {
+                dangerous.add(sig);
+            }
+        }
+        return dangerous.toArray(new String[dangerous.size()]);
+    }
+
+    @Restricted(NoExternalUse.class) // Jelly, implementation
     public synchronized String[] getAclApprovedSignatures() {
         return aclApprovedSignatures.toArray(new String[aclApprovedSignatures.size()]);
     }
@@ -659,7 +670,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             ScriptApproval instance = ScriptApproval.get();
             synchronized (instance) {
                 reset(Collections.singleton(new AclAwareWhitelist(new StaticWhitelist(instance.approvedSignatures), new StaticWhitelist(instance.aclApprovedSignatures))));
-                return new String[][] {instance.getApprovedSignatures(), instance.getAclApprovedSignatures()};
+                return new String[][] {instance.getApprovedSignatures(), instance.getAclApprovedSignatures(), instance.getDangerousApprovedSignatures()};
             }
         }
     }
@@ -763,7 +774,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (awl != null) {
             return awl.reconfigure();
         } else {
-            return new String[][] {new String[0], new String[0]};
+            return new String[][] {new String[0], new String[0], new String[0]};
         }
     }
 

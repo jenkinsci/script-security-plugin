@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
@@ -208,8 +209,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
                 }
             }
             try {
-                c.getDeclaredMethod(method, types(argumentTypes));
-                return true;
+                return !Modifier.isStatic(c.getDeclaredMethod(method, types(argumentTypes)).getModifiers());
             } catch (NoSuchMethodException x) {
                 return false;
             }
@@ -222,6 +222,13 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override public String toString() {
             return "staticMethod " + signaturePart();
+        }
+        @Override boolean exists() throws Exception {
+            try {
+                return Modifier.isStatic(type(receiverType).getDeclaredMethod(method, types(argumentTypes)).getModifiers());
+            } catch (NoSuchMethodException x) {
+                return false;
+            }
         }
     }
 
