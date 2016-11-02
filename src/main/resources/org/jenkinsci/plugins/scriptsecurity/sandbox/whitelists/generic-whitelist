@@ -48,6 +48,7 @@ method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Enum name
 method java.lang.Enum ordinal
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
+staticMethod java.lang.Integer parseInt java.lang.String
 method java.lang.Number byteValue
 method java.lang.Number doubleValue
 method java.lang.Number floatValue
