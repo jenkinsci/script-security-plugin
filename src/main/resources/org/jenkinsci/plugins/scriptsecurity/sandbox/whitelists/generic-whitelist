@@ -142,6 +142,16 @@ method java.util.Map$Entry getKey
 method java.util.Map$Entry getValue
 staticMethod java.util.Objects requireNonNull java.lang.Object
 staticMethod java.util.Objects requireNonNull java.lang.Object java.lang.String
+new java.util.Random
+new java.util.Random long
+method java.util.Random nextBoolean
+method java.util.Random nextBytes byte[]
+method java.util.Random nextDouble
+method java.util.Random nextFloat
+method java.util.Random nextGaussian
+method java.util.Random nextInt
+method java.util.Random nextInt int
+method java.util.Random nextLong
 staticMethod java.util.TimeZone getTimeZone java.lang.String
 staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
