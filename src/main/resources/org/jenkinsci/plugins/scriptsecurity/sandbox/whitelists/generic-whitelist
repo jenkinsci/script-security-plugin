@@ -16,6 +16,8 @@ staticMethod groovy.json.JsonOutput toJson java.util.Map
 staticMethod groovy.json.JsonOutput toJson java.util.UUID
 new groovy.json.JsonSlurper
 method groovy.json.JsonSlurper parseText java.lang.String
+new groovy.json.JsonSlurperClassic
+method groovy.json.JsonSlurperClassic parseText java.lang.String
 
 method groovy.lang.Binding hasVariable java.lang.String
 staticField groovy.lang.Closure DELEGATE_FIRST
@@ -107,6 +109,7 @@ method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
 method java.util.Collection isEmpty
 method java.util.Collection size
+new java.util.Date
 new java.util.Date long
 method java.util.Iterator hasNext
 method java.util.Iterator next
