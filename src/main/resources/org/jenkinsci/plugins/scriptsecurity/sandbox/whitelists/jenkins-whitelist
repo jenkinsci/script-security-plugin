@@ -4,6 +4,11 @@ method hudson.model.AbstractBuild getEnvironments
 staticMethod hudson.model.Environment create hudson.EnvVars
 method hudson.model.Item getParent
 method hudson.model.ModelObject getDisplayName
+staticField hudson.model.Result ABORTED
+staticField hudson.model.Result FAILURE
+staticField hudson.model.Result NOT_BUILT
+staticField hudson.model.Result SUCCESS
+staticField hudson.model.Result UNSTABLE
 method hudson.model.Run getFullDisplayName
 method hudson.model.User getFullName
 method hudson.model.User getId
