@@ -24,28 +24,22 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import com.gargoylesoftware.htmlunit.html.DomElement;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import org.apache.commons.io.FileUtils;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
-import com.gargoylesoftware.htmlunit.ConfirmHandler;
-import com.gargoylesoftware.htmlunit.Page;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import hudson.Util;
+import org.jvnet.hudson.test.recipes.LocalData;
+import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.security.SecureRandom;
-import java.util.TreeSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.jvnet.hudson.test.WithoutJenkins;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
     private static final String CLEAR_ALL_ID = "approvedScripts-clear";
@@ -55,6 +49,29 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Test public void emptyScript() throws Exception {
         configureSecurity();
         script("").use();
+    }
+
+    @Test @LocalData public void dangerousApprovedSignatures() {
+        String[] dangerousSignatures = ScriptApproval.get().getDangerousApprovedSignatures();
+        assertEquals(1, dangerousSignatures.length);
+    }
+
+    @Test @LocalData public void dangerousApprovedWarnings() throws IOException, SAXException {
+        JenkinsRule.WebClient wc = r.createWebClient();
+        HtmlPage managePage = wc.goTo("manage");
+
+        List<?> scriptApprovalLinks = managePage.getByXPath("//a[@href='scriptApproval']");
+        assertEquals(2, scriptApprovalLinks.size()); // the icon link and the textual link
+
+        String managePageBodyText = managePage.getBody().getTextContent();
+        assertThat(managePageBodyText, Matchers.containsString("1 dangerous signatures previously approved which ought not have been."));
+
+        HtmlPage scriptApprovalPage = managePage.getAnchorByHref("scriptApproval").click();
+        HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
+        HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
+
+        assertThat(approvedTextArea.getTextContent(), Matchers.containsString("staticMethod hudson.model.User current"));
+        assertThat(dangerousTextArea.getTextContent(), Matchers.containsString("staticMethod hudson.model.User current"));
     }
 
     private Script script(String groovy) {
