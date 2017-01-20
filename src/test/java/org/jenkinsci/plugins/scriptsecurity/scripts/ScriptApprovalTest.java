@@ -46,6 +46,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     private static final AtomicLong COUNTER = new AtomicLong(0L);
 
+    private static final String DANGEROUR_SIGNATURE = "staticMethod hudson.model.User current";
+
     @Test public void emptyScript() throws Exception {
         configureSecurity();
         script("").use();
@@ -70,8 +72,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
         HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
 
-        assertThat(approvedTextArea.getTextContent(), Matchers.containsString("staticMethod hudson.model.User current"));
-        assertThat(dangerousTextArea.getTextContent(), Matchers.containsString("staticMethod hudson.model.User current"));
+        assertThat(approvedTextArea.getTextContent(), Matchers.containsString(DANGEROUR_SIGNATURE));
+        assertThat(dangerousTextArea.getTextContent(), Matchers.containsString(DANGEROUR_SIGNATURE));
     }
 
     private Script script(String groovy) {
