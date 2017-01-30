@@ -80,6 +80,8 @@ method java.lang.String trim
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getMessage
 new java.net.URL java.lang.String
+staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
+staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticField java.util.Calendar AM_PM
 staticField java.util.Calendar DATE
