@@ -64,6 +64,7 @@ method java.lang.String endsWith java.lang.String
 method java.lang.String indexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String matches java.lang.String
+method java.lang.String find java.lang.String
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
