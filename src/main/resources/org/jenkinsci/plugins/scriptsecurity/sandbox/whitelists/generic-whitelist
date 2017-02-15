@@ -61,7 +61,6 @@ method java.lang.Object getClass
 method java.lang.Object toString
 method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
-method java.lang.String find java.lang.String
 method java.lang.String indexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String matches java.lang.String
@@ -255,3 +254,7 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.la
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter isCase java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
