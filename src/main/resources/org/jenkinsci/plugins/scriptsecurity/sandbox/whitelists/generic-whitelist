@@ -159,6 +159,9 @@ staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
 method java.util.regex.Matcher replaceAll java.lang.String
 method java.util.regex.Matcher replaceFirst java.lang.String
+method net.sf.json.JSON isArray
+method net.sf.json.JSON size
+
 
 # More Groovy:
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
