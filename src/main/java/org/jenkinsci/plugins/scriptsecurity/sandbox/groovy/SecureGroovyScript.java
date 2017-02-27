@@ -145,6 +145,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
+        URLClassLoader urlcl = null;
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
             List<URL> urlList = new ArrayList<URL>(cp.size());
@@ -154,18 +155,24 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 urlList.add(entry.getURL());
             }
             
-            loader = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
+            loader = urlcl = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
-        loader = GroovySandbox.createSecureClassLoader(loader);
-        if (sandbox) {
-            GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
-            try {
-                return GroovySandbox.run(shell.parse(script), Whitelist.all());
-            } catch (RejectedAccessException x) {
-                throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
+        try {
+            loader = GroovySandbox.createSecureClassLoader(loader);
+            if (sandbox) {
+                GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
+                try {
+                    return GroovySandbox.run(shell.parse(script), Whitelist.all());
+                } catch (RejectedAccessException x) {
+                    throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
+                }
+            } else {
+                return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
             }
-        } else {
-            return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+        } finally {
+            if (urlcl != null) {
+                urlcl.close();
+            }
         }
     }
 
