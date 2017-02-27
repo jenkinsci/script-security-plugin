@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,57 +60,59 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     public final void reset(Collection<? extends Whitelist> delegates) {
-        originalDelegates = delegates;
-        this.delegates.clear();
-        methodSignatures.clear();
-        newSignatures.clear();
-        staticMethodSignatures.clear();
-        fieldSignatures.clear();
-        this.delegates.add(new EnumeratingWhitelist() {
-            @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
-                return methodSignatures;
-            }
-            @Override protected List<EnumeratingWhitelist.NewSignature> newSignatures() {
-                return newSignatures;
-            }
-            @Override protected List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures() {
-                return staticMethodSignatures;
-            }
-            @Override protected List<EnumeratingWhitelist.FieldSignature> fieldSignatures() {
-                return fieldSignatures;
-            }
-            @Override protected List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures() {
-                return staticFieldSignatures;
-            }
-        });
-        for (Whitelist delegate : delegates) {
-            if (delegate instanceof EnumeratingWhitelist) {
-                EnumeratingWhitelist ew = (EnumeratingWhitelist) delegate;
-                methodSignatures.addAll(ew.methodSignatures());
-                newSignatures.addAll(ew.newSignatures());
-                staticMethodSignatures.addAll(ew.staticMethodSignatures());
-                fieldSignatures.addAll(ew.fieldSignatures());
-                staticFieldSignatures.addAll(ew.staticFieldSignatures());
-            } else if (delegate instanceof ProxyWhitelist) {
-                ProxyWhitelist pw = (ProxyWhitelist) delegate;
-                pw.wrappers.put(this, null);
-                for (Whitelist subdelegate : pw.delegates) {
-                    if (subdelegate instanceof EnumeratingWhitelist) {
-                        continue; // this is handled specially
-                    }
-                    this.delegates.add(subdelegate);
+        synchronized (this.delegates) {
+            originalDelegates = delegates;
+            this.delegates.clear();
+            methodSignatures.clear();
+            newSignatures.clear();
+            staticMethodSignatures.clear();
+            fieldSignatures.clear();
+            this.delegates.add(new EnumeratingWhitelist() {
+                @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
+                    return methodSignatures;
                 }
-                methodSignatures.addAll(pw.methodSignatures);
-                newSignatures.addAll(pw.newSignatures);
-                staticMethodSignatures.addAll(pw.staticMethodSignatures);
-                fieldSignatures.addAll(pw.fieldSignatures);
-                staticFieldSignatures.addAll(pw.staticFieldSignatures);
-            } else {
-                this.delegates.add(delegate);
+                @Override protected List<EnumeratingWhitelist.NewSignature> newSignatures() {
+                    return newSignatures;
+                }
+                @Override protected List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures() {
+                    return staticMethodSignatures;
+                }
+                @Override protected List<EnumeratingWhitelist.FieldSignature> fieldSignatures() {
+                    return fieldSignatures;
+                }
+                @Override protected List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures() {
+                    return staticFieldSignatures;
+                }
+            });
+            for (Whitelist delegate : delegates) {
+                if (delegate instanceof EnumeratingWhitelist) {
+                    EnumeratingWhitelist ew = (EnumeratingWhitelist) delegate;
+                    methodSignatures.addAll(ew.methodSignatures());
+                    newSignatures.addAll(ew.newSignatures());
+                    staticMethodSignatures.addAll(ew.staticMethodSignatures());
+                    fieldSignatures.addAll(ew.fieldSignatures());
+                    staticFieldSignatures.addAll(ew.staticFieldSignatures());
+                } else if (delegate instanceof ProxyWhitelist) {
+                    ProxyWhitelist pw = (ProxyWhitelist) delegate;
+                    pw.wrappers.put(this, null);
+                    for (Whitelist subdelegate : pw.delegates) {
+                        if (subdelegate instanceof EnumeratingWhitelist) {
+                            continue; // this is handled specially
+                        }
+                        this.delegates.add(subdelegate);
+                    }
+                    methodSignatures.addAll(pw.methodSignatures);
+                    newSignatures.addAll(pw.newSignatures);
+                    staticMethodSignatures.addAll(pw.staticMethodSignatures);
+                    fieldSignatures.addAll(pw.fieldSignatures);
+                    staticFieldSignatures.addAll(pw.staticFieldSignatures);
+                } else {
+                    this.delegates.add(delegate);
+                }
             }
-        }
-        for (ProxyWhitelist pw : wrappers.keySet()) {
-            pw.reset();
+            for (ProxyWhitelist pw : wrappers.keySet()) {
+                pw.reset();
+            }
         }
     }
 
@@ -118,63 +121,77 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsMethod(method, receiver, args)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsMethod(method, receiver, args)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsConstructor(constructor, args)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsConstructor(constructor, args)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsStaticMethod(method, args)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsStaticMethod(method, args)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsFieldGet(field, receiver)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsFieldGet(field, receiver)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsFieldSet(field, receiver, value)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsFieldSet(field, receiver, value)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsStaticFieldGet(field)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsStaticFieldGet(field)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
-        for (Whitelist delegate : delegates) {
-            if (delegate.permitsStaticFieldSet(field, value)) {
-                return true;
+        synchronized (this.delegates) {
+            for (Whitelist delegate : delegates) {
+                if (delegate.permitsStaticFieldSet(field, value)) {
+                    return true;
+                }
             }
         }
         return false;
