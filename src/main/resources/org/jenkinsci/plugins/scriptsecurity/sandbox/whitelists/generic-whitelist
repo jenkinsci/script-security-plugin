@@ -216,6 +216,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Obj
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Collection java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Map java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String
@@ -250,6 +251,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection java.util.Comparator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
