@@ -62,19 +62,19 @@ import org.kohsuke.stapler.StaplerRequest;
  * Use {@code <f:property field="…"/>} to configure it from Jelly.
  */
 public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> {
-
-    private final String script;
+ 
+    private final @Nonnull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
 
-    @DataBoundConstructor public SecureGroovyScript(String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
+    @DataBoundConstructor public SecureGroovyScript(@Nonnull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
     }
 
-    @Deprecated public SecureGroovyScript(String script, boolean sandbox) {
+    @Deprecated public SecureGroovyScript(@Nonnull String script, boolean sandbox) {
         this(script, sandbox, null);
     }
 
@@ -83,7 +83,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return this;
     }
 
-    public String getScript() {
+    public @Nonnull String getScript() {
         return script;
     }
 
