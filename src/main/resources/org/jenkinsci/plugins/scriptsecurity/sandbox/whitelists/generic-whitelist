@@ -252,6 +252,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection java.util.Comparator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String
