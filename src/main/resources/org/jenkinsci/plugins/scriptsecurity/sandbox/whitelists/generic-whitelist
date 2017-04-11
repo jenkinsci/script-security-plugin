@@ -267,6 +267,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList double[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList float[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList int[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Enumeration
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Iterator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList long[]
