@@ -328,7 +328,6 @@ public class SandboxInterceptorTest {
         assertRejected(new AnnotatedWhitelist(), "staticMethod " + clazz + " explode", "C.m(); class C {static void m() {" + clazz + ".explode();}}");
     }
 
-    @Ignore("TODO RejectedAccessException: unclassified new C java.util.LinkedHashMap")
     @Issue("JENKINS-34741")
     @Test public void structConstructor() throws Exception {
         assertEvaluate(new StaticWhitelist(), "ok", "class C {String f}; new C(f: 'ok').f");

@@ -31,6 +31,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -163,6 +164,18 @@ class GroovyCallSiteSelector {
                 return c;
             }
         }
+
+        // Only check for the magic Map constructor if we haven't already found a real constructor.
+        // Also note that this logic is derived from how Groovy itself decides to use the magic Map constructor, at
+        // MetaClassImpl#invokeConstructor(Class, Object[]).
+        if (args.length == 1 && args[0] instanceof Map) {
+            for (Constructor<?> c : receiver.getDeclaredConstructors()) {
+                if (c.getParameterTypes().length == 0 && !c.isVarArgs()) {
+                    return c;
+                }
+            }
+        }
+
         return null;
     }
 
