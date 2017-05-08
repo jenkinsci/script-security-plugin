@@ -184,8 +184,7 @@ method java.util.regex.Matcher replaceAll java.lang.String
 method java.util.regex.Matcher replaceFirst java.lang.String
 method net.sf.json.JSON isArray
 method net.sf.json.JSON size
-method java.text.Format format java.lang.Object
-new java.text.SimpleDateFormat java.lang.String
+
 
 # More Groovy:
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
