@@ -80,6 +80,7 @@ method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
 method java.lang.String replaceFirst java.lang.String java.lang.String
 method java.lang.String split java.lang.String
+method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
 method java.lang.String substring int
 method java.lang.String substring int int

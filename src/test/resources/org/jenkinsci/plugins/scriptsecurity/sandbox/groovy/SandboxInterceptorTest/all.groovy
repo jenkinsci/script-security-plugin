@@ -26,6 +26,13 @@ assert arr == [0];
 assert true in [true, false];
 (1..3).each {};
 [1..3]*.toString();
+
+// convert env variable to docker env parameters
+assert "test=test -e test2=test2" == ["test=test","test2=test2"].inject([]) { result, entry ->
+  def entryArray = entry.split("=", 2)
+  result << "${entryArray[0].toString()}=${entryArray[1].toString()}"
+}.join(' -e ')
+
 assert 42 as String == "42"
 assert 0 == [1:0][1];
 
