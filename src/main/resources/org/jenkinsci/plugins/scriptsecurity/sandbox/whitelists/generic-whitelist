@@ -88,6 +88,8 @@ method java.lang.String toLowerCase java.util.Locale
 method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
+staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
+staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String valueOf java.lang.Object
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getMessage
