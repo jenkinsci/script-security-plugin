@@ -124,6 +124,7 @@ method java.util.Collection add java.lang.Object
 method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
 method java.util.Collection isEmpty
+method java.util.Collection removeAll java.util.Collection
 method java.util.Collection size
 staticMethod java.util.Collections sort java.util.List java.util.Comparator
 new java.util.Date
