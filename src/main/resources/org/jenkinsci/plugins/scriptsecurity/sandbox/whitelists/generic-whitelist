@@ -95,6 +95,8 @@ new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
+method java.text.Format format java.lang.Object
+new java.text.SimpleDateFormat java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticField java.util.Calendar AM_PM
