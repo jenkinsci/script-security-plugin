@@ -299,3 +299,11 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.Char
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Iterable java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Collection java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Iterator java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.List java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Map java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Set java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.SortedSet java.lang.Object groovy.lang.Closure
