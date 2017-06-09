@@ -20,7 +20,6 @@ method groovy.json.JsonSlurper parseText java.lang.String
 method groovy.lang.Binding hasVariable java.lang.String
 staticField groovy.lang.Closure DELEGATE_FIRST
 staticField groovy.lang.Closure DELEGATE_ONLY
-staticField groovy.lang.Closure DONE
 staticField groovy.lang.Closure OWNER_FIRST
 staticField groovy.lang.Closure OWNER_ONLY
 staticField groovy.lang.Closure TO_SELF
@@ -29,19 +28,13 @@ method groovy.lang.Closure call java.lang.Object[]
 method groovy.lang.Closure curry java.lang.Object
 method groovy.lang.Closure curry java.lang.Object[]
 method groovy.lang.Closure getDelegate
-method groovy.lang.Closure getDirective
-method groovy.lang.Closure getMaximumNumberOfParameters
 method groovy.lang.Closure getResolveStrategy
 method groovy.lang.Closure ncurry int java.lang.Object
 method groovy.lang.Closure ncurry int java.lang.Object[]
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
-staticMethod groovy.lang.ListWithDefault newInstance java.util.List boolean groovy.lang.Closure
-staticMethod groovy.lang.MapWithDefault newInstance java.util.Map groovy.lang.Closure
 method groovy.lang.Script getBinding
-staticMethod groovy.util.GroovyCollections combinations java.util.Collection
-new groovy.util.PermutationGenerator java.util.Collection
 
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
@@ -57,9 +50,6 @@ staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
 method java.lang.Class getName
-method java.lang.Class getSimpleName
-method java.lang.Class isArray
-method java.lang.Class isInstance java.lang.Object
 method java.lang.Comparable compareTo java.lang.Object
 method java.lang.Enum name
 method java.lang.Enum ordinal
@@ -99,7 +89,6 @@ method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
 staticMethod java.lang.String valueOf java.lang.Object
-staticMethod java.lang.System arraycopy java.lang.Object int java.lang.Object int int
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getMessage
 new java.net.MalformedURLException java.lang.String
@@ -108,10 +97,7 @@ staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
-new java.util.ArrayList
-new java.util.ArrayList int
 new java.util.ArrayList java.util.Collection
-staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticField java.util.Calendar AM_PM
 staticField java.util.Calendar DATE
@@ -146,8 +132,6 @@ new java.util.Date long
 new java.util.HashSet
 method java.util.Iterator hasNext
 method java.util.Iterator next
-method java.util.Iterator remove
-new java.util.LinkedHashMap
 method java.util.List get int
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
@@ -388,7 +372,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimil
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarCollection java.util.Collection int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarMap java.util.Map
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
-new org.codehaus.groovy.runtime.ReverseListIterator java.util.List
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
@@ -434,7 +417,3 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSe
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpandLine java.lang.CharSequence int
-method org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper call java.lang.Object[]
-method org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper callForMap java.util.Map$Entry
-new org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper groovy.lang.Closure
-new org.codehaus.groovy.util.ArrayIterator java.lang.Object[]
