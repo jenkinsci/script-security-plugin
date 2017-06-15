@@ -214,13 +214,11 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Map java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.regex.Matcher int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Iterable java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object[] java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Collection java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Iterator java.lang.Object groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.List java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Map java.lang.Object groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Set java.lang.Object groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.SortedSet java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isNumber java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.lang.Object[] java.lang.String
