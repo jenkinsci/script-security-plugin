@@ -72,6 +72,8 @@ method java.lang.Object toString
 method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
+staticMethod java.lang.String format java.lang.String java.lang.Object[]
+staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
 method java.lang.String indexOf java.lang.String
 method java.lang.String isEmpty
 method java.lang.String lastIndexOf java.lang.String
@@ -289,6 +291,8 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Coll
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String
