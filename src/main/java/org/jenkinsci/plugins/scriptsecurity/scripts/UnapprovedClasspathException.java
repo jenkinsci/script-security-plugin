@@ -35,10 +35,14 @@ public final class UnapprovedClasspathException extends SecurityException {
     private final URL url;
     private final String hash;
 
-    UnapprovedClasspathException(URL url, String hash) {
-        super(String.format("classpath entry %s (%s) not yet approved for use", url, hash));
+    UnapprovedClasspathException(String format, URL url, String hash) {
+        super(String.format(format, url, hash));
         this.url = url;
         this.hash = hash;
+    }
+
+    UnapprovedClasspathException(URL url, String hash) {
+        this("classpath entry %s (%s) not yet approved for use", url, hash);
     }
 
     public URL getURL() {
