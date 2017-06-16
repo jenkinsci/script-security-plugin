@@ -83,6 +83,7 @@ method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
 method java.lang.String replaceFirst java.lang.String java.lang.String
 method java.lang.String split java.lang.String
+method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
 method java.lang.String substring int
 method java.lang.String substring int int
@@ -270,6 +271,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.util.
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.util.Map java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupEntriesBy java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.lang.Object[] java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Collection groovy.lang.Closure
