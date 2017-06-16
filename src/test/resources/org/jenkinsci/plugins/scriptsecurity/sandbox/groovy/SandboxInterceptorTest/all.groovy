@@ -26,7 +26,6 @@ assert arr == [0];
 assert true in [true, false];
 (1..3).each {};
 [1..3]*.toString();
-
 assert 42 as String == "42"
 assert 0 == [1:0][1];
 
