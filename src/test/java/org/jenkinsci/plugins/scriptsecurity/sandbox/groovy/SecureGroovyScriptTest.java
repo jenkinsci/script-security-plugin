@@ -577,6 +577,8 @@ public class SecureGroovyScriptTest {
         {
             FreeStyleBuild b = p.scheduleBuild2(0).get();
             r.assertBuildStatus(Result.FAILURE, b);
+            r.assertLogNotContains("not yet approved", b);
+            r.assertLogContains("is a class directory, which are not allowed", b);
             assertNotEquals(testingDisplayName, b.getDisplayName());
         }
         
