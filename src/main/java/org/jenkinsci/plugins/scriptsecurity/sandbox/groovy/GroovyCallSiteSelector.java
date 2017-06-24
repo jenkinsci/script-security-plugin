@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.primitives.Primitives;
 import groovy.lang.GString;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -159,17 +160,24 @@ class GroovyCallSiteSelector {
     }
 
     public static @CheckForNull Constructor<?> constructor(@Nonnull Class<?> receiver, @Nonnull Object[] args) {
-        for (Constructor<?> c : receiver.getDeclaredConstructors()) {
+        Constructor<?>[] constructors = receiver.getDeclaredConstructors();
+        Constructor<?> candidate = null;
+        for (Constructor<?> c : constructors) {
             if (matches(c.getParameterTypes(), args, c.isVarArgs())) {
-                return c;
+                if (candidate == null || isMoreSpecific(c, c.getParameterTypes(), c.isVarArgs(), candidate, candidate.getParameterTypes(), candidate.isVarArgs())) {
+                    candidate = c;
+                }
             }
+        }
+        if (candidate != null) {
+            return candidate;
         }
 
         // Only check for the magic Map constructor if we haven't already found a real constructor.
         // Also note that this logic is derived from how Groovy itself decides to use the magic Map constructor, at
         // MetaClassImpl#invokeConstructor(Class, Object[]).
         if (args.length == 1 && args[0] instanceof Map) {
-            for (Constructor<?> c : receiver.getDeclaredConstructors()) {
+            for (Constructor<?> c : constructors) {
                 if (c.getParameterTypes().length == 0 && !c.isVarArgs()) {
                     return c;
                 }
@@ -187,7 +195,7 @@ class GroovyCallSiteSelector {
         Method candidate = null;
         for (Method m : receiver.getDeclaredMethods()) {
             if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, m.isVarArgs()))) {
-                if (candidate == null || isMoreSpecific(m, candidate)) {
+                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), m.isVarArgs(), candidate, candidate.getParameterTypes(), candidate.isVarArgs())) {
                     candidate = m;
                 }
             }
@@ -233,12 +241,10 @@ class GroovyCallSiteSelector {
     }
 
     // TODO nowhere close to implementing http://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.12.2.5
-    private static boolean isMoreSpecific(Method more, Method less) {
-        Class<?>[] moreParams = more.getParameterTypes();
-        Class<?>[] lessParams = less.getParameterTypes();
-        if (less.isVarArgs() && !more.isVarArgs()) {
+    private static boolean isMoreSpecific(AccessibleObject more, Class<?>[] moreParams, boolean moreVarArgs, AccessibleObject less, Class<?>[] lessParams, boolean lessVarArgs) { // TODO clumsy arguments pending Executable in Java 8
+        if (lessVarArgs && !moreVarArgs) {
             return true; // main() vs. main(String...) on []
-        } else if (!less.isVarArgs() && more.isVarArgs()) {
+        } else if (!lessVarArgs && moreVarArgs) {
             return false;
         }
         // TODO what about passing [arg] to log(String...) vs. log(String, String...)?
