@@ -28,6 +28,7 @@ import com.google.common.io.NullOutputStream;
 import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
+import hudson.EnvVars;
 import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -86,6 +87,12 @@ public class GroovyCallSiteSelectorTest {
         Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding());
         assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
         assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
+    }
+
+    @Issue("JENKINS-45117")
+    @Test public void constructorVarargs() throws Exception {
+        assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
+        assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
     }
 
 }
