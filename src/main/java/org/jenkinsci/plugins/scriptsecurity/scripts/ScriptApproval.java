@@ -688,6 +688,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return "scriptApproval";
     }
 
+    @SuppressFBWarnings(value="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification="TODO 1.653+ switch to Jenkins.getInstanceOrNull")
     @CheckForNull
     private XmlFile getConfigFile() {
         final Jenkins jenkins = Jenkins.getInstance();
