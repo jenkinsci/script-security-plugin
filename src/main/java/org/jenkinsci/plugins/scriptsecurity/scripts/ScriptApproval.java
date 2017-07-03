@@ -479,7 +479,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         // - When trying to use them, the job will fail
         // - Going to the configuration page you'll have the validation error in the classpath entry
         if (entry.isClassDirectory()) {
-            LOG.log(Level.WARNING, "{0} is a class directory, which are not allowed. Ignored in configuration, use will be rejected",
+            LOG.log(Level.WARNING, "Classpath {0} is a class directory, which are not allowed. Ignored in configuration, use will be rejected",
                     entry.getURL());
             return;
         }
@@ -561,7 +561,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (!approvedClasspathEntries.contains(new ApprovedClasspathEntry(hash, url))) {
             // Don't add it to pending if it is a class directory
             if (entry.isClassDirectory()) {
-                LOG.log(Level.WARNING, "{0} ({1}) is a class directory, which are not allowed.", new Object[] {url, hash});
+                LOG.log(Level.WARNING, "Classpath {0} ({1}) is a class directory, which are not allowed.", new Object[] {url, hash});
+                throw new UnapprovedClasspathException("classpath entry %s is a class directory, which are not allowed.", url, hash);
             } else {
                 // Never approve classpath here.
                 ApprovalContext context = ApprovalContext.create();
