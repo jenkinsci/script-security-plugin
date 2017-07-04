@@ -31,3 +31,5 @@ field hudson.scm.EditType EDIT
 method hudson.scm.EditType getName
 method hudson.tools.ToolInstallation getHome
 method hudson.tools.ToolInstallation getName
+method org.jenkinsci.plugins.workflow.steps.FlowInterruptedException getCauses
+method org.jenkinsci.plugins.workflow.support.steps.input.Rejection getUser
