@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.ExtensionPoint;
 import java.lang.reflect.Constructor;
@@ -70,6 +71,7 @@ public abstract class Whitelist implements ExtensionPoint {
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.
      * @return an aggregated default list
      */
+    @SuppressFBWarnings(value="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification="TODO 1.653+ switch to Jenkins.getInstanceOrNull")
     public static synchronized @Nonnull Whitelist all() {
         Jenkins j = Jenkins.getInstance();
         if (j == null) {
