@@ -179,6 +179,26 @@ public class SandboxInterceptorTest {
         assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x = 99}; X.x");
         // Test case: field set in static instance initializer.
         assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x; static {x = 99}}; X.x");
+        // Control case: initialization expressions themselves are checked.
+        assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x = jenkins.model.Jenkins.instance}; new X().x");
+        assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x; {x = jenkins.model.Jenkins.instance}}; new X().x");
+        try {
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x = jenkins.model.Jenkins.instance}; X.x"), is((Object) "should be rejected"));
+        } catch (ExceptionInInitializerError x) {
+            errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        try {
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x; static {x = jenkins.model.Jenkins.instance}}; X.x"), is((Object) "should be rejected"));
+        } catch (ExceptionInInitializerError x) {
+            errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        // Control case: when there is no backing field, we should not allow setters to be called.
+        String sps = SafePerSe.class.getName();
+        assertRejected(new StaticWhitelist(), "method " + sps + " setSecure boolean", "class X extends " + sps + " {X() {this.secure = false}}; new X()");
     }
 
     @Test public void propertiesAndGettersAndSetters() throws Exception {
@@ -649,6 +669,7 @@ public class SandboxInterceptorTest {
         @Whitelisted
         public SafePerSe() {}
         public void dangerous() {}
+        public void setSecure(boolean x) {}
     }
 
     @Test public void keywordsAndOperators() throws Exception {
