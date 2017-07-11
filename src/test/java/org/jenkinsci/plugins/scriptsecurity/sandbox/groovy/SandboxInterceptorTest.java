@@ -592,7 +592,7 @@ public class SandboxInterceptorTest {
         final boolean groovy2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2.0")) >= 0;
         try {
             // In 1.8.9 Groovy selects one of these. How, I do not know.
-            assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+            assertEquals(true, evaluate(new AnnotatedWhitelist(), Ambiguity.class.getName() + ".m(null)"));
             assertFalse("Ambiguous overload non-deterministically resolved in Groovy 1", groovy2);
         } catch(GroovyRuntimeException e) {
             assertTrue("Ambiguous overload is an error in Groovy 2", groovy2);
