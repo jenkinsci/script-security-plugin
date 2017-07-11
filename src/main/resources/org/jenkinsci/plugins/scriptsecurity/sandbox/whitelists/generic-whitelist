@@ -3,11 +3,9 @@ staticMethod com.cloudbees.groovy.cps.CpsDefaultGroovyMethods each java.util.Ite
 
 # Groovy:
 staticMethod groovy.json.JsonOutput prettyPrint java.lang.String
-staticMethod groovy.json.JsonOutput toJson groovy.lang.Closure
 staticMethod groovy.json.JsonOutput toJson java.lang.Boolean
 staticMethod groovy.json.JsonOutput toJson java.lang.Character
 staticMethod groovy.json.JsonOutput toJson java.lang.Number
-staticMethod groovy.json.JsonOutput toJson java.lang.Object
 staticMethod groovy.json.JsonOutput toJson java.lang.String
 staticMethod groovy.json.JsonOutput toJson java.net.URL
 staticMethod groovy.json.JsonOutput toJson java.util.Calendar
@@ -257,7 +255,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResult java.ut
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResults java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResults java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.Collection groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String int
@@ -315,7 +312,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Map java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.Map java.util.Collection
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Map java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeAll java.util.Collection groovy.lang.Closure

@@ -676,7 +676,7 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.instance");
     }
 
-    private static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
+    public static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
         if (actual instanceof GString) {
@@ -690,7 +690,7 @@ public class SandboxInterceptorTest {
         assertEquals("control case", expected, actual);
     }
 
-    private static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
+    public static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
         try {
             assertEvaluate(whitelist, "should be rejected", script);
         } catch (RejectedAccessException x) {

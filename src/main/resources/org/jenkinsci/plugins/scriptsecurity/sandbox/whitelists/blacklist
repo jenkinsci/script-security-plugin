@@ -1,3 +1,7 @@
+# SECURITY-538
+staticMethod groovy.json.JsonOutput toJson groovy.lang.Closure
+staticMethod groovy.json.JsonOutput toJson java.lang.Object
+
 # Reflective access to Groovy is too open-ended. Approve only specific GroovyObject subclass methods.
 method groovy.lang.GroovyObject getMetaClass
 method groovy.lang.GroovyObject getProperty java.lang.String
@@ -84,6 +88,12 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.lang.
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.lang.String[] java.io.File
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods execute java.util.List java.util.List java.io.File
+
+# SECURITY-538
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getMetaPropertyValues java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getProperties java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object
 
 # TODO do we need a @Blacklisted annotation?
 method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
