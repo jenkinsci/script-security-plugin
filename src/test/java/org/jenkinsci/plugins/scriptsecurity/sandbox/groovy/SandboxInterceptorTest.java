@@ -160,6 +160,27 @@ public class SandboxInterceptorTest {
         assertTrue(Clazz.flag);
     }
 
+    @Ignore("TODO groovy.lang.ReadOnlyPropertyException: Cannot set readonly property: x for class: X")
+    @Issue("JENKINS-34599")
+    @Test public void finalFields() throws Exception {
+        // Control cases: non-final fields.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x = 99}; new X().x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x; X(int x) {this.x = x}}; new X(99).x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x; {this.x = 99}}; new X().x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static int x = 99}; X.x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static int x; static {x = 99}}; X.x");
+        // Control case: field set in initialization expression.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x = 99}; new X().x");
+        // Test case: field set in constructor.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x; X(int x) {this.x = x}}; new X(99).x");
+        // Test case: field set in instance initializer.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x; {this.x = 99}}; new X().x");
+        // Control case: field set in static initialization expression.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x = 99}; X.x");
+        // Test case: field set in static instance initializer.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x; static {x = 99}}; X.x");
+    }
+
     @Test public void propertiesAndGettersAndSetters() throws Exception {
         String clazz = Clazz.class.getName();
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop"), "default", "new " + clazz + "().prop");
