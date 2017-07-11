@@ -640,6 +640,17 @@ public class SandboxInterceptorTest {
         );
     }
 
+    @Test public void superCalls() throws Exception {
+        String sps = SafePerSe.class.getName();
+        assertRejected(new StaticWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void dangerous() {super.dangerous()}}; new C().dangerous()");
+        assertRejected(new StaticWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void x() {super.dangerous()}}; new C().x()");
+    }
+    public static class SafePerSe {
+        @Whitelisted
+        public SafePerSe() {}
+        public void dangerous() {}
+    }
+
     @Test public void keywordsAndOperators() throws Exception {
         String script = IOUtils.toString(this.getClass().getResourceAsStream("SandboxInterceptorTest/all.groovy"));
         assertEvaluate(new GenericWhitelist(), null, script);
