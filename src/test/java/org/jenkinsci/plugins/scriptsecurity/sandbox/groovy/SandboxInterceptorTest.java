@@ -24,10 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
 import groovy.lang.GString;
@@ -60,6 +56,7 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import static org.hamcrest.Matchers.is;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist;
@@ -69,11 +66,16 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import static org.junit.Assert.*;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.jvnet.hudson.test.Issue;
 
 public class SandboxInterceptorTest {
+
+    @Rule public ErrorCollector errors = new ErrorCollector();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -132,7 +134,8 @@ public class SandboxInterceptorTest {
 //                "method groovy.json.JsonBuilder invokeMethod java.lang.String java.lang.Object"
         )), expected, script);
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "class Real {}; def real = new Real(); real.nonexistent(42)");
+            evaluate(new ProxyWhitelist(), "class Real {}; def real = new Real(); real.nonexistent(42)");
+            fail();
         } catch (RejectedAccessException x) {
             String message = x.getMessage();
             assertEquals(message, "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object", x.getSignature());
@@ -176,13 +179,15 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("staticMethod " + clazz + " isProp4"), true, clazz + ".prop4");
         assertRejected(new StaticWhitelist(), "staticMethod " + clazz + " isProp4", clazz + ".prop4");
         try {
-            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent");
+            evaluate(new StaticWhitelist("new " + clazz), "new " + clazz + "().nonexistent");
+            fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
         }
         try {
-            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent = 'edited'");
+            evaluate(new StaticWhitelist("new " + clazz), "new " + clazz + "().nonexistent = 'edited'");
+            fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
@@ -351,17 +356,20 @@ public class SandboxInterceptorTest {
     @Issue("kohsuke/groovy-sandbox #15")
     @Test public void nullPointerException() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot get property 'member' on null object", x.getMessage());
         }
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member = 42");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member = 42");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot set property 'member' on null object", x.getMessage());
         }
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member()");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member()");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot invoke method member() on null object", x.getMessage());
         }
@@ -511,7 +519,8 @@ public class SandboxInterceptorTest {
 
     @Test public void missingPropertyException() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "should fail", "GOOP");
+            evaluate(new ProxyWhitelist(), "GOOP");
+            fail();
         } catch (MissingPropertyException x) {
             assertEquals("GOOP", x.getProperty());
         }
@@ -550,7 +559,8 @@ public class SandboxInterceptorTest {
     @Issue("JENKINS-25118")
     @Test public void primitiveTypes() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.charAt(1);");
+            evaluate(new ProxyWhitelist(), "'123'.charAt(1);");
+            fail();
         } catch (RejectedAccessException x) {
             assertNotNull(x.toString(), x.getSignature());
         }
@@ -676,25 +686,49 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.instance");
     }
 
-    public static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
-        final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+    private static Object evaluate(Whitelist whitelist, String script) {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
-        assertEquals(expected, actual);
-        actual = new GroovyShell().evaluate(script);
-        if (actual instanceof GString) {
-            actual = actual.toString();
-        }
-        assertEquals("control case", expected, actual);
+        return actual;
     }
 
-    public static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
+    private void assertEvaluate(Whitelist whitelist, Object expected, String script) {
+        assertEvaluate(whitelist, expected, script, errors);
+    }
+
+    public static void assertEvaluate(Whitelist whitelist, Object expected, String script, ErrorCollector errors) {
         try {
-            assertEvaluate(whitelist, "should be rejected", script);
+            Object actual = evaluate(whitelist, script);
+            errors.checkThat(actual, is(expected));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        try {
+            Object actual = new GroovyShell().evaluate(script);
+            if (actual instanceof GString) {
+                actual = actual.toString();
+            }
+            errors.checkThat("control case", actual, is(expected));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+    }
+
+    private void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
+        assertRejected(whitelist, expectedSignature, script, errors);
+    }
+
+    public static void assertRejected(Whitelist whitelist, String expectedSignature, String script, ErrorCollector errors) {
+        try {
+            Object actual = evaluate(whitelist, script);
+            errors.checkThat(actual, is((Object) "should be rejected"));
         } catch (RejectedAccessException x) {
-            assertEquals(x.getMessage(), expectedSignature, x.getSignature());
+            errors.checkThat(x.getMessage(), x.getSignature(), is(expectedSignature));
+        } catch (Throwable t) {
+            errors.addError(t);
         }
     }
 
