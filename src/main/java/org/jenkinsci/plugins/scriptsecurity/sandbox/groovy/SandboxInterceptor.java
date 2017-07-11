@@ -363,6 +363,18 @@ final class SandboxInterceptor extends GroovyInterceptor {
         throw rejector != null ? rejector.reject() : unclassifiedField(receiver, property);
     }
 
+    @Override
+    public Object onSuperCall(Invoker invoker, Class senderType, Object receiver, String method, Object... args) throws Throwable {
+        Method m = GroovyCallSiteSelector.method(receiver, method, args);
+        if (m == null) {
+            throw new RejectedAccessException("unclassified super.method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+        } else if (whitelist.permitsMethod(m, receiver, args)) {
+            return super.onSuperCall(invoker, senderType, receiver, method, args);
+        } else {
+            throw StaticWhitelist.rejectMethod(m);
+        }
+    }
+
     private static RejectedAccessException unclassifiedField(Object receiver, String property) {
         return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
     }
