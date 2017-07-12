@@ -160,7 +160,6 @@ public class SandboxInterceptorTest {
         assertTrue(Clazz.flag);
     }
 
-    @Ignore("TODO groovy.lang.ReadOnlyPropertyException: Cannot set readonly property: x for class: X")
     @Issue("JENKINS-34599")
     @Test public void finalFields() throws Exception {
         // Control cases: non-final fields.
