@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
+import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.Functions;
@@ -110,7 +111,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return super.onMethodCall(invoker, receiver, method, args);
             }
 
-            throw new RejectedAccessException("unclassified method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+            // no such method exists
+            throw new MissingMethodException(method, receiver.getClass(), args);
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else if (method.equals("invokeMethod") && args.length == 2 && args[0] instanceof String && args[1] instanceof Object[]) {
