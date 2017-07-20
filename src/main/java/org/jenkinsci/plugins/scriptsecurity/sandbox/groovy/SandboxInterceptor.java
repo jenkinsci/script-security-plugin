@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.google.common.collect.ImmutableSet;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
@@ -34,6 +35,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
@@ -46,6 +48,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.typehandling.NumberMathModificationInfo;
 import org.codehaus.groovy.tools.DgmConverter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -75,10 +78,13 @@ final class SandboxInterceptor extends GroovyInterceptor {
         ProcessGroovyMethods.class,
     };
 
+    /** @see NumberMathModificationInfo */
+    private static final Set<String> NUMBER_MATH_NAMES = ImmutableSet.of("plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
-            if (receiver instanceof Number || (receiver instanceof String && method.equals("plus"))) {
+            if (receiver instanceof Number && NUMBER_MATH_NAMES.contains(method)) {
                 // Synthetic methods like Integer.plus(Integer).
                 return super.onMethodCall(invoker, receiver, method, args);
             }
