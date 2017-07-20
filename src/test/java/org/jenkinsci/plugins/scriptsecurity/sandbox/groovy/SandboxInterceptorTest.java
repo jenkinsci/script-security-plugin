@@ -191,7 +191,7 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp5", "new " + clazz + "().prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "DEFAULT", "new " + clazz + "().prop5");
         assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "method " + clazz + " setProp5 java.lang.String", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5");
-        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "method " + clazz + " setProp5 java.lang.String", "method " + clazz + " rawProp5"), "EDITEDedited", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5 + c.rawProp5()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "method " + clazz + " setProp5 java.lang.String", "method " + clazz + " rawProp5", "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object"), "EDITEDedited", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5 + c.rawProp5()");
         assertRejected(new StaticWhitelist("new " + clazz), "field " + clazz + " prop5", "new " + clazz + "().@prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop5"), "default", "new " + clazz + "().@prop5");
         assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "field " + clazz + " prop5", "def c = new " + clazz + "(); c.@prop5 = 'edited'; c.prop5");
