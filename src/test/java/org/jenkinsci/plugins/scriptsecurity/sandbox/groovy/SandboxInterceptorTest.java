@@ -793,22 +793,20 @@ public class SandboxInterceptorTest {
     @Test public void methodMissingException() throws Exception {
         // the case where the unsafe receiver type causes the security check to fail
         try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "[].noSuchMethod()");
+            evaluate(new GenericWhitelist(), "[].noSuchMethod()");
+            fail();
         } catch (MissingMethodException e) {
             assertEquals(e.getType(),ArrayList.class);
             assertThat(e.getMethod(),is("noSuchMethod"));
         }
 
         // trying to call an existing method that's not safe
-        try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "[].class.classLoader");
-        } catch (RejectedAccessException e) {
-            assertEquals("method java.lang.Class getClassLoader", e.getSignature());
-        }
+        assertRejected(new GenericWhitelist(), "method java.lang.Class getClassLoader", "[].class.classLoader");
 
         // the case where the safe receiver type causes the security check to pass
         try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "1.noSuchMethod()");
+            evaluate(new GenericWhitelist(), "1.noSuchMethod()");
+            fail();
         } catch (MissingMethodException e) {
             assertEquals(e.getType(),Integer.class);
             assertThat(e.getMethod(),is("noSuchMethod"));
