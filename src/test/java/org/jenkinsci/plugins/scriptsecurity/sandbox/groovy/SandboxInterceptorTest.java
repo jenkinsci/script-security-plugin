@@ -33,6 +33,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
+import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
@@ -43,6 +44,7 @@ import hudson.util.IOUtils;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -72,6 +74,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.jvnet.hudson.test.Issue;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 public class SandboxInterceptorTest {
 
@@ -784,4 +789,29 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("JENKINS-37129")
+    @Test public void methodMissingException() throws Exception {
+        // the case where the unsafe receiver type causes the security check to fail
+        try {
+            assertEvaluate(new GenericWhitelist(), "should fail", "[].noSuchMethod()");
+        } catch (MissingMethodException e) {
+            assertEquals(e.getType(),ArrayList.class);
+            assertThat(e.getMethod(),is("noSuchMethod"));
+        }
+
+        // trying to call an existing method that's not safe
+        try {
+            assertEvaluate(new GenericWhitelist(), "should fail", "[].class.classLoader");
+        } catch (RejectedAccessException e) {
+            assertEquals("method java.lang.Class getClassLoader", e.getSignature());
+        }
+
+        // the case where the safe receiver type causes the security check to pass
+        try {
+            assertEvaluate(new GenericWhitelist(), "should fail", "1.noSuchMethod()");
+        } catch (MissingMethodException e) {
+            assertEquals(e.getType(),Integer.class);
+            assertThat(e.getMethod(),is("noSuchMethod"));
+        }
+    }
 }
