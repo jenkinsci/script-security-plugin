@@ -45,8 +45,6 @@ import javax.annotation.Nonnull;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import groovy.lang.GroovySystem;
-import hudson.util.VersionNumber;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -55,7 +53,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
-    static final boolean GROOVY2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2")) >= 0;
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();

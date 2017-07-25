@@ -182,8 +182,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
-        // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
-        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
             try {
                 new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader).parse(value);

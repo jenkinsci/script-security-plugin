@@ -24,8 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
@@ -34,6 +32,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.Util;
 import hudson.XmlFile;
 import hudson.model.RootAction;
@@ -95,8 +94,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     /** Gets the singleton instance. */
     public static @Nonnull ScriptApproval get() {
-        final Jenkins jenkins = getActiveJenkinsInstance();
-        ScriptApproval instance = jenkins.getExtensionList(RootAction.class).get(ScriptApproval.class);
+        ScriptApproval instance = ExtensionList.lookup(RootAction.class).get(ScriptApproval.class);
         if (instance == null) {
             throw new IllegalStateException("maybe need to rebuild plugin?");
         }
@@ -202,8 +200,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             return hash(script, language);
         }
         public Language getLanguage() {
-            final Jenkins jenkins = getActiveJenkinsInstance();
-            for (Language l : jenkins.getExtensionList(Language.class)) {
+            for (Language l : ExtensionList.lookup(Language.class)) {
                 if (l.getName().equals(language)) {
                     return l;
                 }
@@ -415,9 +412,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      */
     public synchronized String configuring(@Nonnull String script, @Nonnull Language language, @Nonnull ApprovalContext context) {
         final String hash = hash(script, language.getName());
-        final Jenkins jenkins = getActiveJenkinsInstance();
         if (!approvedScriptHashes.contains(hash)) {
-            if (!jenkins.isUseSecurity() || Jenkins.getAuthentication() != ACL.SYSTEM && jenkins.hasPermission(Jenkins.RUN_SCRIPTS)) {
+            if (!Jenkins.getInstance().isUseSecurity() || Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
                 approvedScriptHashes.add(hash);
             } else {
                 String key = context.getKey();
@@ -484,7 +480,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             return;
         }
         //TODO: better error propagation
-        final Jenkins jenkins = getActiveJenkinsInstance();
         URL url = entry.getURL();
         String hash;
         try {
@@ -499,7 +494,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (!approvedClasspathEntries.contains(acp)) {
             boolean shouldSave = false;
             PendingClasspathEntry pcp = new PendingClasspathEntry(hash, url, context);
-            if (!jenkins.isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && jenkins.hasPermission(Jenkins.RUN_SCRIPTS))) {
+            if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
                 LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with RUN_SCRIPTS permission.", new Object[] {url, hash});
                 pendingClasspathEntries.remove(pcp);
                 approvedClasspathEntries.add(acp);
@@ -529,13 +524,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      */
     public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
         //TODO: better error propagation
-        final Jenkins jenkins = getActiveJenkinsInstance();
         if (entry.isClassDirectory()) {
             return FormValidation.error(Messages.ClasspathEntry_path_noDirsAllowed());
         }
         URL url = entry.getURL();
         try {
-            if (!jenkins.hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
                 return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
             } else {
                 return FormValidation.ok();
@@ -587,8 +581,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @param language the language in which it is written
      * @return a warning in case the script is not yet approved and this user lacks {@link Jenkins#RUN_SCRIPTS}, else {@link FormValidation#ok()}
      */
-    // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
     public synchronized FormValidation checking(@Nonnull String script, @Nonnull Language language) {
         if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedScriptHashes.contains(hash(script, language.getName()))) {
             return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used.");
@@ -688,10 +680,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return "scriptApproval";
     }
 
-    @SuppressFBWarnings(value="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification="TODO 1.653+ switch to Jenkins.getInstanceOrNull")
     @CheckForNull
     private XmlFile getConfigFile() {
-        final Jenkins jenkins = Jenkins.getInstance();
+        final Jenkins jenkins = Jenkins.getInstanceOrNull();
         if (jenkins == null) {
             return null;
         }
@@ -721,8 +712,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public void approveScript(String hash) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         synchronized (this) {
             approvedScriptHashes.add(hash);
             removePendingScript(hash);
@@ -730,7 +720,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
         SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
         try {
-            for (ApprovalListener listener : jenkins.getExtensionList(ApprovalListener.class)) {
+            for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                 listener.onApproved(hash);
             }
         } finally {
@@ -740,8 +730,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void denyScript(String hash) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.remove(hash);
         removePendingScript(hash);
         save();
@@ -759,8 +748,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void clearApprovedScripts() throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.clear();
         save();
     }
@@ -771,8 +759,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     // Added to account for new findbugs annotations in ExtensionList#get (PCT scenario)
-    private String[][] reconfigure(@NonNull Jenkins jenkins) throws IOException {
-        final ApprovedWhitelist awl = jenkins.getExtensionList(Whitelist.class).get(ApprovedWhitelist.class);
+    private String[][] reconfigure() throws IOException {
+        final ApprovedWhitelist awl = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
         if (awl != null) {
             return awl.reconfigure();
         } else {
@@ -782,28 +770,25 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] approveSignature(String signature) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         approvedSignatures.add(signature);
         save();
-        return reconfigure(jenkins);
+        return reconfigure();
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] aclApproveSignature(String signature) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         aclApprovedSignatures.add(signature);
         save();
-        return reconfigure(jenkins);
+        return reconfigure();
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void denySignature(String signature) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         save();
     }
@@ -811,13 +796,12 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] clearApprovedSignatures() throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedSignatures.clear();
         aclApprovedSignatures.clear();
         save();
         // Should be [[], []] but still returning it for consistency with approve methods.
-        return reconfigure(jenkins);
+        return reconfigure();
     }
 
     @Restricted(NoExternalUse.class)
@@ -859,8 +843,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON approveClasspathEntry(String hash) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         URL url = null;
         synchronized (this) {
             final PendingClasspathEntry cp = getPendingClasspathEntry(hash);
@@ -874,7 +857,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         if (url != null) {
             SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
             try {
-                for (ApprovalListener listener : jenkins.getExtensionList(ApprovalListener.class)) {
+                for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                     listener.onApprovedClasspathEntry(hash, url);
                 }
             } finally {
@@ -887,8 +870,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON denyClasspathEntry(String hash) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         PendingClasspathEntry cp = getPendingClasspathEntry(hash);
         if (cp != null) {
             pendingClasspathEntries.remove(cp);
@@ -900,8 +882,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON denyApprovedClasspathEntry(String hash) throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         if (approvedClasspathEntries.remove(new ApprovedClasspathEntry(hash, null))) {
             save();
         }
@@ -911,29 +892,10 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public synchronized JSON clearApprovedClasspathEntries() throws IOException {
-        final Jenkins jenkins = getJenkins();
-        jenkins.checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedClasspathEntries.clear();
         save();
         return getClasspathRenderInfo();
     }
 
-    //TODO: Remove once the baseline supports Jenkins.getActiveInstance (1.590+)
-    @Nonnull
-    private static Jenkins getJenkins() throws IOException {
-        final Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IOException("Jenkins instance is not ready");
-        }
-        return jenkins;
-    }
-    
-    @Nonnull
-    private static Jenkins getActiveJenkinsInstance() throws IllegalStateException {
-        final Jenkins jenkins = Jenkins.getInstance();
-        if (jenkins == null) {
-            throw new IllegalStateException("Jenkins instance is not ready");
-        }
-        return jenkins;
-    }
 }

@@ -24,7 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Item;
 import hudson.model.User;
 import hudson.security.ACL;
@@ -91,8 +90,6 @@ public final class ApprovalContext {
     /**
      * Gets any associated item which should be displayed to an administrator.
      */
-    // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
     public @CheckForNull Item getItem() {
         // TODO if getItemByFullName == null, we should removal the approval
         return item != null ? Jenkins.getInstance().getItemByFullName(item) : null;
