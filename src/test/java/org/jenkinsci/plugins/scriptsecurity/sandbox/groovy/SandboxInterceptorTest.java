@@ -58,6 +58,7 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import static org.hamcrest.Matchers.is;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist;
@@ -67,14 +68,16 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.GenericWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import static org.junit.Assert.*;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.jvnet.hudson.test.Issue;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
 public class SandboxInterceptorTest {
+
+    @Rule public ErrorCollector errors = new ErrorCollector();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -133,7 +136,8 @@ public class SandboxInterceptorTest {
 //                "method groovy.json.JsonBuilder invokeMethod java.lang.String java.lang.Object"
         )), expected, script);
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "class Real {}; def real = new Real(); real.nonexistent(42)");
+            evaluate(new ProxyWhitelist(), "class Real {}; def real = new Real(); real.nonexistent(42)");
+            fail();
         } catch (RejectedAccessException x) {
             String message = x.getMessage();
             assertEquals(message, "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object", x.getSignature());
@@ -158,6 +162,46 @@ public class SandboxInterceptorTest {
         assertTrue(Clazz.flag);
     }
 
+    @Issue("JENKINS-34599")
+    @Test public void finalFields() throws Exception {
+        // Control cases: non-final fields.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x = 99}; new X().x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x; X(int x) {this.x = x}}; new X(99).x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {int x; {this.x = 99}}; new X().x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static int x = 99}; X.x");
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static int x; static {x = 99}}; X.x");
+        // Control case: field set in initialization expression.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x = 99}; new X().x");
+        // Test case: field set in constructor.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x; X(int x) {this.x = x}}; new X(99).x");
+        // Test case: field set in instance initializer.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {final int x; {this.x = 99}}; new X().x");
+        // Control case: field set in static initialization expression.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x = 99}; X.x");
+        // Test case: field set in static instance initializer.
+        assertEvaluate(new ProxyWhitelist(), 99, "class X {static final int x; static {x = 99}}; X.x");
+        // Control case: initialization expressions themselves are checked.
+        assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x = jenkins.model.Jenkins.instance}; new X().x");
+        assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x; {x = jenkins.model.Jenkins.instance}}; new X().x");
+        try {
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x = jenkins.model.Jenkins.instance}; X.x"), is((Object) "should be rejected"));
+        } catch (ExceptionInInitializerError x) {
+            errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        try {
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x; static {x = jenkins.model.Jenkins.instance}}; X.x"), is((Object) "should be rejected"));
+        } catch (ExceptionInInitializerError x) {
+            errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        // Control case: when there is no backing field, we should not allow setters to be called.
+        String sps = SafePerSe.class.getName();
+        assertRejected(new StaticWhitelist(), "method " + sps + " setSecure boolean", "class X extends " + sps + " {X() {this.secure = false}}; new X()");
+    }
+
     @Test public void propertiesAndGettersAndSetters() throws Exception {
         String clazz = Clazz.class.getName();
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop"), "default", "new " + clazz + "().prop");
@@ -177,13 +221,15 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("staticMethod " + clazz + " isProp4"), true, clazz + ".prop4");
         assertRejected(new StaticWhitelist(), "staticMethod " + clazz + " isProp4", clazz + ".prop4");
         try {
-            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent");
+            evaluate(new StaticWhitelist("new " + clazz), "new " + clazz + "().nonexistent");
+            fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
         }
         try {
-            assertEvaluate(new StaticWhitelist("new " + clazz), "should be rejected", "new " + clazz + "().nonexistent = 'edited'");
+            evaluate(new StaticWhitelist("new " + clazz), "new " + clazz + "().nonexistent = 'edited'");
+            fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
             assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
@@ -347,17 +393,20 @@ public class SandboxInterceptorTest {
     @Issue("kohsuke/groovy-sandbox #15")
     @Test public void nullPointerException() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot get property 'member' on null object", x.getMessage());
         }
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member = 42");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member = 42");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot set property 'member' on null object", x.getMessage());
         }
         try {
-            assertEvaluate(new ProxyWhitelist(), "should be rejected", "def x = null; x.member()");
+            evaluate(new ProxyWhitelist(), "def x = null; x.member()");
+            fail();
         } catch (NullPointerException x) {
             assertEquals(Functions.printThrowable(x), "Cannot invoke method member() on null object", x.getMessage());
         }
@@ -507,7 +556,8 @@ public class SandboxInterceptorTest {
 
     @Test public void missingPropertyException() throws Exception {
         try {
-            assertEvaluate(new ProxyWhitelist(), "should fail", "GOOP");
+            evaluate(new ProxyWhitelist(), "GOOP");
+            fail();
         } catch (MissingPropertyException x) {
             assertEquals("GOOP", x.getProperty());
         }
@@ -563,7 +613,7 @@ public class SandboxInterceptorTest {
         final boolean groovy2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2.0")) >= 0;
         try {
             // In 1.8.9 Groovy selects one of these. How, I do not know.
-            assertEvaluate(new AnnotatedWhitelist(), true, Ambiguity.class.getName() + ".m(null)");
+            assertEquals(true, evaluate(new AnnotatedWhitelist(), Ambiguity.class.getName() + ".m(null)"));
             assertFalse("Ambiguous overload non-deterministically resolved in Groovy 1", groovy2);
         } catch(GroovyRuntimeException e) {
             assertTrue("Ambiguous overload is an error in Groovy 2", groovy2);
@@ -620,6 +670,7 @@ public class SandboxInterceptorTest {
         @Whitelisted
         public SafePerSe() {}
         public void dangerous() {}
+        public void setSecure(boolean x) {}
     }
 
     @Test public void keywordsAndOperators() throws Exception {
@@ -689,25 +740,49 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.instance");
     }
 
-    public static void assertEvaluate(Whitelist whitelist, final Object expected, final String script) {
-        final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+    private static Object evaluate(Whitelist whitelist, String script) {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         Object actual = GroovySandbox.run(shell.parse(script), whitelist);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
-        assertEquals(expected, actual);
-        actual = new GroovyShell().evaluate(script);
-        if (actual instanceof GString) {
-            actual = actual.toString();
-        }
-        assertEquals("control case", expected, actual);
+        return actual;
     }
 
-    public static void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
+    private void assertEvaluate(Whitelist whitelist, Object expected, String script) {
+        assertEvaluate(whitelist, expected, script, errors);
+    }
+
+    public static void assertEvaluate(Whitelist whitelist, Object expected, String script, ErrorCollector errors) {
         try {
-            assertEvaluate(whitelist, "should be rejected", script);
+            Object actual = evaluate(whitelist, script);
+            errors.checkThat(actual, is(expected));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+        try {
+            Object actual = new GroovyShell().evaluate(script);
+            if (actual instanceof GString) {
+                actual = actual.toString();
+            }
+            errors.checkThat("control case", actual, is(expected));
+        } catch (Throwable t) {
+            errors.addError(t);
+        }
+    }
+
+    private void assertRejected(Whitelist whitelist, String expectedSignature, String script) {
+        assertRejected(whitelist, expectedSignature, script, errors);
+    }
+
+    public static void assertRejected(Whitelist whitelist, String expectedSignature, String script, ErrorCollector errors) {
+        try {
+            Object actual = evaluate(whitelist, script);
+            errors.checkThat(actual, is((Object) "should be rejected"));
         } catch (RejectedAccessException x) {
-            assertEquals(x.getMessage(), expectedSignature, x.getSignature());
+            errors.checkThat(x.getMessage(), x.getSignature(), is(expectedSignature));
+        } catch (Throwable t) {
+            errors.addError(t);
         }
     }
 
@@ -715,17 +790,14 @@ public class SandboxInterceptorTest {
     @Test public void methodMissingException() throws Exception {
         // test: trying to call a nonexistent method
         try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "[].noSuchMethod()");
+            evaluate(new GenericWhitelist(), "[].noSuchMethod()");
+            fail();
         } catch (MissingMethodException e) {
             assertEquals(e.getType(),ArrayList.class);
             assertThat(e.getMethod(),is("noSuchMethod"));
         }
 
         // control: trying to call an existing method that's not safe
-        try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "[].class.classLoader");
-        } catch (RejectedAccessException e) {
-            assertEquals("method java.lang.Class getClassLoader", e.getSignature());
-        }
+        assertRejected(new GenericWhitelist(), "method java.lang.Class getClassLoader", "[].class.classLoader");
     }
 }
