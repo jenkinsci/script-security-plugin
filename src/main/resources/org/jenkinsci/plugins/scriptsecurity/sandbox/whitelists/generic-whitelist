@@ -290,6 +290,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.lang.Obje
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.String java.lang.Number
@@ -310,6 +311,12 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Lis
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.List int java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Map java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Integer java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Long java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Number java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigDecimal java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigInteger java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object

@@ -191,16 +191,11 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp5", "new " + clazz + "().prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "DEFAULT", "new " + clazz + "().prop5");
         assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "method " + clazz + " setProp5 java.lang.String", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5");
-        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "method " + clazz + " setProp5 java.lang.String", "method " + clazz + " rawProp5"), "EDITEDedited", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5 + c.rawProp5()");
+        assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "method " + clazz + " setProp5 java.lang.String", "method " + clazz + " rawProp5", "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.String java.lang.Object"), "EDITEDedited", "def c = new " + clazz + "(); c.prop5 = 'EDITED'; c.prop5 + c.rawProp5()");
         assertRejected(new StaticWhitelist("new " + clazz), "field " + clazz + " prop5", "new " + clazz + "().@prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "field " + clazz + " prop5"), "default", "new " + clazz + "().@prop5");
         assertRejected(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "field " + clazz + " prop5", "def c = new " + clazz + "(); c.@prop5 = 'edited'; c.prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5", "field " + clazz + " prop5"), "EDITED", "def c = new " + clazz + "(); c.@prop5 = 'edited'; c.prop5");
-    }
-
-    @Test public void syntheticMethods() throws Exception {
-        assertEvaluate(new GenericWhitelist(), 4, "2 + 2");
-        assertEvaluate(new GenericWhitelist(), "17", "'' + 17");
     }
 
     public static final class Clazz {
@@ -550,12 +545,18 @@ public class SandboxInterceptorTest {
 
     @Issue("JENKINS-25118")
     @Test public void primitiveTypes() throws Exception {
-        try {
-            assertEvaluate(new ProxyWhitelist(), "should fail", "'123'.charAt(1);");
-        } catch (RejectedAccessException x) {
-            assertNotNull(x.toString(), x.getSignature());
-        }
+        // Some String operations:
+        assertRejected(new ProxyWhitelist(), "method java.lang.CharSequence charAt int", "'123'.charAt(1);");
         assertEvaluate(new StaticWhitelist("method java.lang.CharSequence charAt int"), '2', "'123'.charAt(1);");
+        // Unrelated to math:
+        assertRejected(new ProxyWhitelist(), "staticMethod java.lang.Integer getInteger java.lang.String", "Integer.getInteger('whatever')");
+        // Some of http://groovy-lang.org/operators.html#Operator-Overloading on numbers are handled internally:
+        assertEvaluate(new ProxyWhitelist(), 4, "2 + 2");
+        assertEvaluate(new ProxyWhitelist(), 4, "2.plus(2)");
+        // Others are handled via DefaultGroovyMethods:
+        assertEvaluate(new GenericWhitelist(), 4, "2 ** 2");
+        assertEvaluate(new GenericWhitelist(), 4, "2.power(2)");
+        assertEvaluate(new GenericWhitelist(), "23", "'2' + 3");
     }
 
     @Test public void ambiguousOverloads() {
@@ -712,7 +713,7 @@ public class SandboxInterceptorTest {
 
     @Issue("JENKINS-37129")
     @Test public void methodMissingException() throws Exception {
-        // the case where the unsafe receiver type causes the security check to fail
+        // test: trying to call a nonexistent method
         try {
             assertEvaluate(new GenericWhitelist(), "should fail", "[].noSuchMethod()");
         } catch (MissingMethodException e) {
@@ -720,19 +721,11 @@ public class SandboxInterceptorTest {
             assertThat(e.getMethod(),is("noSuchMethod"));
         }
 
-        // trying to call an existing method that's not safe
+        // control: trying to call an existing method that's not safe
         try {
             assertEvaluate(new GenericWhitelist(), "should fail", "[].class.classLoader");
         } catch (RejectedAccessException e) {
             assertEquals("method java.lang.Class getClassLoader", e.getSignature());
-        }
-
-        // the case where the safe receiver type causes the security check to pass
-        try {
-            assertEvaluate(new GenericWhitelist(), "should fail", "1.noSuchMethod()");
-        } catch (MissingMethodException e) {
-            assertEquals(e.getType(),Integer.class);
-            assertThat(e.getMethod(),is("noSuchMethod"));
         }
     }
 }
