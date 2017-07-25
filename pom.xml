@@ -14,7 +14,7 @@
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url> 
     <properties>
-      <jenkins.version>1.625.3</jenkins.version>
+      <jenkins.version>2.7.3</jenkins.version>
     </properties>
     <licenses>
         <license>
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.12-20170725.132832-4</version> <!-- TODO -->
+      <version>1.12-20170725.145644-5</version> <!-- TODO https://github.com/jenkinsci/groovy-sandbox/pull/35 -->
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>

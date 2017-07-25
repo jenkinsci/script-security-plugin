@@ -24,16 +24,14 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.gargoylesoftware.htmlunit.ElementNotFoundException;
-import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlFormUtil;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
@@ -90,7 +88,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
@@ -154,7 +152,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
@@ -193,7 +191,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
         HtmlTextArea script = config.getTextAreaByName("_.script");
@@ -791,22 +789,4 @@ public class SecureGroovyScriptTest {
         }
     }
     
-    /**
-     * Get the form button having the specified text/caption.
-     *
-     * TODO 1.627+ or jenkins-test-harness 2.0+ use standard version from HtmlFormUtil
-     *
-     * @param htmlForm The form containing the button.
-     * @param caption The button text/caption being searched for.
-     * @return The button if found.
-     * @throws ElementNotFoundException Failed to find the button on the form.
-     */
-    private HtmlButton getButtonByCaption(final HtmlForm htmlForm, final String caption) throws ElementNotFoundException {
-        for (HtmlElement b : htmlForm.getHtmlElementsByTagName("button")) {
-            if(b instanceof HtmlButton && b.getTextContent().trim().equals(caption)) {
-                return (HtmlButton) b;
-            }
-        }
-        throw new ElementNotFoundException("button", "caption", caption);
-    }
 }

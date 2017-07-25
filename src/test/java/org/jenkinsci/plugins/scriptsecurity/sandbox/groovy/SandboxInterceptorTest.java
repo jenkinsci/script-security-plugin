@@ -31,7 +31,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -53,7 +52,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import hudson.util.VersionNumber;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
@@ -610,13 +608,11 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void ambiguousOverloads() {
-        final boolean groovy2 = new VersionNumber(GroovySystem.getVersion()).compareTo(new VersionNumber("2.0")) >= 0;
         try {
-            // In 1.8.9 Groovy selects one of these. How, I do not know.
-            assertEquals(true, evaluate(new AnnotatedWhitelist(), Ambiguity.class.getName() + ".m(null)"));
-            assertFalse("Ambiguous overload non-deterministically resolved in Groovy 1", groovy2);
+            evaluate(new AnnotatedWhitelist(), Ambiguity.class.getName() + ".m(null)");
+            fail("Ambiguous overload is an error in Groovy 2");
         } catch(GroovyRuntimeException e) {
-            assertTrue("Ambiguous overload is an error in Groovy 2", groovy2);
+            // OK
         }
     }
 

@@ -24,20 +24,17 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts.languages;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.scripts.Language;
 import hudson.Extension;
-import jenkins.model.Jenkins;
+import hudson.ExtensionList;
 
 /**
  * Language for Groovy Template scripts generating Bourne Shell script.
  */
 @Extension public final class GroovyShellLanguage extends Language {
 
-    // TODO: To remove, use `getActiveInstance` 1.590+ and back to `getInstance` on 1.653+
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "https://github.com/jenkinsci/jenkins/pull/2094")
     public static Language get() {
-        return Jenkins.getInstance().getExtensionList(Language.class).get(GroovyShellLanguage.class);
+        return ExtensionList.lookup(Language.class).get(GroovyShellLanguage.class);
     }
 
     @Override public String getName() {
