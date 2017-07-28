@@ -50,6 +50,7 @@ method java.lang.CharSequence length
 method java.lang.Class getName
 method java.lang.Class getSimpleName
 method java.lang.Comparable compareTo java.lang.Object
+new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 staticField java.lang.Integer MAX_VALUE
@@ -477,3 +478,6 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSe
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpandLine java.lang.CharSequence int
+
+# Currently called indirectly from Builder.sandboxCast; cf. comment in SandboxInvokerTest.typeCoercion:
+staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCast java.lang.Class java.lang.Object boolean boolean boolean

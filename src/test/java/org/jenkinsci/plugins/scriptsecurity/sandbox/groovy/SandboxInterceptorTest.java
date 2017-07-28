@@ -56,7 +56,7 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist;
@@ -197,7 +197,7 @@ public class SandboxInterceptorTest {
         }
         // Control case: when there is no backing field, we should not allow setters to be called.
         String sps = SafePerSe.class.getName();
-        assertRejected(new StaticWhitelist(), "method " + sps + " setSecure boolean", "class X extends " + sps + " {X() {this.secure = false}}; new X()");
+        assertRejected(new AnnotatedWhitelist(), "method " + sps + " setSecure boolean", "class X extends " + sps + " {X() {this.secure = false}}; new X()");
     }
 
     @Test public void propertiesAndGettersAndSetters() throws Exception {
@@ -586,6 +586,46 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("SECURITY-566")
+    @Test public void typeCoercion() throws Exception {
+        assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).getCountry()");
+        assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).country");
+        assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).getAvailableLocales()");
+        assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).availableLocales");
+    }
+
+    @Issue("SECURITY-580")
+    @Test public void positionalConstructors() throws Exception {
+        assertRejected(new ProxyWhitelist(), "new java.lang.Boolean java.lang.String", "['true'] as Boolean");
+        assertEvaluate(new StaticWhitelist("new java.lang.Boolean java.lang.String"), true, "['true'] as Boolean");
+        String cc = "staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCast java.lang.Class java.lang.Object boolean boolean boolean";
+        assertRejected(new StaticWhitelist(cc), "new java.lang.Boolean java.lang.String", "Boolean x = ['true']; x");
+        assertEvaluate(new StaticWhitelist(cc, "new java.lang.Boolean java.lang.String"), true, "Boolean x = ['true']; x");
+        assertRejected(new ProxyWhitelist(), "new java.util.TreeMap java.util.Map", "[k: 1] as TreeMap");
+        assertEvaluate(new StaticWhitelist("new java.util.TreeMap java.util.Map"), Collections.singletonMap("k", 1), "[k: 1] as TreeMap");
+        assertRejected(new StaticWhitelist(cc), "new java.util.TreeMap java.util.Map", "TreeMap x = [k: 1]; x");
+        assertEvaluate(new StaticWhitelist(cc, "new java.util.TreeMap java.util.Map"), Collections.singletonMap("k", 1), "TreeMap x = [k: 1]; x");
+        // These go through a different code path:
+        assertEvaluate(new ProxyWhitelist(), Arrays.asList(1), "[1] as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "['v'] as LinkedList");
+        assertEvaluate(new StaticWhitelist(cc), Arrays.asList(1), "LinkedList x = [1]; x");
+        assertEvaluate(new StaticWhitelist(cc), Arrays.asList("v"), "LinkedList x = ['v']; x");
+        assertEvaluate(new ProxyWhitelist(), Arrays.asList(1), "int[] a = [1]; a as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "String[] a = ['v']; a as LinkedList");
+        assertEvaluate(new StaticWhitelist(cc), Arrays.asList("v"), "String[] a = ['v']; LinkedList x = a; x");
+        assertEvaluate(new StaticWhitelist(cc), Arrays.asList("v"), "String[] a = ['v']; LinkedList x = a; x");
+        /* TODO casting arrays is not yet supported:
+        assertRejected(new StaticWhitelist(cc), "new java.lang.Boolean java.lang.String", "String[] a = ['true']; Boolean x = a; x");
+        assertEvaluate(new StaticWhitelist(cc, "new java.lang.Boolean java.lang.String"), true, "String[] a = ['true']; Boolean x = a; x");
+        assertRejected(new ProxyWhitelist(), "new java.lang.Boolean java.lang.String", "String[] a = ['true']; a as Boolean");
+        assertEvaluate(new StaticWhitelist("new java.lang.Boolean java.lang.String"), true, "String[] a = ['true']; a as Boolean");
+        */
+        /* TODO tuple assignment is not yet supported:
+        assertRejected(new ProxyWhitelist(), "new java.util.LinkedList java.util.Collection", "String[] a = ['v']; def (LinkedList x, int y) = [a, 1]; x");
+        assertEvaluate(new StaticWhitelist("new java.util.LinkedList java.util.Collection"), Arrays.asList("v"), "String[] a = ['v']; def (LinkedList x, int y) = [a, 1]; x");
+        */
+    }
+
     @Issue("kohsuke/groovy-sandbox #16")
     @Test public void infiniteLoop() throws Exception {
         assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
@@ -657,10 +697,22 @@ public class SandboxInterceptorTest {
         );
     }
 
+    @Issue({"JENKINS-42563", "SECURITY-582"})
     @Test public void superCalls() throws Exception {
         String sps = SafePerSe.class.getName();
-        assertRejected(new StaticWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void dangerous() {super.dangerous()}}; new C().dangerous()");
-        assertRejected(new StaticWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void x() {super.dangerous()}}; new C().x()");
+        assertRejected(new AnnotatedWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void dangerous() {super.dangerous()}}; new C().dangerous()");
+        assertRejected(new AnnotatedWhitelist(), "method " + sps + " dangerous", "class C extends " + sps + " {void x() {super.dangerous()}}; new C().x()");
+        assertRejected(new StaticWhitelist(), "new java.lang.Exception java.lang.String", "class X1 extends Exception {X1(String x) {super(x)}}; new X1('x')");
+        assertEvaluate(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception java.lang.String"), "X1: x", "class X1 extends Exception {X1(String x) {super(x)}}; new X1('x').toString()");
+        assertRejected(new StaticWhitelist(), "new java.lang.Exception", "class X2 extends Exception {X2() {}}; new X2()");
+        assertEvaluate(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception"), "X2", "class X2 extends Exception {X2() {}}; new X2().toString()");
+        assertRejected(new StaticWhitelist(), "new java.lang.Exception", "class X3 extends Exception {}; new X3()");
+        assertEvaluate(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception"), "X3", "class X3 extends Exception {}; new X3().toString()");
+        assertRejected(new StaticWhitelist(), "new java.lang.Exception java.lang.String", "class X4 extends Exception {X4(int x) {this(x + 1, true)}; X4(int x, boolean b) {super(/$x$b/)}}; new X4(1)");
+        assertEvaluate(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception java.lang.String"), "X4: 2true", "class X4 extends Exception {X4(int x) {this(x + 1, true)}; X4(int x, boolean b) {super(/$x$b/)}}; new X4(1).toString()");
+        assertRejected(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception java.lang.String"), "method java.lang.String toUpperCase", "class X5 extends Exception {X5(String x) {this(x.toUpperCase(), true)}; X5(String x, boolean b) {super(x)}}; new X5('x')");
+        assertRejected(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception java.lang.String"), "method java.lang.String toUpperCase", "class X6 extends Exception {X6(String x) {super(x.toUpperCase())}}; new X6('x')");
+        assertRejected(new StaticWhitelist("method java.lang.Object toString", "new java.lang.Exception"), "new java.lang.Object", "class X7 extends Exception {X7(String x) {new Object()}}; new X7('x')");
     }
     public static class SafePerSe {
         @Whitelisted

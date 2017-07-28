@@ -253,7 +253,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override boolean exists() throws Exception {
             try {
-                type(type).getConstructor(types(argumentTypes));
+                type(type).getDeclaredConstructor(types(argumentTypes));
                 return true;
             } catch (NoSuchMethodException x) {
                 return false;
