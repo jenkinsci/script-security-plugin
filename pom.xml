@@ -15,6 +15,7 @@
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url> 
     <properties>
       <jenkins.version>2.7.3</jenkins.version>
+      <groovy-sandbox.version>1.12</groovy-sandbox.version>
     </properties>
     <licenses>
         <license>
@@ -47,7 +48,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.12</version>
+      <version>${groovy-sandbox.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
