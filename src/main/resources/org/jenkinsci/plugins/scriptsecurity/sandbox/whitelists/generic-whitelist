@@ -225,6 +225,16 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java.util.Collection java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods combinations java.lang.Iterable groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains Object[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains boolean[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains byte[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains char[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains double[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains float[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains int[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains long[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains short[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods containsAll Collection[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] java.lang.Object
@@ -385,6 +395,12 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Str
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.StringBuffer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[] boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[] boolean groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[] boolean java.util.Comparator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[] groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Object[] java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Collection java.util.Comparator
