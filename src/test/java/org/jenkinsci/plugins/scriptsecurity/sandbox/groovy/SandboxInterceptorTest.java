@@ -344,9 +344,7 @@ public class SandboxInterceptorTest {
         assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
         assertEvaluate(new GenericWhitelist(), 123, "'123'.toInteger();");
         assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({x -> x * x})");
-        /* TODO JENKINS-33468 No such property: it for class: groovy.lang.Binding:
         assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 4, 9), "([1, 2, 3] as int[]).collect({it * it})");
-        */
         // cover others from DgmConverter:
         assertEvaluate(new GenericWhitelist(), "1970", "new Date(0).format('yyyy', TimeZone.getTimeZone('GMT'))");
         assertEvaluate(new GenericWhitelist(), /* actual value sensitive to local TZ */ DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(new Date(0)), "new Date(0).dateTimeString");
