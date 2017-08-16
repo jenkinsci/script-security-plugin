@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.15-20170816.182125-1</version> <!-- TODO: Switch to release once https://github.com/jenkinsci/groovy-sandbox/pull/39 is merged/released -->
+      <version>1.15</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
