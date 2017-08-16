@@ -848,4 +848,17 @@ public class SandboxInterceptorTest {
         // control: trying to call an existing method that's not safe
         assertRejected(new GenericWhitelist(), "method java.lang.Class getClassLoader", "[].class.classLoader");
     }
+
+    @Issue("JENKINS-46088")
+    @Test
+    public void matcherTypeAssignment() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "goodbye world", "def text = 'hello world'; java.util.regex.Matcher matcher = text =~ 'hello (.+)'; matcher ? \"goodbye ${matcher[0][1]}\" : 'fail'");
+    }
+
+    @Issue("JENKINS-46088")
+    @Test
+    public void rhsOfDeclarationTransformed() throws Exception {
+        assertRejected(new StaticWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "jenkins.model.Jenkins x = jenkins.model.Jenkins.getInstance()");
+    }
+
 }
