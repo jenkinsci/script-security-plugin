@@ -859,4 +859,10 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "jenkins.model.Jenkins x = jenkins.model.Jenkins.getInstance()");
     }
 
+    @Issue("JENKINS-46191")
+    @Test
+    public void emptyDeclaration() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "abc", "String a; a = 'abc'; return a");
+    }
+
 }
