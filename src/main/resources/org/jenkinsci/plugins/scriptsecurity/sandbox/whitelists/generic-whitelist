@@ -320,8 +320,18 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.M
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isNumber java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods iterator java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join boolean[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join byte[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join char[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join double[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join float[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join int[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.lang.Iterable java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.lang.Object[] java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Iterator java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join long[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join short[] java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.lang.String java.lang.Object
