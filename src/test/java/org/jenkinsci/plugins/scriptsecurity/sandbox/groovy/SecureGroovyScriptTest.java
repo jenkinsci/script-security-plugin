@@ -143,6 +143,7 @@ public class SecureGroovyScriptTest {
         GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
         gmas.add(Jenkins.READ, "devel");
         gmas.add(Jenkins.RUN_SCRIPTS, "devel");
+        gmas.add(Jenkins.ADMINISTER, "devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
             gmas.add(p, "devel");
         }
@@ -658,6 +659,7 @@ public class SecureGroovyScriptTest {
         gmas.add(Jenkins.READ, "devel");
         gmas.add(Jenkins.READ, "approver");
         gmas.add(Jenkins.RUN_SCRIPTS, "approver");
+        gmas.add(Jenkins.ADMINISTER, "approver");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
             gmas.add(p, "devel");
             gmas.add(p, "approver");
