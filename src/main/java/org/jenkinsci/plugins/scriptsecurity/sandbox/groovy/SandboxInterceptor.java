@@ -45,6 +45,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
@@ -70,6 +71,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     /** should be synchronized with {@link DgmConverter} */
     private static final Class<?>[] DGM_CLASSES = {
         DefaultGroovyMethods.class,
+        StringGroovyMethods.class,
         SwingGroovyMethods.class,
         SqlGroovyMethods.class,
         XmlGroovyMethods.class,
@@ -93,15 +95,23 @@ final class SandboxInterceptor extends GroovyInterceptor {
             Object[] selfArgs = new Object[args.length + 1];
             selfArgs[0] = receiver;
             System.arraycopy(args, 0, selfArgs, 1, args.length);
+            Method foundDgmMethod = null;
+
             for (Class<?> dgmClass : DGM_CLASSES) {
                 Method dgmMethod = GroovyCallSiteSelector.staticMethod(dgmClass, method, selfArgs);
                 if (dgmMethod != null) {
                     if (whitelist.permitsStaticMethod(dgmMethod, selfArgs)) {
                         return super.onMethodCall(invoker, receiver, method, args);
-                    } else {
-                        throw StaticWhitelist.rejectStaticMethod(dgmMethod);
+                    } else if (foundDgmMethod == null) {
+                        foundDgmMethod = dgmMethod;
                     }
                 }
+            }
+
+            // Some methods are found by GroovyCallSiteSelector in both DefaultGroovyMethods and StringGroovyMethods, so
+            // we're iterating over the whole list before we decide to fail out on the first failure we found.
+            if (foundDgmMethod != null) {
+                throw StaticWhitelist.rejectStaticMethod(foundDgmMethod);
             }
 
             // if no matching method, look for catchAll "invokeMethod"
