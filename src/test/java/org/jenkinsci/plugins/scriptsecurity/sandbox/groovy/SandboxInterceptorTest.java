@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -870,5 +871,17 @@ public class SandboxInterceptorTest {
     public void validFromAnyDGMClass() throws Exception {
         // This verifies that we pick up a valid DGM-style method from a class other than DefaultGroovyMethods
         assertEvaluate(new GenericWhitelist(), "alppe", "String a = 'apple'; return a.replaceFirst('ppl') { it.reverse() }");
+    }
+
+    @Issue("JENKINS-46391")
+    @Test
+    public void newPattern() throws Exception {
+        assertEvaluate(new GenericWhitelist(), true, "def f = java.util.regex.Pattern.compile('f.*'); return f.matcher('foo').matches()");
+    }
+
+    @Issue("JENKINS-46391")
+    @Test
+    public void tildePattern() throws Exception {
+        assertEvaluate(new GenericWhitelist(), Pattern.class, "def f = ~/f.*/; return f.class");
     }
 }
