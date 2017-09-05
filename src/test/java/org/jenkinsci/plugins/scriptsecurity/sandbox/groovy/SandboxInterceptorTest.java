@@ -865,4 +865,10 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), "abc", "String a; a = 'abc'; return a");
     }
 
+    @Issue("JENKINS-46358")
+    @Test
+    public void validFromAnyDGMClass() throws Exception {
+        // This verifies that we pick up a valid DGM-style method from a class other than DefaultGroovyMethods
+        assertEvaluate(new GenericWhitelist(), "alppe", "String a = 'apple'; return a.replaceFirst('ppl') { it.reverse() }");
+    }
 }
