@@ -38,7 +38,6 @@ import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
 import hudson.model.Result;
-import hudson.security.GlobalMatrixAuthorizationStrategy;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
@@ -63,6 +62,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.groovy.sandbox.impl.Checker;
 
 public class SecureGroovyScriptTest {
@@ -77,12 +77,14 @@ public class SecureGroovyScriptTest {
      */
     @Test public void basicApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
+        
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
+        		mockStrategy.grant(p).everywhere().to("devel");
         }
-        r.jenkins.setAuthorizationStrategy(gmas);
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         FreeStyleProject p = r.createFreeStyleProject("p");
         JenkinsRule.WebClient wc = r.createWebClient();
         wc.login("devel");
@@ -140,13 +142,16 @@ public class SecureGroovyScriptTest {
      */
     @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        gmas.add(Jenkins.RUN_SCRIPTS, "devel");
+        
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("devel");
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
+        		mockStrategy.grant(p).everywhere().to("devel");
         }
-        r.jenkins.setAuthorizationStrategy(gmas);
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+        
         FreeStyleProject p = r.createFreeStyleProject("p");
         JenkinsRule.WebClient wc = r.createWebClient();
         wc.login("devel");
@@ -180,12 +185,14 @@ public class SecureGroovyScriptTest {
      */
     @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
+        
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+       for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
         }
-        r.jenkins.setAuthorizationStrategy(gmas);
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         FreeStyleProject p = r.createFreeStyleProject("p");
         JenkinsRule.WebClient wc = r.createWebClient();
         wc.login("devel");
@@ -296,13 +303,14 @@ public class SecureGroovyScriptTest {
 
     @Test public void testClasspathInSandbox() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
@@ -372,13 +380,14 @@ public class SecureGroovyScriptTest {
     
     @Test public void testNonapprovedClasspathInSandbox() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
         for (File jarfile: getAllJarFiles()) {
             String path = jarfile.getAbsolutePath();
@@ -457,13 +466,14 @@ public class SecureGroovyScriptTest {
     
     @Test public void testUpdatedClasspath() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         // Copy jar files to temporary directory, then overwrite them with updated jar files.
         File tmpDir = tmpFolderRule.newFolder();
         
@@ -539,13 +549,14 @@ public class SecureGroovyScriptTest {
     
     @Test public void testClasspathWithClassDirectory() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         // Copy jar files to temporary directory, then overwrite them with updated jar files.
         File tmpDir = tmpFolderRule.newFolder();
         
@@ -589,13 +600,14 @@ public class SecureGroovyScriptTest {
     
     @Test public void testDifferentClasspathButSameContent() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
         final String testingDisplayName = "TESTDISPLAYNAME";
         
         final List<File> jars = getAllJarFiles();
@@ -654,16 +666,18 @@ public class SecureGroovyScriptTest {
     
     @Test public void testClasspathAutomaticApprove() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        GlobalMatrixAuthorizationStrategy gmas = new GlobalMatrixAuthorizationStrategy();
-        gmas.add(Jenkins.READ, "devel");
-        gmas.add(Jenkins.READ, "approver");
-        gmas.add(Jenkins.RUN_SCRIPTS, "approver");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            gmas.add(p, "devel");
-            gmas.add(p, "approver");
-        }
-        r.jenkins.setAuthorizationStrategy(gmas);
         
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        mockStrategy.grant(Jenkins.READ).everywhere().to("approver");
+        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("approver");
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("approver");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+        		mockStrategy.grant(p).everywhere().to("devel");
+        		mockStrategy.grant(p).everywhere().to("approver");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+               
         JenkinsRule.WebClient wcDevel = r.createWebClient();
         wcDevel.login("devel");
         
