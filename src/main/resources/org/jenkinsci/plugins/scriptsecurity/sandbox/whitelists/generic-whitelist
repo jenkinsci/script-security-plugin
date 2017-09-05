@@ -483,6 +483,8 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods count java.lang.Cha
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods denormalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods drop java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods dropWhile java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expandLine java.lang.CharSequence int
@@ -490,6 +492,14 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.Char
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.String java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.String java.util.regex.Pattern
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods find java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods findAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods findAll java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods findAll java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods findAll java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods isAllWhitespace java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods isDouble java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods isFloat java.lang.CharSequence
@@ -503,6 +513,17 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.C
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.CharSequence java.lang.Number java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSequence java.lang.CharSequence java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
