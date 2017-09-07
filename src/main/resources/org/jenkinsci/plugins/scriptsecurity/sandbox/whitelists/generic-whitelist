@@ -33,6 +33,8 @@ method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
 method groovy.lang.Script getBinding
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.util.regex.Pattern groovy.lang.Closure
 
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
