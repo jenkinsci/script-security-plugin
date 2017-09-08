@@ -95,7 +95,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     static Signature parse(String line) throws IOException {
-        String[] toks = line.split(" ");
+        String[] toks = line.trim().split(" ");
         if (toks[0].equals("method")) {
             if (toks.length < 3) {
                 throw new IOException(line);
@@ -127,7 +127,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     private void add(String line) throws IOException {
-        Signature s = parse(line);
+        Signature s = parse(line.trim());
         if (s instanceof StaticMethodSignature) {
             staticMethodSignatures.add((StaticMethodSignature) s);
         } else if (s instanceof MethodSignature) {
