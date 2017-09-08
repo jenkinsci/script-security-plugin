@@ -884,4 +884,11 @@ public class SandboxInterceptorTest {
     public void tildePattern() throws Exception {
         assertEvaluate(new GenericWhitelist(), Pattern.class, "def f = ~/f.*/; return f.class");
     }
+
+    @Issue("JENKINS-46764")
+    @Test
+    public void whitespaceAtStartOfSignature() throws Exception {
+        assertEvaluate(new StaticWhitelist("method java.lang.Object toString", " new java.lang.Exception java.lang.String"), "X1: x", "class X1 extends Exception {X1(String x) {super(x)}}; new X1('x').toString()");
+
+    }
 }
