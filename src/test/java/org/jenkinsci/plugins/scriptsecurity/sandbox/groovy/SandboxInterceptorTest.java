@@ -884,4 +884,34 @@ public class SandboxInterceptorTest {
     public void tildePattern() throws Exception {
         assertEvaluate(new GenericWhitelist(), Pattern.class, "def f = ~/f.*/; return f.class");
     }
+
+    @Issue("JENKINS-35294")
+    @Test
+    public void enumWithVarargs() throws Exception {
+        String script = "enum Thing {\n"
+                + "  FIRST(\"The first thing\")\n"
+                + "  String[] descriptions;\n"
+                + "  public Thing(String... descriptions) {\n"
+                + "    this.descriptions = descriptions;\n"
+                + "  }\n"
+                + "}\n"
+                + "Thing.values()[0].descriptions[0]\n";
+        String expected = "The first thing";
+        assertEvaluate(new GenericWhitelist(), expected, script);
+    }
+
+    @Issue("JENKINS-35294")
+    @Test
+    public void enumWithStringAndVarargs() throws Exception {
+        String script = "enum Thing {\n"
+                + "  FIRST(\"The first thing\")\n"
+                + "  String description;\n"
+                + "  public Thing(String description, int... unused) {\n"
+                + "    this.description = description;\n"
+                + "  }\n"
+                + "}\n"
+                + "Thing.values()[0].description\n";
+        String expected = "The first thing";
+        assertEvaluate(new GenericWhitelist(), expected, script);
+    }
 }
