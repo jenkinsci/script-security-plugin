@@ -914,4 +914,14 @@ public class SandboxInterceptorTest {
         String expected = "The first thing";
         assertEvaluate(new GenericWhitelist(), expected, script);
     }
+
+    @Issue("JENKINS-44557")
+    @Test
+    public void varArgsWithGString() throws Exception {
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        String uv = UsesVarargs.class.getName();
+
+        assertEvaluate(wl, 3, "def twoStr = 'two'; " + uv + ".len('one', \"${twoStr}\", 'three')");
+
+    }
 }

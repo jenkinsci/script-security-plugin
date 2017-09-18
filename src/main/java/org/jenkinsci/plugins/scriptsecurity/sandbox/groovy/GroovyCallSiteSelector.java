@@ -37,6 +37,7 @@ import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang.ClassUtils;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Assists in determination of which method or other JVM element is actually about to be called by Groovy.
@@ -99,10 +100,7 @@ class GroovyCallSiteSelector {
                 // not a varargs call
                 return parameters;
             } else {
-                Object array = Array.newInstance(componentType, arrayLength);
-                for (int i = 0; i < arrayLength; i++) {
-                    Array.set(array, i, parameters[fixedLen + i]);
-                }
+                Object array = DefaultTypeTransformation.castToVargsArray(parameters, 0, parameterTypes[fixedLen]);
                 Object[] parameters2 = new Object[fixedLen + 1];
                 System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
                 parameters2[fixedLen] = array;
