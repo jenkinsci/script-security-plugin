@@ -96,7 +96,7 @@ class GroovyCallSiteSelector {
         assert componentType != null;
         int arrayLength = parameters.length - fixedLen;
         if (arrayLength >= 0) {
-            if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
+            if (arrayLength == 1) {
                 // not a varargs call
                 return parameters;
             } else {
