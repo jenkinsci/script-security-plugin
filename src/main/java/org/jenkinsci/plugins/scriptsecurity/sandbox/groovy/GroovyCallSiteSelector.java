@@ -27,7 +27,6 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import com.google.common.primitives.Primitives;
 import groovy.lang.GString;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -95,12 +94,13 @@ class GroovyCallSiteSelector {
         Class<?> componentType = parameterTypes[fixedLen].getComponentType();
         assert componentType != null;
         int arrayLength = parameters.length - fixedLen;
+
         if (arrayLength >= 0) {
             if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
                 // not a varargs call
                 return parameters;
             } else {
-                Object array = DefaultTypeTransformation.castToVargsArray(parameters, 0, parameterTypes[fixedLen]);
+                Object array = DefaultTypeTransformation.castToVargsArray(parameters, arrayLength, parameterTypes[fixedLen]);
                 Object[] parameters2 = new Object[fixedLen + 1];
                 System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
                 parameters2[fixedLen] = array;

@@ -29,9 +29,18 @@ import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
 import hudson.EnvVars;
+import hudson.model.BooleanParameterValue;
 import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
@@ -93,6 +102,18 @@ public class GroovyCallSiteSelectorTest {
     @Test public void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
         assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
+        Map<String, String> myMap = new HashMap<>();
+        myMap.put("ONE", "one");
+        myMap.put("TWO", "two");
+        assertEquals(EnvVars.class.getConstructor(Map.class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {myMap}));
+        List<ParameterValue> params = new ArrayList<>();
+        params.add(new StringParameterValue("someParam", "someValue"));
+        params.add(new BooleanParameterValue("someBool", true));
+        params.add(new StringParameterValue("someOtherParam", "someOtherValue"));
+        assertEquals(ParametersAction.class.getConstructor(List.class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{params}));
+        assertEquals(ParametersAction.class.getConstructor(ParameterValue[].class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, params.toArray()));
     }
 
 }
