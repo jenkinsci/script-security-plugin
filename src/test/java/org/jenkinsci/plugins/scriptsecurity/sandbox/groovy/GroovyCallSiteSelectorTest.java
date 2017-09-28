@@ -34,15 +34,14 @@ import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.*;
@@ -101,7 +100,7 @@ public class GroovyCallSiteSelectorTest {
     @Issue("JENKINS-45117")
     @Test public void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
-        assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
+        assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[]{"x"}));
         List<ParameterValue> params = new ArrayList<>();
         params.add(new StringParameterValue("someParam", "someValue"));
         params.add(new BooleanParameterValue("someBool", true));
@@ -109,7 +108,12 @@ public class GroovyCallSiteSelectorTest {
         assertEquals(ParametersAction.class.getConstructor(List.class),
                 GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{params}));
         assertEquals(ParametersAction.class.getConstructor(ParameterValue[].class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{params.get(0)}));
+        assertEquals(ParametersAction.class.getConstructor(ParameterValue[].class),
                 GroovyCallSiteSelector.constructor(ParametersAction.class, params.toArray()));
+        assertEquals(EnumeratingWhitelist.MethodSignature.class.getConstructor(Class.class, String.class, Class[].class),
+                GroovyCallSiteSelector.constructor(EnumeratingWhitelist.MethodSignature.class,
+                        new Object[]{String.class, "foo", Integer.class, Float.class}));
     }
 
 }

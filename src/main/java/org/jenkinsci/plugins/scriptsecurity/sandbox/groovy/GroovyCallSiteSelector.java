@@ -100,7 +100,12 @@ class GroovyCallSiteSelector {
                 // not a varargs call
                 return parameters;
             } else {
-                Object array = DefaultTypeTransformation.castToVargsArray(parameters, arrayLength, parameterTypes[fixedLen]);
+                int firstVargsPos = fixedLen;
+                // Special-casing to handle single-parameter cases, which are still varargs.
+                if (parameters.length == 1) {
+                    firstVargsPos = arrayLength;
+                }
+                Object array = DefaultTypeTransformation.castToVargsArray(parameters, firstVargsPos, parameterTypes[fixedLen]);
                 Object[] parameters2 = new Object[fixedLen + 1];
                 System.arraycopy(parameters, 0, parameters2, 0, fixedLen);
                 parameters2[fixedLen] = array;
