@@ -102,10 +102,6 @@ public class GroovyCallSiteSelectorTest {
     @Test public void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
         assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
-        Map<String, String> myMap = new HashMap<>();
-        myMap.put("ONE", "one");
-        myMap.put("TWO", "two");
-        assertEquals(EnvVars.class.getConstructor(Map.class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {myMap}));
         List<ParameterValue> params = new ArrayList<>();
         params.add(new StringParameterValue("someParam", "someValue"));
         params.add(new BooleanParameterValue("someBool", true));
