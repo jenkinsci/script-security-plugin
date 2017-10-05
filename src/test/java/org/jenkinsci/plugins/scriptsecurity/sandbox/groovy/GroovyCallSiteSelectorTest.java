@@ -116,4 +116,18 @@ public class GroovyCallSiteSelectorTest {
                         new Object[]{String.class, "foo", Integer.class, Float.class}));
     }
 
+    @Issue("JENKINS-47159")
+    @Test
+    public void varargsFailureCases() throws Exception {
+        // If there's a partial match, we should get a ClassCastException
+        try {
+            assertNull(GroovyCallSiteSelector.constructor(EnvVars.class, new Object[]{"x", String.class}));
+        } catch (Exception e) {
+            assertTrue(e instanceof ClassCastException);
+            assertEquals("java.lang.Class cannot be cast to java.lang.String", e.getMessage());
+        }
+        // If it's a complete non-match, we just shouldn't get a constructor.
+        assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
+    }
+
 }
