@@ -34,6 +34,7 @@ import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import hudson.model.ParameterValue;
@@ -132,4 +133,11 @@ public class GroovyCallSiteSelectorTest {
         assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
     }
 
+    @Issue("JENKINS-37257")
+    @Test
+    public void varargsArrayElementTypeMismatch() throws Exception {
+        List<String> l = Arrays.asList("a", "b", "c");
+        assertEquals(String.class.getMethod("join", CharSequence.class, Iterable.class),
+                GroovyCallSiteSelector.staticMethod(String.class, "join", new Object[]{",", l}));
+    }
 }
