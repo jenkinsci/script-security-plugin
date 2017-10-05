@@ -351,8 +351,14 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Coll
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number java.lang.CharSequence 
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.String java.lang.Number java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.CharSequence java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.CharSequence java.lang.Number java.lang.CharSequence 
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.String java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
@@ -513,8 +519,12 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods multiply java.lang.
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods normalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.CharSequence java.lang.Number java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.String java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.lang.String groovy.lang.Closure
