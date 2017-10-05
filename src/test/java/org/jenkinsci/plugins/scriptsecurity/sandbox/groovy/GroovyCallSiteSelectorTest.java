@@ -32,6 +32,8 @@ import hudson.EnvVars;
 import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
@@ -92,6 +94,10 @@ public class GroovyCallSiteSelectorTest {
     @Issue("JENKINS-45117")
     @Test public void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
+        Map<String, String> myMap = new HashMap<String, String>();
+        myMap.put("ONE", "one");
+        myMap.put("TWO", "two"); 
+        assertEquals(EnvVars.class.getConstructor(Map.class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {myMap}));
         assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
     }
 
