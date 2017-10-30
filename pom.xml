@@ -18,6 +18,7 @@
       <changelist>-SNAPSHOT</changelist>
       <jenkins.version>2.60.3</jenkins.version>
       <java.level>8</java.level>
+      <caffeine.version>2.7.0</caffeine.version>
     </properties>
     <licenses>
         <license>
@@ -57,6 +58,16 @@
           <artifactId>groovy</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>${caffeine.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>guava</artifactId>
+      <version>${caffeine.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci</groupId>

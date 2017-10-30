@@ -1,9 +1,10 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.guava.CaffeinatedGuava;
 import com.google.common.base.Optional;
 import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import groovy.lang.GroovyShell;
@@ -90,11 +91,12 @@ class SandboxResolvingClassLoader extends ClassLoader {
     }
 
     private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache() {
-        return CacheBuilder.newBuilder().weakKeys().build(new CacheLoader<ClassLoader, Cache<String, T>>() {
-            @Override public Cache<String, T> load(ClassLoader parentLoader) {
-                return CacheBuilder.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES).build();
-            }
-        });
+        return CaffeinatedGuava.build(
+                Caffeine.newBuilder().weakKeys(),
+                new CacheLoader<ClassLoader, Cache<String, T>>() {
+                    @Override public Cache<String, T> load(ClassLoader parentLoader) {
+                        return CaffeinatedGuava.build(Caffeine.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES));
+                    }
+                });
     }
-
 }
