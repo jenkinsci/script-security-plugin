@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import hudson.Extension;
 import hudson.PluginManager;
@@ -33,11 +34,25 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.util.FormValidation;
+
+import java.beans.Introspector;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
@@ -67,6 +82,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
+
+    static final Logger LOGGER = Logger.getLogger(SecureGroovyScript.class.getName());
 
     @DataBoundConstructor public SecureGroovyScript(@Nonnull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
@@ -130,6 +147,133 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return configuring(context);
     }
 
+    private static void cleanUpLoader(ClassLoader loader, Set<ClassLoader> encounteredLoaders, Set<Class<?>> encounteredClasses) throws Exception {
+        /*if (loader instanceof CpsGroovyShell.TimingLoader) {
+            cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
+            return;
+        }*/
+
+        if (!(loader instanceof GroovyClassLoader)) {
+            LOGGER.log(Level.FINER, "ignoring {0}", loader);
+            return;
+        }
+        if (!encounteredLoaders.add(loader)) {
+            return;
+        }
+        cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
+        LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+        cleanUpGlobalClassValue(loader);
+        GroovyClassLoader gcl = (GroovyClassLoader) loader;
+        for (Class<?> clazz : gcl.getLoadedClasses()) {
+            if (encounteredClasses.add(clazz)) {
+                LOGGER.log(Level.FINER, "found {0}", clazz.getName());
+                Introspector.flushFromCaches(clazz);
+                cleanUpGlobalClassSet(clazz);
+                cleanUpObjectStreamClassCaches(clazz);
+                cleanUpLoader(clazz.getClassLoader(), encounteredLoaders, encounteredClasses);
+            }
+        }
+        gcl.clearCache();
+    }
+
+    private static void cleanUpGlobalClassValue(@Nonnull ClassLoader loader) throws Exception {
+        Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo");
+        // TODO switch to MethodHandle for speed
+        Field globalClassValueF = classInfoC.getDeclaredField("globalClassValue");
+        globalClassValueF.setAccessible(true);
+        Object globalClassValue = globalClassValueF.get(null);
+        Class<?> groovyClassValuePreJava7C = Class.forName("org.codehaus.groovy.reflection.GroovyClassValuePreJava7");
+        if (!groovyClassValuePreJava7C.isInstance(globalClassValue)) {
+            return; // using GroovyClassValueJava7 due to -Dgroovy.use.classvalue or on IBM J9, fine
+        }
+        Field mapF = groovyClassValuePreJava7C.getDeclaredField("map");
+        mapF.setAccessible(true);
+        Object map = mapF.get(globalClassValue);
+        Class<?> groovyClassValuePreJava7Map = Class.forName("org.codehaus.groovy.reflection.GroovyClassValuePreJava7$GroovyClassValuePreJava7Map");
+        Collection entries = (Collection) groovyClassValuePreJava7Map.getMethod("values").invoke(map);
+        Method removeM = groovyClassValuePreJava7Map.getMethod("remove", Object.class);
+        Class<?> entryC = Class.forName("org.codehaus.groovy.util.AbstractConcurrentMapBase$Entry");
+        Method getValueM = entryC.getMethod("getValue");
+        List<Class<?>> toRemove = new ArrayList<>(); // not sure if it is safe against ConcurrentModificationException or not
+        try {
+            Field classRefF = classInfoC.getDeclaredField("classRef"); // 2.4.8+
+            classRefF.setAccessible(true);
+            for (Object entry : entries) {
+                Object value = getValueM.invoke(entry);
+                toRemove.add(((WeakReference<Class<?>>) classRefF.get(value)).get());
+            }
+        } catch (NoSuchFieldException x) {
+            Field klazzF = classInfoC.getDeclaredField("klazz"); // 2.4.7-
+            klazzF.setAccessible(true);
+            for (Object entry : entries) {
+                Object value = getValueM.invoke(entry);
+                toRemove.add((Class) klazzF.get(value));
+            }
+        }
+        Iterator<Class<?>> it = toRemove.iterator();
+        while (it.hasNext()) {
+            Class<?> klazz = it.next();
+            ClassLoader encounteredLoader = klazz.getClassLoader();
+            if (encounteredLoader != loader) {
+                it.remove();
+                LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+            }
+        }
+        LOGGER.log(Level.FINE, "cleaning up {0} associated with {1}", new Object[] {toRemove.toString(), loader.toString()});
+        for (Class<?> klazz : toRemove) {
+            removeM.invoke(map, klazz);
+        }
+    }
+
+    private static void cleanUpGlobalClassSet(@Nonnull Class<?> clazz) throws Exception {
+        Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo"); // or just ClassInfo.class, but unclear whether this will always be there
+        Field globalClassSetF = classInfoC.getDeclaredField("globalClassSet");
+        globalClassSetF.setAccessible(true);
+        Object globalClassSet = globalClassSetF.get(null);
+        try {
+            classInfoC.getDeclaredField("classRef");
+            return; // 2.4.8+, nothing to do here (classRef is weak anyway)
+        } catch (NoSuchFieldException x2) {} // 2.4.7-
+        // Cannot just call .values() since that returns a copy.
+        Field itemsF = globalClassSet.getClass().getDeclaredField("items");
+        itemsF.setAccessible(true);
+        Object items = itemsF.get(globalClassSet);
+        Method iteratorM = items.getClass().getMethod("iterator");
+        Field klazzF = classInfoC.getDeclaredField("klazz");
+        klazzF.setAccessible(true);
+        synchronized (items) {
+            Iterator<?> iterator = (Iterator) iteratorM.invoke(items);
+            while (iterator.hasNext()) {
+                Object classInfo = iterator.next();
+                if (classInfo == null) {
+                    LOGGER.finer("JENKINS-41945: ignoring null ClassInfo from ManagedLinkedList.Iter.next");
+                    continue;
+                }
+                if (klazzF.get(classInfo) == clazz) {
+                    iterator.remove();
+                    LOGGER.log(Level.FINER, "cleaning up {0} from GlobalClassSet", clazz.getName());
+                }
+            }
+        }
+    }
+
+    private static void cleanUpObjectStreamClassCaches(@Nonnull Class<?> clazz) throws Exception {
+        Class<?> cachesC = Class.forName("java.io.ObjectStreamClass$Caches");
+        for (String cacheFName : new String[] {"localDescs", "reflectors"}) {
+            Field cacheF = cachesC.getDeclaredField(cacheFName);
+            cacheF.setAccessible(true);
+            ConcurrentMap<Reference<Class<?>>, ?> cache = (ConcurrentMap) cacheF.get(null);
+            Iterator<? extends Map.Entry<Reference<Class<?>>, ?>> iterator = cache.entrySet().iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().getKey().get() == clazz) {
+                    iterator.remove();
+                    LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                    break;
+                }
+            }
+        }
+    }
+
     /**
      * Runs the Groovy script, using the sandbox if so configured.
      * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
@@ -170,6 +314,12 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
             }
         } finally {
+            try {
+                cleanUpLoader(loader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+            } catch (Exception x) {
+                LOGGER.log(Level.WARNING, "failed to clean up memory " , x);
+            }
+
             if (urlcl != null) {
                 urlcl.close();
             }
