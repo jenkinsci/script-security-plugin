@@ -58,6 +58,14 @@ staticField java.lang.Integer MAX_VALUE
 staticMethod java.lang.Integer parseInt java.lang.String
 staticMethod java.lang.Integer valueOf java.lang.String
 method java.lang.Iterable iterator
+staticMethod java.lang.Math max double double
+staticMethod java.lang.Math max float float
+staticMethod java.lang.Math max int int
+staticMethod java.lang.Math max long long
+staticMethod java.lang.Math min double double
+staticMethod java.lang.Math min float float
+staticMethod java.lang.Math min int int
+staticMethod java.lang.Math min long long
 method java.lang.Number byteValue
 method java.lang.Number doubleValue
 method java.lang.Number floatValue
