@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.35</version>
+    <version>2.37</version>
     <relativePath />
   </parent>
 
@@ -54,12 +54,6 @@
           <artifactId>groovy</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.jvnet.hudson.plugins</groupId>
-      <artifactId>groovy-postbuild</artifactId>
-      <version>2.3.1</version>
-      <scope>test</scope>
     </dependency>
     <dependency> <!-- For memory leak testing. -->
       <groupId>org.jvnet.hudson.plugins</groupId>
