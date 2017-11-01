@@ -53,7 +53,7 @@ public class GroovyMemoryLeakTest {
         r.buildAndAssertSuccess(p);
 
         assertFalse(LOADERS.isEmpty());
-        { // TODO it seems that the call to CpsFlowExecutionMemoryTest.register(Object) on a Script1 parameter creates a MetaMethodIndex.Entry.cachedStaticMethod.
+        { // TODO it seems that the call to GroovyMemoryLeakTest.register(Object) on a Script1 parameter creates a MetaMethodIndex.Entry.cachedStaticMethod.
             // In other words any call to a foundational API might leak classes. Why does Groovy need to do this?
             // Unclear whether this is a problem in a realistic environment; for the moment, suppressing it so the test can run with no SoftReference.
             MetaClass metaClass = ClassInfo.getClassInfo(GroovyMemoryLeakTest.class).getMetaClass();

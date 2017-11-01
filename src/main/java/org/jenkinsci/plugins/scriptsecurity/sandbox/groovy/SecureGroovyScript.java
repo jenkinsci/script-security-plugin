@@ -305,18 +305,29 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             
             loader = urlcl = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
+        boolean canDoCleanup = false;
+
         try {
             loader = GroovySandbox.createSecureClassLoader(loader);
 
-            Field loaderF = GroovyShell.class.getDeclaredField("loader");
-            loaderF.setAccessible(true);
+            Field loaderF = null;
+            try {
+                loaderF = GroovyShell.class.getDeclaredField("loader");
+                loaderF.setAccessible(true);
+                canDoCleanup = true;
+            } catch (NoSuchFieldException nsme) {
+                LOGGER.log(Level.FINE, "GroovyShell fields have changed, field loader no longer exists -- memory leak fixes won't work");
+            }
 
             GroovyShell sh;
             if (sandbox) {
                 CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
                 sh = new GroovyShell(loader, binding, cc);
-                memoryProtectedLoader = new CleanGroovyClassLoader(loader, cc);
-                loaderF.set(sh, memoryProtectedLoader);
+
+                if (canDoCleanup) {
+                    memoryProtectedLoader = new CleanGroovyClassLoader(loader, cc);
+                    loaderF.set(sh, memoryProtectedLoader);
+                }
 
                 try {
                     return GroovySandbox.run(sh.parse(script), Whitelist.all());
@@ -325,16 +336,18 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 }
             } else {
                 sh = new GroovyShell(loader, binding);
-                memoryProtectedLoader = new CleanGroovyClassLoader(loader);
-                loaderF.set(sh, memoryProtectedLoader);
+                if (canDoCleanup) {
+                    memoryProtectedLoader = new CleanGroovyClassLoader(loader);
+                    loaderF.set(sh, memoryProtectedLoader);
+                }
                 return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
             }
 
         } finally {
             try {
-                loader = null;
-                // FIXME: DOES NOT DO ENOUGH CLEANUP, SEE IF WE NEED TO HOOK INTO CLASSLOADING MORE AND CHECK WHAT WE DO WITH CPSGROOVYSHELL
-                cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+                if (canDoCleanup) {
+                    cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+                }
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING, "failed to clean up memory " , x);
             }
