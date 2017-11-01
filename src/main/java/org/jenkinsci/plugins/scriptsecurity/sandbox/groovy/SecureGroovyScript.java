@@ -57,6 +57,9 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
@@ -152,7 +155,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
             return;
         }*/
-
+        // Check me, am I cleaning up the right loader???
         if (!(loader instanceof GroovyClassLoader)) {
             LOGGER.log(Level.FINER, "ignoring {0}", loader);
             return;
@@ -290,6 +293,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
         URLClassLoader urlcl = null;
+        ClassLoader memoryProtectedLoader = null;
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
             List<URL> urlList = new ArrayList<URL>(cp.size());
@@ -303,19 +307,34 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
         try {
             loader = GroovySandbox.createSecureClassLoader(loader);
+
+            Field loaderF = GroovyShell.class.getDeclaredField("loader");
+            loaderF.setAccessible(true);
+
+            GroovyShell sh;
             if (sandbox) {
-                GroovyShell shell = new GroovyShell(loader, binding, GroovySandbox.createSecureCompilerConfiguration());
+                CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+                sh = new GroovyShell(loader, binding, cc);
+                memoryProtectedLoader = new CleanGroovyClassLoader(loader, cc);
+                loaderF.set(sh, memoryProtectedLoader);
+
                 try {
-                    return GroovySandbox.run(shell.parse(script), Whitelist.all());
+                    return GroovySandbox.run(sh.parse(script), Whitelist.all());
                 } catch (RejectedAccessException x) {
                     throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
                 }
             } else {
-                return new GroovyShell(loader, binding).evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+                sh = new GroovyShell(loader, binding);
+                memoryProtectedLoader = new CleanGroovyClassLoader(loader);
+                loaderF.set(sh, memoryProtectedLoader);
+                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
             }
+
         } finally {
             try {
-                cleanUpLoader(loader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+                loader = null;
+                // FIXME: DOES NOT DO ENOUGH CLEANUP, SEE IF WE NEED TO HOOK INTO CLASSLOADING MORE AND CHECK WHAT WE DO WITH CPSGROOVYSHELL
+                cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING, "failed to clean up memory " , x);
             }
@@ -323,6 +342,43 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             if (urlcl != null) {
                 urlcl.close();
             }
+        }
+    }
+
+
+    /**
+     * Disables the weird and unreliable {@link groovy.lang.GroovyClassLoader.InnerLoader}.
+     * This is apparently only necessary when you are using class recompilation, which we are not.
+     * We want the {@linkplain Class#getClassLoader defining loader} of {@code *.groovy} to be this one.
+     * Otherwise the defining loader will be an {@code InnerLoader}, and not necessarily the same instance from load to load.
+     * @see GroovyClassLoader#getTimeStamp
+     */
+    private static final class CleanGroovyClassLoader extends GroovyClassLoader {
+
+        CleanGroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
+            super(loader, config);
+        }
+
+        CleanGroovyClassLoader(ClassLoader loader) {
+            super(loader);
+        }
+
+        @Override protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
+            // Super implementation is what creates the InnerLoader.
+            return new CleanClassCollector(unit, su);
+        }
+
+        private final class CleanClassCollector extends ClassCollector {
+
+            CleanClassCollector(CompilationUnit unit, SourceUnit su) {
+                // Cannot override {@code final cl} field so have to do it this way.
+                super(null, unit, su);
+            }
+
+            @Override public GroovyClassLoader getDefiningClassLoader() {
+                return CleanGroovyClassLoader.this;
+            }
+
         }
     }
 
