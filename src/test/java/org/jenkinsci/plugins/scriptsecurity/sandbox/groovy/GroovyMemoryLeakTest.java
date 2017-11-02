@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author Sam Van Oort
+ * Tests for memory leak cleanup successfully purging the most common memory leak.
  */
 public class GroovyMemoryLeakTest {
     @ClassRule
