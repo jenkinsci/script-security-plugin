@@ -136,11 +136,13 @@ method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
 method java.util.Collection isEmpty
 method java.util.Collection removeAll java.util.Collection
+method java.util.Collection retainAll java.util.Collection
 method java.util.Collection size
 staticMethod java.util.Collections sort java.util.List java.util.Comparator
 new java.util.Date
 new java.util.Date long
 new java.util.HashSet
+new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
 method java.util.Iterator next
 method java.util.List get int
@@ -211,6 +213,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map 
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Map groovy.lang.Closure
@@ -328,6 +331,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.C
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Collection java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Iterator java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods inject java.util.Map java.lang.Object groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods intersect java.util.Set java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isCase java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods isNumber java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods iterator java.lang.Object
