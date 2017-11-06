@@ -50,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -583,6 +584,17 @@ public class SandboxInterceptorTest {
             }
             return super.getProperty(property);
         }
+    }
+
+    @Ignore("TODO last fails with: RejectedAccessException: Scripts not permitted to use new java.util.Properties java.util.Properties")
+    @Issue("JENKINS-46757")
+    @Test public void properties() throws Exception {
+        String script = "def properties = new Properties()";
+        assertRejected(new StaticWhitelist(), "new java.util.Properties", script);
+        assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
+        script = "Properties properties = new Properties()";
+        assertRejected(new StaticWhitelist(), "new java.util.Properties", script);
+        assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
     }
 
     @Issue("SECURITY-566")
