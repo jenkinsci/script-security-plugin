@@ -59,7 +59,7 @@ public final class TestGroovyRecorder extends Recorder {
         try {
             Binding binding = new Binding();
             binding.setVariable("build", build);
-            build.setDescription(script.evaluate(Jenkins.getInstance().getPluginManager().uberClassLoader, binding).toString());
+            build.setDescription(String.valueOf(script.evaluate(Jenkins.getInstance().getPluginManager().uberClassLoader, binding)));
         } catch (Exception x) {
             throw new IOException(x);
         }
