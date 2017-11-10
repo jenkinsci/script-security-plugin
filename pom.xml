@@ -55,23 +55,5 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency> <!-- For memory leak testing. -->
-      <groupId>org.jvnet.hudson.plugins</groupId>
-      <artifactId>groovy-postbuild</artifactId>
-      <version>2.3.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency> <!-- Required for groovy postbuild. -->
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>matrix-project</artifactId>
-      <version>1.4.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency> <!-- Required for groovy postbuild, because needed for matrix-project after unbundling. -->
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>junit</artifactId>
-      <version>1.15</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 </project>

@@ -7,7 +7,6 @@ import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.plugins.groovypostbuild.GroovyPostbuildRecorder;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
@@ -46,10 +45,8 @@ public class GroovyMemoryLeakTest {
     @Test
     public void loaderReleased() throws Exception {
         FreeStyleProject p = r.jenkins.createProject(FreeStyleProject.class, "p");
-        p.addPublisher(new GroovyPostbuildRecorder(
-                new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, null),
-                2, false
-        ));
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, null)));
         r.buildAndAssertSuccess(p);
 
         assertFalse(LOADERS.isEmpty());
