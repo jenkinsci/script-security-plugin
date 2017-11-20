@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.37</version>
+    <version>3.0</version>
     <relativePath />
   </parent>
 
@@ -12,7 +12,7 @@
     <packaging>hpi</packaging>
     <name>Script Security Plugin</name>
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Script+Security+Plugin</url> 
+    <url>https://wiki.jenkins.io/display/JENKINS/Script+Security+Plugin</url>
     <properties>
       <jenkins.version>2.7.3</jenkins.version>
     </properties>
