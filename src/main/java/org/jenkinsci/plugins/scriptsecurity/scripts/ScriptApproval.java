@@ -354,6 +354,17 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         }
     }
 
+    /** Nothing has ever been approved or is pending. */
+    boolean isEmpty() {
+        return approvedScriptHashes.isEmpty() &&
+               approvedSignatures.isEmpty() &&
+               aclApprovedSignatures.isEmpty() &&
+               approvedClasspathEntries.isEmpty() &&
+               pendingScripts.isEmpty() &&
+               pendingSignatures.isEmpty() &&
+               pendingClasspathEntries.isEmpty();
+    }
+
     private static String hash(String script, String language) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");

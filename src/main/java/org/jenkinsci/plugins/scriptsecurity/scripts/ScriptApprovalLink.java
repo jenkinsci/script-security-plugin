@@ -35,6 +35,9 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class ScriptApprovalLink extends ManagementLink {
 
     @Override public String getIconFileName() {
+        if (ScriptApproval.get().isEmpty()) {
+            return null;
+        }
         return "notepad.png";
     }
 
