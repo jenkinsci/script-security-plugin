@@ -76,6 +76,10 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertThat(dangerousTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
     }
 
+    @Test public void nothingHappening() throws Exception {
+        assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
+    }
+
     private Script script(String groovy) {
         return new Script(groovy);
     }
