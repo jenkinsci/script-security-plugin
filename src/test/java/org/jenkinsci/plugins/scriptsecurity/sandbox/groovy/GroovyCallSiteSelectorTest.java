@@ -29,11 +29,20 @@ import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
 import hudson.EnvVars;
+import hudson.model.BooleanParameterValue;
 import hudson.model.Hudson;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.*;
@@ -92,7 +101,43 @@ public class GroovyCallSiteSelectorTest {
     @Issue("JENKINS-45117")
     @Test public void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
-        assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[] {"x"}));
+        assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[]{"x"}));
+        List<ParameterValue> params = new ArrayList<>();
+        params.add(new StringParameterValue("someParam", "someValue"));
+        params.add(new BooleanParameterValue("someBool", true));
+        params.add(new StringParameterValue("someOtherParam", "someOtherValue"));
+        assertEquals(ParametersAction.class.getConstructor(List.class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{params}));
+        assertEquals(ParametersAction.class.getConstructor(ParameterValue[].class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{params.get(0)}));
+        assertEquals(ParametersAction.class.getConstructor(ParameterValue[].class),
+                GroovyCallSiteSelector.constructor(ParametersAction.class, params.toArray()));
+        assertEquals(EnumeratingWhitelist.MethodSignature.class.getConstructor(Class.class, String.class, Class[].class),
+                GroovyCallSiteSelector.constructor(EnumeratingWhitelist.MethodSignature.class,
+                        new Object[]{String.class, "foo", Integer.class, Float.class}));
     }
 
+    @Issue("JENKINS-47159")
+    @Test
+    public void varargsFailureCases() throws Exception {
+        // If there's a partial match, we should get a ClassCastException
+        try {
+            assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
+                    new Object[]{new BooleanParameterValue("someBool", true), "x"}));
+        } catch (Exception e) {
+            assertTrue(e instanceof ClassCastException);
+            assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
+                    e.getMessage());
+        }
+        // If it's a complete non-match, we just shouldn't get a constructor.
+        assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
+    }
+
+    @Issue("JENKINS-37257")
+    @Test
+    public void varargsArrayElementTypeMismatch() throws Exception {
+        List<String> l = Arrays.asList("a", "b", "c");
+        assertEquals(String.class.getMethod("join", CharSequence.class, Iterable.class),
+                GroovyCallSiteSelector.staticMethod(String.class, "join", new Object[]{",", l}));
+    }
 }
