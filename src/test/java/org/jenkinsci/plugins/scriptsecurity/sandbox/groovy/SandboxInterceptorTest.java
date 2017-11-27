@@ -50,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -535,6 +536,25 @@ public class SandboxInterceptorTest {
             return StringUtils.join(vals, sep);
         }
         public static void explode(String... vals) {}
+        @Whitelisted
+        public static String varargsMethod(Integer i, Boolean b, StringContainer... s) {
+            return i.toString() + "-" + b.toString() + "-" + StringUtils.join(s, "-");
+        }
+    }
+
+    public static final class StringContainer {
+        final String o;
+
+        @Whitelisted
+        public StringContainer(String o) {
+            this.o = o;
+        }
+
+        @Whitelisted
+        @Override
+        public String toString() {
+            return o;
+        }
     }
 
     @Test public void templates() throws Exception {
@@ -583,6 +603,17 @@ public class SandboxInterceptorTest {
             }
             return super.getProperty(property);
         }
+    }
+
+    @Ignore("TODO last fails with: RejectedAccessException: Scripts not permitted to use new java.util.Properties java.util.Properties")
+    @Issue("JENKINS-46757")
+    @Test public void properties() throws Exception {
+        String script = "def properties = new Properties()";
+        assertRejected(new StaticWhitelist(), "new java.util.Properties", script);
+        assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
+        script = "Properties properties = new Properties()";
+        assertRejected(new StaticWhitelist(), "new java.util.Properties", script);
+        assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
     }
 
     @Issue("SECURITY-566")
@@ -922,6 +953,20 @@ public class SandboxInterceptorTest {
         String uv = UsesVarargs.class.getName();
 
         assertEvaluate(wl, 3, "def twoStr = 'two'; " + uv + ".len('one', \"${twoStr}\", 'three')");
+    }
 
+    @Issue("JENKINS-47893")
+    @Test
+    public void varArgsWithOtherArgs() throws Exception {
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        String uv = UsesVarargs.class.getName();
+        String sc = StringContainer.class.getName();
+        String script = sc + " a = new " + sc + "(\"a\")\n"
+                + sc + " b = new " + sc + "(\"b\")\n"
+                + sc + " c = new " + sc + "(\"c\")\n"
+                + "return " + uv + ".varargsMethod(4, true, a, b, c)\n";
+
+        String expected = "4-true-a-b-c";
+        assertEvaluate(wl, expected, script);
     }
 }
