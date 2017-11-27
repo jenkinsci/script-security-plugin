@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2014 CloudBees, Inc.
+ * Copyright 2017 CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,28 +24,30 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts.languages;
 
-import org.jenkinsci.plugins.scriptsecurity.scripts.Language;
 import hudson.Extension;
 import hudson.ExtensionList;
+import hudson.Util;
+import org.jenkinsci.plugins.scriptsecurity.scripts.Language;
 
 /**
- * Language for Groovy Template scripts generating Bourne Shell script.
- * <p>The protection here is about the Groovy scripting,
- * similar to {@link GroovyLanguage} or {@link GroovyXmlLanguage}.
- * Not to be confused with unprocessed strings controlled by {@link SystemCommandLanguage}.
+ * Language for launched processes, as per {@link Util#tokenize(String)} and {@link ProcessBuilder}.
+ * Typically the launch is on the master so arbitrary content could be dangerous.
  */
-@Extension public final class GroovyShellLanguage extends Language {
+@Extension
+public class SystemCommandLanguage extends Language {
 
     public static Language get() {
-        return ExtensionList.lookup(Language.class).get(GroovyShellLanguage.class);
+        return ExtensionList.lookup(Language.class).get(SystemCommandLanguage.class);
     }
 
-    @Override public String getName() {
-        return "groovy-sh";
+    @Override
+    public String getName() {
+        return "system-command";
     }
 
-    @Override public String getDisplayName() {
-        return "Groovy Template for Shell";
+    @Override
+    public String getDisplayName() {
+        return "System Commands";
     }
 
 }
