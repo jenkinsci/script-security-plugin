@@ -126,22 +126,34 @@ public class GroovySandbox {
     /**
      * Runs a script in the sandbox.
      * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
+     * Before running a sandboxed script, always {@link org.kohsuke.groovy.sandbox.GroovyInterceptor#register register} and after that make sure to {@link org.kohsuke.groovy.sandbox.GroovyInterceptor#unregister unregister}
      * @param script a script ready to {@link Script#run}, created for example by {@link GroovyShell#parse(String)}
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @return the value produced by the script, if any
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      */
     public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
-        Whitelist wrapperWhitelist = new ProxyWhitelist(
-                new ClassLoaderWhitelist(script.getClass().getClassLoader()),
-                whitelist);
-        GroovyInterceptor sandbox = new SandboxInterceptor(wrapperWhitelist);
+        GroovyInterceptor sandbox = createSandbox(script, whitelist);
         sandbox.register();
         try {
             return script.run();
         } finally {
             sandbox.unregister();
         }
+    }
+
+    /**
+     * Prepares a sandbox for a script.
+     * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
+     * @param script a script ready to {@link Script#run}, created for example by {@link GroovyShell#parse(String)}
+     * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
+     * @return the sandbox for running this script
+     */
+    public static GroovyInterceptor createSandbox(@Nonnull Script script, @Nonnull final Whitelist whitelist) {
+        Whitelist wrapperWhitelist = new ProxyWhitelist(
+                new ClassLoaderWhitelist(script.getClass().getClassLoader()),
+                whitelist);
+        return new SandboxInterceptor(wrapperWhitelist);
     }
 
     private GroovySandbox() {}
