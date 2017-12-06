@@ -195,14 +195,48 @@ class GroovyCallSiteSelector {
 
     private static Method findMatchingMethod(Class<?> receiver, String method, Object[] args) {
         Method candidate = null;
+
         for (Method m : receiver.getDeclaredMethods()) {
-            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, m.isVarArgs()))) {
-                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), m.isVarArgs(), candidate, candidate.getParameterTypes(), candidate.isVarArgs())) {
+            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, isVargsMethod(m, args)))) {
+                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), isVargsMethod(m, args), candidate,
+                        candidate.getParameterTypes(), isVargsMethod(candidate, args))) {
                     candidate = m;
                 }
             }
         }
         return candidate;
+    }
+
+    /**
+     * Emulates, with some tweaks, {@link org.codehaus.groovy.reflection.ParameterTypes#isVargsMethod(Object[])}
+     */
+    private static boolean isVargsMethod(Method m, Object[] args) {
+        if (m.isVarArgs()) {
+            return true;
+        }
+        Class<?>[] paramTypes = m.getParameterTypes();
+
+        // If there's 0 or only 1 parameter type, we don't want to do varargs magic. Normal callsite selector logic works then.
+        if (paramTypes.length < 2) {
+            return false;
+        }
+
+        int lastIndex = paramTypes.length - 1;
+        // If there are more arguments than parameter types and the last parameter type is an array, we may be vargy.
+        if (paramTypes[lastIndex].isArray() && args.length > paramTypes.length) {
+            Class<?> lastClass = paramTypes[lastIndex].getComponentType();
+            // Check each possible vararg to see if it can be cast to the array's component type. If not, we're not vargy.
+            for (int i = lastIndex; i < args.length; i++) {
+                if (!lastClass.isAssignableFrom(args[i].getClass())) {
+                    return false;
+                }
+            }
+            // Otherwise, we are.
+            return true;
+        }
+
+        // Fallback to we're not vargy.
+        return false;
     }
 
     public static @CheckForNull Field field(@Nonnull Object receiver, @Nonnull String field) {
