@@ -102,7 +102,7 @@ class GroovyCallSiteSelector {
             if (arrayLength == 1 && parameterTypes[fixedLen].isInstance(parameters[fixedLen])) {
                 // not a varargs call
                 return parameters;
-            } else if ((arrayLength > 0 && componentType.isInstance(parameters[fixedLen])) ||
+            } else if ((arrayLength > 0 && (componentType.isInstance(parameters[fixedLen]) || parameters[fixedLen] == null)) ||
                     arrayLength == 0) {
                 Object array = DefaultTypeTransformation.castToVargsArray(parameters, fixedLen, parameterTypes[fixedLen]);
                 Object[] parameters2 = new Object[fixedLen + 1];

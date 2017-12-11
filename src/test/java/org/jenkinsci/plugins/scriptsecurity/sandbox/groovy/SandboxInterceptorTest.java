@@ -970,6 +970,17 @@ public class SandboxInterceptorTest {
         assertEvaluate(wl, expected, script);
     }
 
+    @Issue("JENKINS-48364")
+    @Test
+    public void nullFirstVarArg() throws Exception {
+        ProxyWhitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
+        String uv = UsesVarargs.class.getName();
+
+        String script = "return " + uv + ".join(':', null, 'def', 'ghi')\n";
+        String expected = ":def:ghi";
+        assertEvaluate(wl, expected, script);
+    }
+    
     @Issue("JENKINS-46213")
     @Test
     public void varArgsOnStaticDeclaration() throws Exception {
