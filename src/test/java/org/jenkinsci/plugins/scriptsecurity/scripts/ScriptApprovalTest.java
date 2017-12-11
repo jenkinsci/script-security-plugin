@@ -27,21 +27,29 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import org.hamcrest.Matchers;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.LoggerRule;
 import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
+    @Rule
+    public LoggerRule logging = new LoggerRule();
+
     private static final String CLEAR_ALL_ID = "approvedScripts-clear";
 
     private static final AtomicLong COUNTER = new AtomicLong(0L);
@@ -53,12 +61,27 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         script("").use();
     }
 
-    @Test @LocalData public void dangerousApprovedSignatures() {
+    @Issue("JENKINS-46764")
+    @Test
+    @LocalData("malformedScriptApproval")
+    public void malformedScriptApproval() throws Exception {
+        logging.record(ScriptApproval.class, Level.FINER).capture(100);
+        try {
+            Whitelist w = new ScriptApproval.ApprovedWhitelist();
+        } catch (Exception e) {
+            // ignore - we want to make sure we're logging this properly.
+        }
+        assertThat(logging.getRecords(), Matchers.hasSize(Matchers.equalTo(1)));
+        assertEquals("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'",
+                logging.getRecords().get(0).getMessage());
+    }
+
+    @Test @LocalData("dangerousApproved") public void dangerousApprovedSignatures() {
         String[] dangerousSignatures = ScriptApproval.get().getDangerousApprovedSignatures();
         assertEquals(1, dangerousSignatures.length);
     }
 
-    @Test @LocalData public void dangerousApprovedWarnings() throws IOException, SAXException {
+    @Test @LocalData("dangerousApproved") public void dangerousApprovedWarnings() throws IOException, SAXException {
         JenkinsRule.WebClient wc = r.createWebClient();
         HtmlPage managePage = wc.goTo("manage");
 

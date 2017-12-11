@@ -980,4 +980,35 @@ public class SandboxInterceptorTest {
         String expected = ":def:ghi";
         assertEvaluate(wl, expected, script);
     }
+    
+    @Issue("JENKINS-46213")
+    @Test
+    public void varArgsOnStaticDeclaration() throws Exception {
+        String script = "class Explode {\n" +
+                "  static TEST_FMT = 'a:%s b:%s'\n" +
+                "  static STATIC_TEST = sprintf(\n" +
+                "    TEST_FMT,\n" +
+                "    '1',\n" +
+                "    '2',\n" +
+                "  )\n" +
+                "  String fieldTest = sprintf(\n" +
+                "    TEST_FMT,\n" +
+                "    '3',\n" +
+                "    '4',\n" +
+                "  )\n" +
+                "}\n" +
+                "def ex = new Explode()\n" +
+                "return \"${Explode.STATIC_TEST} ${ex.fieldTest}\"\n";
+
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sprintf java.lang.Object java.lang.String java.lang.Object[]"),
+                "a:1 b:2 a:3 b:4",
+                script);
+    }
+
+    @Issue("SECURITY-663")
+    @Test
+    public void castAsFile() throws Exception {
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "def s = []; ('/tmp/foo' as File).each { s << it }\n");
+    }
 }
