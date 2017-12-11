@@ -969,4 +969,12 @@ public class SandboxInterceptorTest {
         String expected = "4-true-a-b-c";
         assertEvaluate(wl, expected, script);
     }
+
+    @Issue("SECURITY-663")
+    @Test
+    public void castAsFile() throws Exception {
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "def s = []; ('/tmp/foo' as File).each { s << it }\n");
+
+    }
 }
