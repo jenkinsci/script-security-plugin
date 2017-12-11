@@ -197,9 +197,10 @@ class GroovyCallSiteSelector {
         Method candidate = null;
 
         for (Method m : receiver.getDeclaredMethods()) {
-            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, isVargsMethod(m, args)))) {
-                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), isVargsMethod(m, args), candidate,
-                        candidate.getParameterTypes(), isVargsMethod(candidate, args))) {
+            boolean isVarArgs = isVarArgsMethod(m, args);
+            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, isVarArgs))) {
+                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), isVarArgs, candidate,
+                        candidate.getParameterTypes(), isVarArgsMethod(candidate, args))) {
                     candidate = m;
                 }
             }
@@ -210,7 +211,7 @@ class GroovyCallSiteSelector {
     /**
      * Emulates, with some tweaks, {@link org.codehaus.groovy.reflection.ParameterTypes#isVargsMethod(Object[])}
      */
-    private static boolean isVargsMethod(Method m, Object[] args) {
+    private static boolean isVarArgsMethod(Method m, Object[] args) {
         if (m.isVarArgs()) {
             return true;
         }
