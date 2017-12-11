@@ -667,9 +667,14 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 
     @Restricted(NoExternalUse.class) // implementation
     @Extension public static final class ApprovedWhitelist extends ProxyWhitelist {
-        public ApprovedWhitelist() throws IOException {
-            reconfigure();
+        public ApprovedWhitelist() {
+            try {
+                reconfigure();
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + e.getMessage() + "'");
+            }
         }
+
         String[][] reconfigure() throws IOException {
             ScriptApproval instance = ScriptApproval.get();
             synchronized (instance) {

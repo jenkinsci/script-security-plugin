@@ -993,4 +993,11 @@ public class SandboxInterceptorTest {
                 "a:1 b:2 a:3 b:4",
                 script);
     }
+
+    @Issue("SECURITY-663")
+    @Test
+    public void castAsFile() throws Exception {
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "def s = []; ('/tmp/foo' as File).each { s << it }\n");
+    }
 }
