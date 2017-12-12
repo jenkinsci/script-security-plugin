@@ -193,15 +193,17 @@ class GroovyCallSiteSelector {
         return findMatchingMethod(receiver, method, args);
     }
 
-    private static Method findMatchingMethod(Class<?> receiver, String method, Object[] args) {
+    private static Method findMatchingMethod(@Nonnull Class<?> receiver, @Nonnull String method, @Nonnull Object[] args) {
         Method candidate = null;
 
         for (Method m : receiver.getDeclaredMethods()) {
-            boolean isVarArgs = isVarArgsMethod(m, args);
-            if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, isVarArgs))) {
-                if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), isVarArgs, candidate,
-                        candidate.getParameterTypes(), isVarArgsMethod(candidate, args))) {
-                    candidate = m;
+            if (m != null) {
+                boolean isVarArgs = isVarArgsMethod(m, args);
+                if (m.getName().equals(method) && (matches(m.getParameterTypes(), args, isVarArgs))) {
+                    if (candidate == null || isMoreSpecific(m, m.getParameterTypes(), isVarArgs, candidate,
+                            candidate.getParameterTypes(), isVarArgsMethod(candidate, args))) {
+                        candidate = m;
+                    }
                 }
             }
         }
@@ -211,7 +213,7 @@ class GroovyCallSiteSelector {
     /**
      * Emulates, with some tweaks, {@link org.codehaus.groovy.reflection.ParameterTypes#isVargsMethod(Object[])}
      */
-    private static boolean isVarArgsMethod(Method m, Object[] args) {
+    private static boolean isVarArgsMethod(@Nonnull Method m, @Nonnull Object[] args) {
         if (m.isVarArgs()) {
             return true;
         }
@@ -226,9 +228,9 @@ class GroovyCallSiteSelector {
         // If there are more arguments than parameter types and the last parameter type is an array, we may be vargy.
         if (paramTypes[lastIndex].isArray() && args.length > paramTypes.length) {
             Class<?> lastClass = paramTypes[lastIndex].getComponentType();
-            // Check each possible vararg to see if it can be cast to the array's component type. If not, we're not vargy.
+            // Check each possible vararg to see if it can be cast to the array's component type or is null. If not, we're not vargy.
             for (int i = lastIndex; i < args.length; i++) {
-                if (!lastClass.isAssignableFrom(args[i].getClass())) {
+                if (args[i] != null && !lastClass.isAssignableFrom(args[i].getClass())) {
                     return false;
                 }
             }

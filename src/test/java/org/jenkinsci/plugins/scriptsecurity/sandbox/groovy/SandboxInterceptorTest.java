@@ -1011,4 +1011,15 @@ public class SandboxInterceptorTest {
         assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
                 "def s = []; ('/tmp/foo' as File).each { s << it }\n");
     }
+
+    @Issue("JENKINS-48501")
+    @Test
+    public void nullInVarArgsAsArray() throws Exception {
+        String script = "def TEST_FMT = 'a:%s b:%s c:%s d:%s'\n" +
+                "String s = sprintf(TEST_FMT, null, '2', '3', '4')\n" +
+                "return s\n";
+        assertEvaluate(new StaticWhitelist("staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sprintf java.lang.Object java.lang.String java.lang.Object[]"),
+                "a:null b:2 c:3 d:4",
+                script);
+    }
 }
