@@ -87,7 +87,7 @@ class SandboxResolvingClassLoader extends ClassLoader {
                             t.setName(origName);
                             long ms = (System.nanoTime() - start) / 1000000;
                             if (ms > 250) {
-                                LOGGER.log(Level.DEBUG, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
+                                LOGGER.log(Level.FINE, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
                             }
                         }
                     }
