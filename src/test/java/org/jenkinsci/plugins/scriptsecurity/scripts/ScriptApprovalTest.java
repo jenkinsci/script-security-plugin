@@ -54,6 +54,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     private static final AtomicLong COUNTER = new AtomicLong(0L);
 
+    private static final String WHITELISTED_SIGNATURE = "method java.lang.String trim";
     private static final String DANGEROUS_SIGNATURE = "staticMethod hudson.model.User current";
 
     @Test public void emptyScript() throws Exception {
@@ -101,6 +102,32 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @Test public void nothingHappening() throws Exception {
         assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
+    }
+
+    @Test public void clearMethodsLifeCycle() throws Exception {
+        ScriptApproval sa = ScriptApproval.get();
+        assertEquals(0, sa.getApprovedSignatures().length);
+
+        sa.approveSignature(WHITELISTED_SIGNATURE);
+        assertEquals(1, sa.getApprovedSignatures().length);
+        assertEquals(0, sa.getDangerousApprovedSignatures().length);
+        
+        sa.approveSignature(DANGEROUS_SIGNATURE);
+        assertEquals(2, sa.getApprovedSignatures().length);
+        assertEquals(1, sa.getDangerousApprovedSignatures().length);
+        
+        sa.clearApprovedSignatures();
+        assertEquals(0, sa.getApprovedSignatures().length);
+        assertEquals(0, sa.getDangerousApprovedSignatures().length);
+    
+        sa.approveSignature(WHITELISTED_SIGNATURE);
+        sa.approveSignature(DANGEROUS_SIGNATURE);
+        assertEquals(2, sa.getApprovedSignatures().length);
+        assertEquals(1, sa.getDangerousApprovedSignatures().length);
+        
+        sa.clearDangerousApprovedSignatures();
+        assertEquals(1, sa.getApprovedSignatures().length);
+        assertEquals(0, sa.getDangerousApprovedSignatures().length);
     }
 
     private Script script(String groovy) {
