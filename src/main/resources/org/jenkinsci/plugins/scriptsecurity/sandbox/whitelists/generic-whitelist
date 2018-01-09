@@ -33,8 +33,6 @@ method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
 method groovy.lang.Script getBinding
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.lang.String groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.util.regex.Pattern groovy.lang.Closure
 
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
@@ -198,6 +196,7 @@ method net.sf.json.JSON size
 
 # More Groovy:
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
+
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String java.util.TimeZone
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString java.util.Date
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
@@ -422,6 +421,8 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.St
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Set groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String
