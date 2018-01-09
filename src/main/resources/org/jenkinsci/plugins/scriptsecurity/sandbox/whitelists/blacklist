@@ -103,3 +103,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Ob
 
 # TODO do we need a @Blacklisted annotation?
 method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
+
+# SECURITY-683 speculative approach to Spectre/Meltdown
+staticMethod java.lang.System nanoTime
