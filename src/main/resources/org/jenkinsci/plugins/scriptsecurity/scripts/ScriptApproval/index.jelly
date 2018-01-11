@@ -250,8 +250,7 @@ THE SOFTWARE.
             </p>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 Or you can just remove the dangerous ones:
-                <button onclick="if (confirm('Really delete all dangerous approvals? Any scripts that was using such signatures will need to be rerun and signatures reapproved.')) {clearDangerousApprovedSignatures()}">Clear only dangerous Approvals</button>
-
+                <button onclick="clearDangerousApprovedSignatures()">Clear only dangerous Approvals</button>
             </j:if>
             <hr/>
             <p id="pendingClasspathEntries-none">

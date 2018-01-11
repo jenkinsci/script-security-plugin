@@ -824,23 +824,19 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @JavaScriptMethod public synchronized String[][] clearDangerousApprovedSignatures() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
 
-        TreeSet<String> newApprovedSignatures = new TreeSet<>();
-        for (String signature : approvedSignatures) {
-            if(!StaticWhitelist.isBlacklisted(signature)){
-                newApprovedSignatures.add(signature);
+        Iterator<String> it = approvedSignatures.iterator();
+        while (it.hasNext()) {
+            if (StaticWhitelist.isBlacklisted(it.next())) {
+                it.remove();
             }
         }
-        approvedSignatures.clear();
-        approvedSignatures.addAll(newApprovedSignatures);
 
-        TreeSet<String> newAclApprovedSignatures = new TreeSet<>();
-        for (String signature : aclApprovedSignatures) {
-            if(!StaticWhitelist.isBlacklisted(signature)){
-                newAclApprovedSignatures.add(signature);
+        it = aclApprovedSignatures.iterator();
+        while (it.hasNext()) {
+            if (StaticWhitelist.isBlacklisted(it.next())) {
+                it.remove();
             }
         }
-        aclApprovedSignatures.clear();
-        aclApprovedSignatures.addAll(newAclApprovedSignatures);
 
         save();
         return reconfigure();
