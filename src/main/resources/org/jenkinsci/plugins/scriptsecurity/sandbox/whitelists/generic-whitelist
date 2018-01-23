@@ -468,6 +468,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.E
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList java.util.Iterator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList short[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toListString java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toListString java.util.Collection int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toMapString java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toMapString java.util.Map int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toSet java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.Character
