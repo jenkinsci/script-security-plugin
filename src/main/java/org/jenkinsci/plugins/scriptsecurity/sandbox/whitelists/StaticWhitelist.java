@@ -52,7 +52,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 /**
  * Whitelist based on a static file.
  */
-public final class StaticWhitelist extends EnumeratingWhitelist {
+public final class StaticWhitelist extends EnumeratingWhitelist implements CacheableWhitelist {
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();

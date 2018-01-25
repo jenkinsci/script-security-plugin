@@ -38,7 +38,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 /**
  * A whitelist based on listing signatures and searching them.
  */
-public abstract class EnumeratingWhitelist extends Whitelist {
+public abstract class EnumeratingWhitelist extends Whitelist implements CacheableWhitelist {
 
     protected abstract List<MethodSignature> methodSignatures();
 

@@ -33,7 +33,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Includes entries useful for scripts accessing the Jenkins API, such as model objects.
  */
 @Restricted(NoExternalUse.class)
-@Extension public final class JenkinsWhitelist extends ProxyWhitelist {
+@Extension public final class JenkinsWhitelist extends ProxyWhitelist implements CacheableWhitelist {
 
     public JenkinsWhitelist() throws IOException {
         super(StaticWhitelist.from(JenkinsWhitelist.class.getResource("jenkins-whitelist")));
