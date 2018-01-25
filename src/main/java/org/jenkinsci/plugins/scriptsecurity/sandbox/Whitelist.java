@@ -66,6 +66,45 @@ public abstract class Whitelist implements ExtensionPoint {
 
     public abstract boolean permitsStaticFieldSet(@Nonnull Field field, @CheckForNull Object value);
 
+    // Utility methods for creating canonical string representations of the signature
+    public static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+        for (String type : types) {
+            b.append(' ').append(type);
+        }
+        return b;
+    }
+
+    public static @Nonnull String getName(@Nonnull Class<?> c) {
+        Class<?> e = c.getComponentType();
+        if (e == null) {
+            return c.getName();
+        } else {
+            return getName(e) + "[]";
+        }
+    }
+
+    public static @Nonnull String getName(@CheckForNull Object o) {
+        return o == null ? "null" : getName(o.getClass());
+    }
+
+    public static String[] argumentTypes(Class<?>[] argumentTypes) {
+        String[] s = new String[argumentTypes.length];
+        for (int i = 0; i < argumentTypes.length; i++) {
+            s[i] = getName(argumentTypes[i]);
+        }
+        return s;
+    }
+
+    /** Canonical name for a field access. */
+    public static String canonicalFieldString(@Nonnull Field field) {
+        return getName(field.getDeclaringClass()) + ' ' + field.getName();
+    }
+
+    /** Canonical name for a field access. */
+    public static String canonicalMethodString(@Nonnull Method method) {
+        return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
+    }
+
     /**
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.
      * @return an aggregated default list

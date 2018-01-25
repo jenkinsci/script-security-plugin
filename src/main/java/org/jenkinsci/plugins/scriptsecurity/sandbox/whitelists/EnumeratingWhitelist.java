@@ -115,27 +115,6 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return false;
     }
 
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
-        Class<?> e = c.getComponentType();
-        if (e == null) {
-            return c.getName();
-        } else {
-            return getName(e) + "[]";
-        }
-    }
-
-    public static @Nonnull String getName(@CheckForNull Object o) {
-        return o == null ? "null" : getName(o.getClass());
-    }
-
-    private static String[] argumentTypes(Class<?>[] argumentTypes) {
-        String[] s = new String[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            s[i] = getName(argumentTypes[i]);
-        }
-        return s;
-    }
-
     private static boolean is(String thisIdentifier, String identifier) {
         return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
     }
@@ -143,12 +122,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     public static abstract class Signature implements Comparable<Signature> {
         /** Form as in {@link StaticWhitelist} entries. */
         @Override public abstract String toString();
-        final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
-            for (String type : types) {
-                b.append(' ').append(type);
-            }
-            return b;
-        }
+
         abstract String signaturePart();
         @Override public int compareTo(Signature o) {
             int r = signaturePart().compareTo(o.signaturePart());
