@@ -27,11 +27,21 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
+import javax.sql.rowset.Predicate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -39,10 +49,12 @@ import java.util.WeakHashMap;
 /**
  * Aggregates several whitelists.
  */
+@SuppressFBWarnings(value = "RC_REF_COMPARISON_BAD_PRACTICE_BOOLEAN", justification = "We want to be aware of null Boolean values and reference comparison is very efficient.")
 public class ProxyWhitelist extends Whitelist {
     
     private Collection<? extends Whitelist> originalDelegates;
     private final List<Whitelist> delegates = new ArrayList<Whitelist>();
+    private final List<Whitelist> sortedDelegates = new ArrayList<Whitelist>();
     private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
     private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
     private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
@@ -51,9 +63,26 @@ public class ProxyWhitelist extends Whitelist {
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
+    /** Caches valid permission checks or false if no {@link CacheableWhitelist} approves the entry.
+     *  Synchronization not required because we already synchronize on delegates.
+     */
+    // TODO permission checks look HERE first, then iterate through Whitelists -- if Whitelist approving isinstanceof CacheableWhitelist it is cached.
+    // We may also be able to cache notes that none of the CacheableWhitelists match the method so we know to just check dynamic ones and fail if they don't permit
+    HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
+
     public ProxyWhitelist(Collection<? extends Whitelist> delegates) {
         reset(delegates);
     }
+
+    static final Comparator<Whitelist> CACHEABLE_WHITELIST_FIRST = new Comparator<Whitelist>() {
+        @Override
+        public int compare(Whitelist o1, Whitelist o2) {
+            if (o1 instanceof CacheableWhitelist ^ o2 instanceof CacheableWhitelist) {  // If they don't match
+                return (o1 instanceof CacheableWhitelist) ? -1 : 1;
+            }
+            return 0;
+        }
+    };
 
     private void reset() {
         reset(originalDelegates);
@@ -61,6 +90,7 @@ public class ProxyWhitelist extends Whitelist {
 
     public final void reset(Collection<? extends Whitelist> delegates) {
         synchronized (this.delegates) {
+            permittedCache.clear();
             originalDelegates = delegates;
             this.delegates.clear();
             methodSignatures.clear();
@@ -110,6 +140,9 @@ public class ProxyWhitelist extends Whitelist {
                     this.delegates.add(delegate);
                 }
             }
+            this.sortedDelegates.clear();
+            this.sortedDelegates.addAll(this.delegates);
+            Collections.sort(this.sortedDelegates, CACHEABLE_WHITELIST_FIRST);
             for (ProxyWhitelist pw : wrappers.keySet()) {
                 pw.reset();
             }
@@ -122,77 +155,168 @@ public class ProxyWhitelist extends Whitelist {
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalMethodSig(method);
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsMethod(method, receiver, args)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalConstructorSig(constructor);
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsConstructor(constructor, args)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalStaticMethodSig(method);
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsStaticMethod(method, args)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalFieldSig(field);  // Only non-cacheable Whitelists care about get vs. set
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsFieldGet(field, receiver)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalFieldSig(field);  // Only non-cacheable Whitelists care about get vs. set
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsFieldSet(field, receiver, value)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalStaticFieldSig(field);  // Only non-cacheable Whitelists care about get vs. set
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsStaticFieldGet(field)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
         synchronized (this.delegates) {
-            for (Whitelist delegate : delegates) {
+            String sigString = Whitelist.canonicalStaticFieldSig(field);  // Only non-cacheable Whitelists care about get vs. set
+            Boolean b = permittedCache.get(sigString);
+
+            if (b == Boolean.TRUE) {
+                return true;
+            }
+
+            for (Whitelist delegate : sortedDelegates) {
+                if (b == Boolean.FALSE && delegate instanceof CacheableWhitelist) {
+                    // Skip CacheableWhitelists if we already know none of them permit the method
+                    continue;
+                }
                 if (delegate.permitsStaticFieldSet(field, value)) {
+                    permittedCache.put(sigString, delegate instanceof CacheableWhitelist); // If we get a hit from non-Cacheable whitelists, none of the CacheableWhitelists permitted it
                     return true;
                 }
             }
+            permittedCache.put(sigString, Boolean.FALSE);
         }
         return false;
     }
