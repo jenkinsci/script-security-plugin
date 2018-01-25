@@ -100,9 +100,34 @@ public abstract class Whitelist implements ExtensionPoint {
         return getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
-    /** Canonical name for a field access. */
+    /** Canonical name for a method call. */
     public static String canonicalMethodString(@Nonnull Method method) {
         return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
+    }
+
+    /** Canonical name for a constructor call. */
+    public static String canonicalConstructorString(@Nonnull Constructor cons) {
+        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())).append(' ').append(cons.getName()), argumentTypes(cons.getParameterTypes())).toString();
+    }
+
+    public static String canonicalMethodSig(@Nonnull Method method) {
+        return "method "+canonicalMethodString(method);
+    }
+
+    public static String canonicalStaticMethodSig(@Nonnull Method method) {
+        return "staticMethod "+canonicalMethodString(method);
+    }
+
+    public static String canonicalConstructorSig(@Nonnull Constructor cons) {
+        return "new "+canonicalConstructorString(cons);
+    }
+
+    public static String canonicalFieldSig(@Nonnull Field field) {
+        return "field "+canonicalFieldString(field);
+    }
+
+    public static String canonicalStaticFieldSig(@Nonnull Field field) {
+        return "staticField "+canonicalFieldString(field);
     }
 
     /**
