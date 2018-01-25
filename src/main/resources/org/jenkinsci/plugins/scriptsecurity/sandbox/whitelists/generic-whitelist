@@ -56,6 +56,7 @@ method java.lang.Enum ordinal
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
+staticMethod java.lang.Integer toString int int
 staticMethod java.lang.Integer valueOf java.lang.String
 method java.lang.Iterable iterator
 staticMethod java.lang.Math max double double
