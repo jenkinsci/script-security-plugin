@@ -28,14 +28,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
-import javax.sql.rowset.Predicate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
