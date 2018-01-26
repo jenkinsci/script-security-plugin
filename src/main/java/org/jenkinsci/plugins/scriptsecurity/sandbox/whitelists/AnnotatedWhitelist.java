@@ -38,7 +38,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Whitelists anything marked with {@link Whitelisted}.
  */
 @Restricted(NoExternalUse.class)
-@Extension public final class AnnotatedWhitelist extends AclAwareWhitelist implements CacheableWhitelist {
+@Extension public final class AnnotatedWhitelist extends AclAwareWhitelist {
 
     public AnnotatedWhitelist() {
         super(new Impl(false), new Impl(true));
