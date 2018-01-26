@@ -48,6 +48,35 @@ import java.util.WeakHashMap;
 
 /**
  * Aggregates several whitelists.
+ *
+ * <p>To improve performance we split the {@link Whitelist}s into two categories:
+ *
+ * <ol>
+ *     <li>{@link CacheableWhitelist} for static whitelists whose permit/fail results can be cached.  This is because the lists do not change and depend ONLY on the signature of the Field/Method/Constructor (see the interface Javadocs).</li>
+ *     <li>Non-cacheable or "dynamic" Whitelists, which must be dynamically evaluated for each call, i.e. {@link AclAwareWhitelist}.</li>
+ * </ol>
+ *
+ * <p> We rely on the fact that an operation is permitted if ANY Whitelist approves it, and the majority of calls are approved by one of the CacheableWhitelist checks.
+ * By sorting the aggregated (delegate) Whitelists to evaluate CacheableWhitelists first, this allows us to partially cache lookups and use an optimized permission check.
+ *
+ * <ol>
+ *     <li>First, we generate a String signature specific to the Field/Method/Constructor call type</li>
+ *     <li>Then, this signature is used to check the cache {@link #permittedCache} - a stored "true" indicates that one of the CacheableWhitelist entries approved the method so it is always safe.</li>
+ *     <li>A stored "false" value is a bit more subtle:
+ *      <ol>
+ *          <li>It means we can SKIP the CacheableWhitelists entirely because we know none of them approved the call.</li>
+ *          <li>We still have to test against the non-cacheable Whitelists though, because one of them may dynamically approve the check, i.e. if THIS call happens with appropriate permissions.</li>
+ *          <li>But once none of the dynamic Whitelists permits the call, we know it is forbidden.</li>
+ *      </ol>
+ *     </li>
+ *     <li>If we don't have a cache entry, we need to do a full check. We use the {@link #sortedDelegates} field, which is sorted to put CacheableWhitelists first.</li>
+ *     <li>If the call is permitted, we look to see whether or not a CacheableWhitelist permitted it, and cache it as:
+ *      <ol>
+ *          <li>true - permitted statically by a CacheableWhitelist.</li>
+ *          <li>false - we know a CacheableWhitelist did not approve it - either a dynamic Whitelist approved it (after we checked the Cacheables) or we tried all of them and none of them did.</li>
+ *      </ol>
+ *     </li>
+ * </ol>
  */
 @SuppressFBWarnings(value = "RC_REF_COMPARISON_BAD_PRACTICE_BOOLEAN", justification = "We want to be aware of null Boolean values and reference comparison is very efficient.")
 public class ProxyWhitelist extends Whitelist {
@@ -64,16 +93,19 @@ public class ProxyWhitelist extends Whitelist {
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
     /** Caches valid permission checks or false if no {@link CacheableWhitelist} approves the entry.
+     *  This allows us to avoid redundant checks against the {@link Whitelist}s that statically approve
+     *   on the basis of the Method/Field/Constructor signature ONLY (see contract for CacheableWhitelist).
+     *
      *  Synchronization not required because we already synchronize on delegates.
      */
-    // TODO permission checks look HERE first, then iterate through Whitelists -- if Whitelist approving isinstanceof CacheableWhitelist it is cached.
-    // We may also be able to cache notes that none of the CacheableWhitelists match the method so we know to just check dynamic ones and fail if they don't permit
-    HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
+    private HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
 
     public ProxyWhitelist(Collection<? extends Whitelist> delegates) {
         reset(delegates);
     }
 
+    /** Sorter that ensures we check {@link CacheableWhitelist}s before the dynamically-evaluating whitelists such as
+     *  {@link AclAwareWhitelist}. */
     static final Comparator<Whitelist> CACHEABLE_WHITELIST_FIRST = new Comparator<Whitelist>() {
         @Override
         public int compare(Whitelist o1, Whitelist o2) {
