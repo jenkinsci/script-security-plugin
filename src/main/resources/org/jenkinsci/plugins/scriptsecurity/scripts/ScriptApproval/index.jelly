@@ -70,6 +70,11 @@ THE SOFTWARE.
                         updateApprovedSignatures(r);
                     });
                 }
+                function clearDangerousApprovedSignatures() {
+                    mgr.clearDangerousApprovedSignatures(function(r) {
+                        updateApprovedSignatures(r);
+                    });
+                }
                 
                 function renderPendingClasspathEntries(pendingClasspathEntries) {
                     if (pendingClasspathEntries.length == 0) {
@@ -243,6 +248,10 @@ THE SOFTWARE.
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
             </p>
+            <j:if test="${!empty(dangerousApprovedSignatures)}">
+                Or you can just remove the dangerous ones:
+                <button onclick="clearDangerousApprovedSignatures()">Clear only dangerous Approvals</button>
+            </j:if>
             <hr/>
             <p id="pendingClasspathEntries-none">
                 No pending classpath entry approvals.

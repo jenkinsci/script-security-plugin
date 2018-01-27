@@ -819,6 +819,28 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         // Should be [[], []] but still returning it for consistency with approve methods.
         return reconfigure();
     }
+    
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized String[][] clearDangerousApprovedSignatures() throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        Iterator<String> it = approvedSignatures.iterator();
+        while (it.hasNext()) {
+            if (StaticWhitelist.isBlacklisted(it.next())) {
+                it.remove();
+            }
+        }
+
+        it = aclApprovedSignatures.iterator();
+        while (it.hasNext()) {
+            if (StaticWhitelist.isBlacklisted(it.next())) {
+                it.remove();
+            }
+        }
+
+        save();
+        return reconfigure();
+    }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
