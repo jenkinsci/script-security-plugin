@@ -667,7 +667,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     }
 
     @Restricted(NoExternalUse.class) // implementation
-    @Extension public static final class ApprovedWhitelist extends ProxyWhitelist implements CacheableWhitelist {
+    @Extension public static final class ApprovedWhitelist extends ProxyWhitelist {
         public ApprovedWhitelist() {
             try {
                 reconfigure();
