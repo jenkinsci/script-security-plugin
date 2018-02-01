@@ -36,6 +36,8 @@ import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * Determines which methods and similar members which scripts may call.
@@ -87,6 +89,7 @@ public abstract class Whitelist implements ExtensionPoint {
         return o == null ? "null" : getName(o.getClass());
     }
 
+    @Restricted(NoExternalUse.class)
     public static String[] argumentTypes(Class<?>[] argumentTypes) {
         String[] s = new String[argumentTypes.length];
         for (int i = 0; i < argumentTypes.length; i++) {
@@ -96,36 +99,44 @@ public abstract class Whitelist implements ExtensionPoint {
     }
 
     /** Canonical name for a field access. */
+    @Restricted(NoExternalUse.class)
     public static String canonicalFieldString(@Nonnull Field field) {
         return getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
     /** Canonical name for a method call. */
+    @Restricted(NoExternalUse.class)
     public static String canonicalMethodString(@Nonnull Method method) {
         return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
     }
 
     /** Canonical name for a constructor call. */
+    @Restricted(NoExternalUse.class)
     public static String canonicalConstructorString(@Nonnull Constructor cons) {
         return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())).append(' ').append(cons.getName()), argumentTypes(cons.getParameterTypes())).toString();
     }
 
+    @Restricted(NoExternalUse.class)
     public static String canonicalMethodSig(@Nonnull Method method) {
         return "method "+canonicalMethodString(method);
     }
 
+    @Restricted(NoExternalUse.class)
     public static String canonicalStaticMethodSig(@Nonnull Method method) {
         return "staticMethod "+canonicalMethodString(method);
     }
 
+    @Restricted(NoExternalUse.class)
     public static String canonicalConstructorSig(@Nonnull Constructor cons) {
         return "new "+canonicalConstructorString(cons);
     }
 
+    @Restricted(NoExternalUse.class)
     public static String canonicalFieldSig(@Nonnull Field field) {
         return "field "+canonicalFieldString(field);
     }
 
+    @Restricted(NoExternalUse.class)
     public static String canonicalStaticFieldSig(@Nonnull Field field) {
         return "staticField "+canonicalFieldString(field);
     }

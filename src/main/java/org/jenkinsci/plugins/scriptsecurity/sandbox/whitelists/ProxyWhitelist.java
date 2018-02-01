@@ -56,7 +56,7 @@ import java.util.WeakHashMap;
  *
  * <ol>
  *     <li>First, we generate a String signature specific to the Field/Method/Constructor call type</li>
- *     <li>Then, this signature is used to check the cache {@link #permittedCache} - a stored "true" indicates that one of the CacheableWhitelist entries approved the method so it is always safe.</li>
+ *     <li>Then, this signature is used to check the cache (field permittedCache) - a stored "true" indicates that one of the CacheableWhitelist entries approved the method so it is always safe.</li>
  *     <li>A stored "false" value is a bit more subtle:
  *      <ol>
  *          <li>It means we can SKIP the CacheableWhitelists entirely because we know none of them approved the call.</li>
