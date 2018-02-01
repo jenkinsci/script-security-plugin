@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.CacheableWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
