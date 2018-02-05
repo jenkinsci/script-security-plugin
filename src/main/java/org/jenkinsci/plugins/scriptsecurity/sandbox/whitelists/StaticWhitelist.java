@@ -60,12 +60,19 @@ public class StaticWhitelist extends EnumeratingWhitelist {
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
     final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
 
-    public StaticWhitelist(StaticWhitelist list) {
-        this.methodSignatures.addAll(list.methodSignatures);
-        this.newSignatures.addAll(list.newSignatures);
-        this.staticMethodSignatures.addAll(list.staticMethodSignatures);
-        this.fieldSignatures.addAll(list.fieldSignatures);
-        this.staticFieldSignatures.addAll(list.staticFieldSignatures);
+    /** Create a static whitelist that is a composite of other lists */
+    public StaticWhitelist(EnumeratingWhitelist ...lists) {
+        for (EnumeratingWhitelist list : lists) {
+            addWhiteList(list);
+        }
+    }
+
+    private void addWhiteList(EnumeratingWhitelist list) {
+        this.methodSignatures.addAll(list.methodSignatures());
+        this.newSignatures.addAll(list.newSignatures());
+        this.staticMethodSignatures.addAll(list.staticMethodSignatures());
+        this.fieldSignatures.addAll(list.fieldSignatures());
+        this.staticFieldSignatures.addAll(list.staticFieldSignatures());
     }
 
     public StaticWhitelist(Reader definition) throws IOException {
