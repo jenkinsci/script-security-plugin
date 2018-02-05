@@ -33,7 +33,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
  * Whitelists everything.
  * This is probably only useful for tests.
  */
-public final class BlanketWhitelist extends Whitelist implements CacheableWhitelist {
+public final class BlanketWhitelist extends Whitelist {
 
     @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
         return true;

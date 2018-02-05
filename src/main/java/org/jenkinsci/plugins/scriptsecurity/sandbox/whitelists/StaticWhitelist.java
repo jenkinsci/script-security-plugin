@@ -52,13 +52,21 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 /**
  * Whitelist based on a static file.
  */
-public final class StaticWhitelist extends EnumeratingWhitelist implements CacheableWhitelist {
+public class StaticWhitelist extends EnumeratingWhitelist {
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
     final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
     final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
+
+    public StaticWhitelist(StaticWhitelist list) {
+        this.methodSignatures.addAll(list.methodSignatures);
+        this.newSignatures.addAll(list.newSignatures);
+        this.staticMethodSignatures.addAll(list.staticMethodSignatures);
+        this.fieldSignatures.addAll(list.fieldSignatures);
+        this.staticFieldSignatures.addAll(list.staticFieldSignatures);
+    }
 
     public StaticWhitelist(Reader definition) throws IOException {
         BufferedReader br = new BufferedReader(definition);
