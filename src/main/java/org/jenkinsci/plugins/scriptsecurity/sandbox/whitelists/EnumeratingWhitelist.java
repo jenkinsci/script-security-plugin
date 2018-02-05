@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -50,69 +51,106 @@ public abstract class EnumeratingWhitelist extends Whitelist implements Cacheabl
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
+    private HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
+
     // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
+        String key = Whitelist.canonicalMethodSig(method);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (MethodSignature s : methodSignatures()) {
             if (s.matches(method)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+        String key = Whitelist.canonicalConstructorSig(constructor);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (NewSignature s : newSignatures()) {
             if (s.matches(constructor)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+        String key = Whitelist.canonicalStaticMethodSig(method);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (MethodSignature s : staticMethodSignatures()) {
             if (s.matches(method)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
+        String key = Whitelist.canonicalFieldSig(field);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (FieldSignature s : fieldSignatures()) {
             if (s.matches(field)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
-        for (FieldSignature s : fieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
+        return permitsFieldGet(field, receiver);
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
+        String key = Whitelist.canonicalStaticFieldSig(field);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (FieldSignature s : staticFieldSignatures()) {
             if (s.matches(field)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
-        for (FieldSignature s : staticFieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
+        return permitsStaticFieldGet(field);
     }
 
     private static boolean is(String thisIdentifier, String identifier) {
