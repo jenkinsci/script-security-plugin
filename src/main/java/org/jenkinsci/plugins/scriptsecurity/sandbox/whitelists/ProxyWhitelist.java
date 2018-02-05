@@ -85,7 +85,7 @@ public class ProxyWhitelist extends Whitelist {
             }
 
             // Roll up the aggregated lists
-            aggregated = new StaticWhitelist(listsToAggregate.toArray(new EnumeratingWhitelist[listsToAggregate.size()]));
+            this.aggregated = new StaticWhitelist(listsToAggregate.toArray(new EnumeratingWhitelist[listsToAggregate.size()]));
             this.delegates.add(0, aggregated);
 
             for (ProxyWhitelist pw : wrappers.keySet()) {

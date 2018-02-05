@@ -59,6 +59,7 @@ public class StaticWhitelist extends EnumeratingWhitelist {
     final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
     final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
+    final HashSet<String> permitted = new HashSet<String>();
 
     /** Create a static whitelist that is a composite of other lists */
     public StaticWhitelist(EnumeratingWhitelist ...lists) {
