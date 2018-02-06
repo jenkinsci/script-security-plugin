@@ -124,8 +124,8 @@ public class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     public StaticWhitelist(String... lines) throws IOException {
-        this(asList(lines));
-        populateLookup();
+        this(asList(lines));  
+        // No need to call populateLookup because the other constructor does
     }
 
     /**

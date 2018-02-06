@@ -38,8 +38,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Aggregates several whitelists.
- 
+ * Aggregates several whitelists. 
  */
 public class ProxyWhitelist extends Whitelist {
     
