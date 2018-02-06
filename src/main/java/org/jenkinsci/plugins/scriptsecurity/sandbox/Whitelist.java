@@ -113,7 +113,7 @@ public abstract class Whitelist implements ExtensionPoint {
     /** Canonical name for a constructor call. */
     @Restricted(NoExternalUse.class)
     public static String canonicalConstructorString(@Nonnull Constructor cons) {
-        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())).append(' ').append(cons.getName()), argumentTypes(cons.getParameterTypes())).toString();
+        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
     }
 
     @Restricted(NoExternalUse.class)
