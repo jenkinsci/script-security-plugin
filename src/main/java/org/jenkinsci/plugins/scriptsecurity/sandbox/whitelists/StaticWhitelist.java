@@ -46,6 +46,7 @@ import javax.annotation.Nonnull;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
@@ -59,13 +60,24 @@ public class StaticWhitelist extends EnumeratingWhitelist {
     final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
     final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
-    final HashSet<String> permitted = new HashSet<String>();
+
+    final HashSet<String> lookupSet = new HashSet<String>();
 
     /** Create a static whitelist that is a composite of other lists */
-    public StaticWhitelist(EnumeratingWhitelist ...lists) {
+    public static StaticWhitelist composite(EnumeratingWhitelist ...lists) {
+        StaticWhitelist output = new StaticWhitelist();
         for (EnumeratingWhitelist list : lists) {
-            addWhiteList(list);
+            output.addWhiteList(list);
         }
+        output.populateLookup();
+        return output;
+    }
+
+    private StaticWhitelist() {}
+
+    public StaticWhitelist(EnumeratingWhitelist list) {
+        addWhiteList(list);
+        populateLookup();
     }
 
     private void addWhiteList(EnumeratingWhitelist list) {
@@ -74,6 +86,22 @@ public class StaticWhitelist extends EnumeratingWhitelist {
         this.staticMethodSignatures.addAll(list.staticMethodSignatures());
         this.fieldSignatures.addAll(list.fieldSignatures());
         this.staticFieldSignatures.addAll(list.staticFieldSignatures());
+    }
+
+    private void permitSignatures(Collection<? extends Signature> sigs) {
+        for (Signature s : sigs) {
+            lookupSet.add(s.toString());
+        }
+    }
+
+    void populateLookup() {
+        if (lookupSet.isEmpty()) {
+            permitSignatures(methodSignatures);
+            permitSignatures(newSignatures);
+            permitSignatures(staticMethodSignatures);
+            permitSignatures(fieldSignatures);
+            permitSignatures(staticFieldSignatures);
+        }
     }
 
     public StaticWhitelist(Reader definition) throws IOException {
@@ -85,16 +113,19 @@ public class StaticWhitelist extends EnumeratingWhitelist {
                 add(line);
             }
         }
+        populateLookup();
     }
 
     public StaticWhitelist(Collection<? extends String> lines) throws IOException {
         for (String line : lines) {
             add(line);
         }
+        populateLookup();
     }
 
     public StaticWhitelist(String... lines) throws IOException {
         this(asList(lines));
+        populateLookup();
     }
 
     /**
@@ -267,4 +298,29 @@ public class StaticWhitelist extends EnumeratingWhitelist {
         return BLACKLIST.contains(signature);
     }
 
+
+    @Override
+    public boolean permitsMethod(@Nonnull Method method, @Nonnull Object receiver, @Nonnull Object[] args) {
+        return lookupSet.contains(Whitelist.canonicalMethodSig(method));
+    }
+
+    @Override
+    public boolean permitsConstructor(@Nonnull Constructor<?> constructor, @Nonnull Object[] args) {
+        return lookupSet.contains(Whitelist.canonicalConstructorSig(constructor));
+    }
+
+    @Override
+    public boolean permitsStaticMethod(@Nonnull Method method, @Nonnull Object[] args) {
+        return lookupSet.contains(Whitelist.canonicalStaticMethodSig(method));
+    }
+
+    @Override
+    public boolean permitsFieldGet(@Nonnull Field field, @Nonnull Object receiver) {
+        return lookupSet.contains(Whitelist.canonicalFieldSig(field));
+    }
+
+    @Override
+    public boolean permitsStaticFieldGet(@Nonnull Field field) {
+        return lookupSet.contains(Whitelist.canonicalStaticFieldSig(field));
+    }
 }

@@ -37,7 +37,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
  * <p>Then there is a (probably much smaller) list of restricted signatures.
  * These can be run only when the {@linkplain Jenkins#getAuthentication current user} is a real user or even {@linkplain Jenkins#ANONYMOUS}, but not when {@link ACL#SYSTEM}.
  * Restricted methods should be limited to those which actually perform a permissions check, typically using {@link ACL#checkPermission}.
- * Allowing the system pseudo-user to run these would be dangerous, since we do not know “on whose behalf” a script is running, and this “user” is permitted to do anything.
+ * Allowing the system pseudo-user to run these would be dangerous, since we do not know “on whose behalf” a script is running, and this “user” is lookupSet to do anything.
  */
 public class AclAwareWhitelist extends Whitelist {
 
