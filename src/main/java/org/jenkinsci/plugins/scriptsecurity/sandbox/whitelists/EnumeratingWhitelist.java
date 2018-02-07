@@ -72,6 +72,12 @@ public abstract class EnumeratingWhitelist extends Whitelist {
                            (List)(staticFieldSignatures()));
     }
 
+    /** Frees up memory used for the cache. */
+    void clearCache() {
+        this.permittedCache.clear();
+        this.permittedCache = new HashMap<String, Boolean>();
+    }
+
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
         String key = Whitelist.canonicalMethodSig(method);
         Boolean b = permittedCache.get(key);

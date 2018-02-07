@@ -94,11 +94,13 @@ public class ProxyWhitelist extends Whitelist {
                     staticMethodSignatures.addAll(ew.staticMethodSignatures());
                     fieldSignatures.addAll(ew.fieldSignatures());
                     staticFieldSignatures.addAll(ew.staticFieldSignatures());
+                    ew.clearCache();
                 } else if (delegate instanceof ProxyWhitelist) {
                     ProxyWhitelist pw = (ProxyWhitelist) delegate;
                     pw.wrappers.put(this, null);
                     for (Whitelist subdelegate : pw.delegates) {
                         if (subdelegate instanceof EnumeratingWhitelist) {
+                            ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
                             continue; // this is handled specially
                         }
                         this.delegates.add(subdelegate);
@@ -115,7 +117,7 @@ public class ProxyWhitelist extends Whitelist {
             for (ProxyWhitelist pw : wrappers.keySet()) {
                 pw.reset();
             }
-            if (this.wrappers.isEmpty()) {
+            if (this.wrappers.isEmpty()) {  // Top-level ProxyWhitelist should be the only cache
                 // Top-level ProxyWhitelist should precache the statically permitted signatures
                 ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
             }
