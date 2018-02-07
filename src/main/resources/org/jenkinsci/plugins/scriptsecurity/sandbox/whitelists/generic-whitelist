@@ -442,6 +442,8 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.St
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Set groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods splitEachLine java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String
