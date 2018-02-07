@@ -115,6 +115,10 @@ public class ProxyWhitelist extends Whitelist {
             for (ProxyWhitelist pw : wrappers.keySet()) {
                 pw.reset();
             }
+            if (this.wrappers.isEmpty()) {
+                // Top-level ProxyWhitelist should precache its delegates
+                ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
+            }
         }
     }
 
