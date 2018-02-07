@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 import java.util.ArrayList;
@@ -37,17 +38,15 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Aggregates several whitelists.
+ * Aggregates several whitelists. 
  */
 public class ProxyWhitelist extends Whitelist {
     
     private Collection<? extends Whitelist> originalDelegates;
     private final List<Whitelist> delegates = new ArrayList<Whitelist>();
-    private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
-    private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
-    private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
-    private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
-    private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+
+    private StaticWhitelist aggregated;
+
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
@@ -63,35 +62,12 @@ public class ProxyWhitelist extends Whitelist {
         synchronized (this.delegates) {
             originalDelegates = delegates;
             this.delegates.clear();
-            methodSignatures.clear();
-            newSignatures.clear();
-            staticMethodSignatures.clear();
-            fieldSignatures.clear();
-            this.delegates.add(new EnumeratingWhitelist() {
-                @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
-                    return methodSignatures;
-                }
-                @Override protected List<EnumeratingWhitelist.NewSignature> newSignatures() {
-                    return newSignatures;
-                }
-                @Override protected List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures() {
-                    return staticMethodSignatures;
-                }
-                @Override protected List<EnumeratingWhitelist.FieldSignature> fieldSignatures() {
-                    return fieldSignatures;
-                }
-                @Override protected List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures() {
-                    return staticFieldSignatures;
-                }
-            });
+
+            List<EnumeratingWhitelist> listsToAggregate = new ArrayList<EnumeratingWhitelist>();
+
             for (Whitelist delegate : delegates) {
                 if (delegate instanceof EnumeratingWhitelist) {
-                    EnumeratingWhitelist ew = (EnumeratingWhitelist) delegate;
-                    methodSignatures.addAll(ew.methodSignatures());
-                    newSignatures.addAll(ew.newSignatures());
-                    staticMethodSignatures.addAll(ew.staticMethodSignatures());
-                    fieldSignatures.addAll(ew.fieldSignatures());
-                    staticFieldSignatures.addAll(ew.staticFieldSignatures());
+                    listsToAggregate.add((EnumeratingWhitelist)delegate);
                 } else if (delegate instanceof ProxyWhitelist) {
                     ProxyWhitelist pw = (ProxyWhitelist) delegate;
                     pw.wrappers.put(this, null);
@@ -101,15 +77,16 @@ public class ProxyWhitelist extends Whitelist {
                         }
                         this.delegates.add(subdelegate);
                     }
-                    methodSignatures.addAll(pw.methodSignatures);
-                    newSignatures.addAll(pw.newSignatures);
-                    staticMethodSignatures.addAll(pw.staticMethodSignatures);
-                    fieldSignatures.addAll(pw.fieldSignatures);
-                    staticFieldSignatures.addAll(pw.staticFieldSignatures);
+                    listsToAggregate.add(pw.aggregated);
                 } else {
                     this.delegates.add(delegate);
                 }
             }
+
+            // Roll up the aggregated lists
+            this.aggregated = StaticWhitelist.composite(listsToAggregate.toArray(new EnumeratingWhitelist[listsToAggregate.size()]));
+            this.delegates.add(0, aggregated);
+
             for (ProxyWhitelist pw : wrappers.keySet()) {
                 pw.reset();
             }

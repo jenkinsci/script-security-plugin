@@ -29,9 +29,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
@@ -50,9 +50,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
-
-    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
         for (MethodSignature s : methodSignatures()) {
             if (s.matches(method)) {
                 return true;
@@ -61,7 +59,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
         for (NewSignature s : newSignatures()) {
             if (s.matches(constructor)) {
                 return true;
@@ -70,7 +68,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public boolean permitsStaticMethod(Method method, Object[] args) {
         for (MethodSignature s : staticMethodSignatures()) {
             if (s.matches(method)) {
                 return true;
@@ -79,7 +77,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public boolean permitsFieldGet(Field field, Object receiver) {
         for (FieldSignature s : fieldSignatures()) {
             if (s.matches(field)) {
                 return true;
@@ -89,15 +87,10 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
-        for (FieldSignature s : fieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
+        return permitsFieldGet(field, receiver);
     }
 
-    @Override public final boolean permitsStaticFieldGet(Field field) {
+    @Override public boolean permitsStaticFieldGet(Field field) {
         for (FieldSignature s : staticFieldSignatures()) {
             if (s.matches(field)) {
                 return true;
@@ -107,33 +100,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
-        for (FieldSignature s : staticFieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
-        Class<?> e = c.getComponentType();
-        if (e == null) {
-            return c.getName();
-        } else {
-            return getName(e) + "[]";
-        }
-    }
-
-    public static @Nonnull String getName(@CheckForNull Object o) {
-        return o == null ? "null" : getName(o.getClass());
-    }
-
-    private static String[] argumentTypes(Class<?>[] argumentTypes) {
-        String[] s = new String[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            s[i] = getName(argumentTypes[i]);
-        }
-        return s;
+        return permitsStaticFieldGet(field);
     }
 
     private static boolean is(String thisIdentifier, String identifier) {
@@ -143,12 +110,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     public static abstract class Signature implements Comparable<Signature> {
         /** Form as in {@link StaticWhitelist} entries. */
         @Override public abstract String toString();
-        final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
-            for (String type : types) {
-                b.append(' ').append(type);
-            }
-            return b;
-        }
+
         abstract String signaturePart();
         @Override public int compareTo(Signature o) {
             int r = signaturePart().compareTo(o.signaturePart());
