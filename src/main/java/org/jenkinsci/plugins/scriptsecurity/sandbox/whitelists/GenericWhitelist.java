@@ -36,7 +36,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class GenericWhitelist extends StaticWhitelist {
 
     public GenericWhitelist() throws IOException {
-        super(StaticWhitelist.from(GenericWhitelist.class.getResource("generic-whitelist")));
+        super(GenericWhitelist.class.getResource("generic-whitelist"));
     }
 
 }

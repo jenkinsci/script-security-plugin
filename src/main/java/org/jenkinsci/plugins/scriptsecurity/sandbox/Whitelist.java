@@ -35,6 +35,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -76,24 +77,11 @@ public abstract class Whitelist implements ExtensionPoint {
         return b;
     }
 
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
-        Class<?> e = c.getComponentType();
-        if (e == null) {
-            return c.getName();
-        } else {
-            return getName(e) + "[]";
-        }
-    }
-
-    public static @Nonnull String getName(@CheckForNull Object o) {
-        return o == null ? "null" : getName(o.getClass());
-    }
-
     @Restricted(NoExternalUse.class)
     public static String[] argumentTypes(Class<?>[] argumentTypes) {
         String[] s = new String[argumentTypes.length];
         for (int i = 0; i < argumentTypes.length; i++) {
-            s[i] = getName(argumentTypes[i]);
+            s[i] = EnumeratingWhitelist.getName(argumentTypes[i]);
         }
         return s;
     }
@@ -101,19 +89,19 @@ public abstract class Whitelist implements ExtensionPoint {
     /** Canonical name for a field access. */
     @Restricted(NoExternalUse.class)
     public static String canonicalFieldString(@Nonnull Field field) {
-        return getName(field.getDeclaringClass()) + ' ' + field.getName();
+        return EnumeratingWhitelist.getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
     /** Canonical name for a method call. */
     @Restricted(NoExternalUse.class)
     public static String canonicalMethodString(@Nonnull Method method) {
-        return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
+        return joinWithSpaces(new StringBuilder(EnumeratingWhitelist.getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
     }
 
     /** Canonical name for a constructor call. */
     @Restricted(NoExternalUse.class)
     public static String canonicalConstructorString(@Nonnull Constructor cons) {
-        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
+        return joinWithSpaces(new StringBuilder(EnumeratingWhitelist.getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
     }
 
     @Restricted(NoExternalUse.class)

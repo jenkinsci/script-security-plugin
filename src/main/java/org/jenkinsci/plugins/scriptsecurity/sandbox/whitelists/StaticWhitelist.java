@@ -60,7 +60,8 @@ public class StaticWhitelist extends EnumeratingWhitelist {
     final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
     final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
 
-    public StaticWhitelist(StaticWhitelist list) {
+    public StaticWhitelist(URL source ) throws IOException {
+        StaticWhitelist list = from(source);
         this.methodSignatures.addAll(list.methodSignatures);
         this.newSignatures.addAll(list.newSignatures);
         this.staticMethodSignatures.addAll(list.staticMethodSignatures);

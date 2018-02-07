@@ -39,7 +39,6 @@ import java.util.WeakHashMap;
 
 /**
  * Aggregates several whitelists.
- 
  */
 public class ProxyWhitelist extends Whitelist {
     
@@ -56,8 +55,6 @@ public class ProxyWhitelist extends Whitelist {
     public ProxyWhitelist(Collection<? extends Whitelist> delegates) {
         reset(delegates);
     }
-
-
 
     private void reset() {
         reset(originalDelegates);

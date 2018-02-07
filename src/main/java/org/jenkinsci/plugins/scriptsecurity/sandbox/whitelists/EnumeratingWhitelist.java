@@ -35,6 +35,9 @@ import java.util.List;
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+
 /**
  * A whitelist based on listing signatures and searching them.
  */
@@ -150,6 +153,19 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
         return permitsStaticFieldGet(field);
+    }
+
+    public static @Nonnull String getName(@Nonnull Class<?> c) {
+        Class<?> e = c.getComponentType();
+        if (e == null) {
+            return c.getName();
+        } else {
+            return getName(e) + "[]";
+        }
+    }
+
+    public static @Nonnull String getName(@CheckForNull Object o) {
+        return o == null ? "null" : getName(o.getClass());
     }
 
     private static boolean is(String thisIdentifier, String identifier) {

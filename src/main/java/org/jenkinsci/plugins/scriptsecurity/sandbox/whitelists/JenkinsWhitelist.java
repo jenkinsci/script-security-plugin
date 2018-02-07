@@ -36,7 +36,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class JenkinsWhitelist extends StaticWhitelist {
 
     public JenkinsWhitelist() throws IOException {
-        super(StaticWhitelist.from(JenkinsWhitelist.class.getResource("jenkins-whitelist")));
+        super((JenkinsWhitelist.class.getResource("jenkins-whitelist")));
     }
 
 }
