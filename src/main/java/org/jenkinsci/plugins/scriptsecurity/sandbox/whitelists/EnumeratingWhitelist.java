@@ -55,7 +55,22 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     private HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
 
-    // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
+    private void cacheSignatureList(List<Signature> ...sigs) {
+        for (List<Signature> list : sigs) {
+            for (Signature s : list) {
+                if (!s.isWildcard()) {
+                    permittedCache.put(s.toString(), Boolean.TRUE);
+                }
+            }
+        }
+    }
+
+    /** Prepopulates the "permitted" cache. */
+    public void precache() {
+        cacheSignatureList((List)methodSignatures(), (List)(newSignatures()),
+                           (List)(staticMethodSignatures()), (List)(fieldSignatures()),
+                           (List)(staticFieldSignatures()));
+    }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
         String key = Whitelist.canonicalMethodSig(method);
@@ -198,6 +213,10 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             }
             return r;
         }
+
+        public boolean isWildcard() {
+            return false;
+        }
     }
 
     public static class MethodSignature extends Signature {
@@ -240,6 +259,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             } catch (NoSuchMethodException x) {
                 return false;
             }
+        }
+
+        @Override
+        public boolean isWildcard() {
+            return "*".equals(method);
         }
     }
 
@@ -313,6 +337,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             } catch (NoSuchFieldException x) {
                 return false;
             }
+        }
+
+        @Override
+        public boolean isWildcard() {
+            return "*".equals(field);
         }
     }
 
