@@ -116,7 +116,7 @@ public class ProxyWhitelist extends Whitelist {
                 pw.reset();
             }
             if (this.wrappers.isEmpty()) {
-                // Top-level ProxyWhitelist should precache its delegates
+                // Top-level ProxyWhitelist should precache the statically permitted signatures
                 ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
             }
         }

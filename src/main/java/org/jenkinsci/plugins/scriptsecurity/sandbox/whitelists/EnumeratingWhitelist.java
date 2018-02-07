@@ -58,7 +58,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     private void cacheSignatureList(List<Signature> ...sigs) {
         for (List<Signature> list : sigs) {
             for (Signature s : list) {
-                if (!s.isWildcard()) {
+                if (!s.isWildcard()) { // Cache entries for wildcard signatures will never be accessed and just waste space
                     permittedCache.put(s.toString(), Boolean.TRUE);
                 }
             }

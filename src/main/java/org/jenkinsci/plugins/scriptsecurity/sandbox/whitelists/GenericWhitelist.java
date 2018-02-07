@@ -33,10 +33,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Includes entries useful for general kinds of scripts.
  */
 @Restricted(NoExternalUse.class)
-@Extension public final class GenericWhitelist extends StaticWhitelist {
+@Extension public final class GenericWhitelist extends ProxyWhitelist {
 
     public GenericWhitelist() throws IOException {
-        super(GenericWhitelist.class.getResource("generic-whitelist"));
+        super(StaticWhitelist.from(GenericWhitelist.class.getResource("generic-whitelist")));
     }
 
 }
