@@ -43,7 +43,7 @@ import java.util.WeakHashMap;
 public class ProxyWhitelist extends Whitelist {
     
     private Collection<? extends Whitelist> originalDelegates;
-    private final List<Whitelist> delegates = new ArrayList<Whitelist>();
+    final List<Whitelist> delegates = new ArrayList<Whitelist>();
     private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
     private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
     private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();

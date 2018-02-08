@@ -27,6 +27,8 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.io.StringReader;
 import java.util.Collections;
+
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -43,6 +45,17 @@ public class ProxyWhitelistTest {
         pw1.reset(Collections.<Whitelist>emptySet());
         assertFalse(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
         assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
+    }
+
+    /** Ensures we cache at the top-level ProxyWhitelist */
+    @Test
+    public void caching() throws Exception {
+        ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("method java.lang.String length")));
+        assertEquals(1, ((EnumeratingWhitelist)pw1.delegates.get(0)).permittedCache.size());
+
+        ProxyWhitelist pw2 = new ProxyWhitelist(pw1, new StaticWhitelist(new StringReader("method java.lang.String trim")));
+        assertEquals(0, ((EnumeratingWhitelist)pw1.delegates.get(0)).permittedCache.size());
+        assertEquals(2, ((EnumeratingWhitelist)pw2.delegates.get(0)).permittedCache.size());
     }
 
 }
