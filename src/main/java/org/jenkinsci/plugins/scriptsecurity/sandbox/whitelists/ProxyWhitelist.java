@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import net.jcip.annotations.GuardedBy;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 import java.util.ArrayList;
@@ -36,21 +37,38 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Aggregates several whitelists.
  */
 public class ProxyWhitelist extends Whitelist {
-    
+    @GuardedBy("lock")
     private Collection<? extends Whitelist> originalDelegates;
+
+    @GuardedBy("lock")
     final List<Whitelist> delegates = new ArrayList<Whitelist>();
+
+    @GuardedBy("lock")
     private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
+
+    @GuardedBy("lock")
     private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
+
+    @GuardedBy("lock")
     private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
+
+    @GuardedBy("lock")
     private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+
+    @GuardedBy("lock")
     private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
+
+    // TODO Consider StampedLock when we switch to Java8 for better performance - https://dzone.com/articles/a-look-at-stampedlock
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public ProxyWhitelist(Collection<? extends Whitelist> delegates) {
         reset(delegates);
@@ -61,7 +79,10 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     public final void reset(Collection<? extends Whitelist> delegates) {
-        synchronized (this.delegates) {
+        ReentrantReadWriteLock.WriteLock writer = lock.writeLock();
+        writer.lock();
+
+        try {
             originalDelegates = delegates;
             this.delegates.clear();
             methodSignatures.clear();
@@ -121,6 +142,8 @@ public class ProxyWhitelist extends Whitelist {
                 // Top-level ProxyWhitelist should precache the statically permitted signatures
                 ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
             }
+        } finally {
+            writer.unlock();
         }
     }
 
@@ -129,78 +152,100 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsMethod(method, receiver, args)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsConstructor(constructor, args)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsStaticMethod(method, args)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsFieldGet(field, receiver)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsFieldSet(field, receiver, value)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
+
         return false;
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsStaticFieldGet(field)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
-        synchronized (this.delegates) {
+        lock.readLock().lock();
+        try {
             for (Whitelist delegate : delegates) {
                 if (delegate.permitsStaticFieldSet(field, value)) {
                     return true;
                 }
             }
+        } finally {
+            lock.readLock().unlock();
         }
         return false;
     }
