@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -53,7 +54,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();  // Not private to facilitate testing
+    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<String, Boolean>();  // Not private to facilitate testing
 
     private void cacheSignatureList(List<Signature> ...sigs) {
         for (List<Signature> list : sigs) {
