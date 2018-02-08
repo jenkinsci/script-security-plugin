@@ -34,8 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -182,7 +180,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return permitsStaticFieldGet(field);
     }
 
-    static @Nonnull String getName(@Nonnull Class<?> c) {
+    public static @Nonnull String getName(@Nonnull Class<?> c) {
         Class<?> e = c.getComponentType();
         if (e == null) {
             return c.getName();
@@ -191,13 +189,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    @Restricted(NoExternalUse.class)
     public static @Nonnull String getName(@CheckForNull Object o) {
         return o == null ? "null" : getName(o.getClass());
     }
 
-    @Restricted(NoExternalUse.class)
-    public static boolean is(String thisIdentifier, String identifier) {
+    private static boolean is(String thisIdentifier, String identifier) {
         return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
     }
 
@@ -234,7 +230,6 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     // Utility methods for creating canonical string representations of the signature
-    @Restricted(NoExternalUse.class)
     static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
         for (String type : types) {
             b.append(' ').append(type);
@@ -242,7 +237,6 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return b;
     }
 
-    @Restricted(NoExternalUse.class)
     static String[] argumentTypes(Class<?>[] argumentTypes) {
         String[] s = new String[argumentTypes.length];
         for (int i = 0; i < argumentTypes.length; i++) {
@@ -252,44 +246,36 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     /** Canonical name for a field access. */
-    @Restricted(NoExternalUse.class)
     static String canonicalFieldString(@Nonnull Field field) {
         return getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
     /** Canonical name for a method call. */
-    @Restricted(NoExternalUse.class)
     static String canonicalMethodString(@Nonnull Method method) {
         return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
     }
 
     /** Canonical name for a constructor call. */
-    @Restricted(NoExternalUse.class)
     static String canonicalConstructorString(@Nonnull Constructor cons) {
         return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
     }
 
-    @Restricted(NoExternalUse.class)
     static String canonicalMethodSig(@Nonnull Method method) {
         return "method "+canonicalMethodString(method);
     }
 
-    @Restricted(NoExternalUse.class)
     static String canonicalStaticMethodSig(@Nonnull Method method) {
         return "staticMethod "+canonicalMethodString(method);
     }
 
-    @Restricted(NoExternalUse.class)
     static String canonicalConstructorSig(@Nonnull Constructor cons) {
         return "new "+canonicalConstructorString(cons);
     }
 
-    @Restricted(NoExternalUse.class)
     static String canonicalFieldSig(@Nonnull Field field) {
         return "field "+canonicalFieldString(field);
     }
 
-    @Restricted(NoExternalUse.class)
     static String canonicalStaticFieldSig(@Nonnull Field field) {
         return "staticField "+canonicalFieldString(field);
     }
