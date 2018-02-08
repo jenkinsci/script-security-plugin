@@ -76,7 +76,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     /** Frees up memory used for the cache. */
     void clearCache() {
         this.permittedCache.clear();
-        this.permittedCache = new HashMap<String, Boolean>();
+        this.permittedCache = new ConcurrentHashMap<String, Boolean>();
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
