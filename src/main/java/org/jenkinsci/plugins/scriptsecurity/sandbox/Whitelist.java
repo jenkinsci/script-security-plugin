@@ -35,7 +35,10 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * Determines which methods and similar members which scripts may call.

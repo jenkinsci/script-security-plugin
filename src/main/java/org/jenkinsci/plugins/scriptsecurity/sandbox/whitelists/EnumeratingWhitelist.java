@@ -30,10 +30,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 
 /**
  * A whitelist based on listing signatures and searching them.
@@ -50,69 +53,131 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    // TODO should precompute hash sets of signatures, assuming we document that the signatures may not change over the lifetime of the whitelist (or pass them in the constructor)
+    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<String, Boolean>();  // Not private to facilitate testing
 
-    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
-        for (MethodSignature s : methodSignatures()) {
-            if (s.matches(method)) {
-                return true;
+    @SafeVarargs
+    private final void cacheSignatureList(List<Signature> ...sigs) {
+        for (List<Signature> list : sigs) {
+            for (Signature s : list) {
+                if (!s.isWildcard()) { // Cache entries for wildcard signatures will never be accessed and just waste space
+                    permittedCache.put(s.toString(), Boolean.TRUE);
+                }
             }
         }
-        return false;
+    }
+
+    /** Prepopulates the "permitted" cache, resetting if populated already.  Should be called when method signatures change or after initialization. */
+    final void precache() {
+        if (!permittedCache.isEmpty()) {
+            this.permittedCache.clear();  // No sense calling clearCache
+        }
+        cacheSignatureList((List)methodSignatures(), (List)(newSignatures()),
+                           (List)(staticMethodSignatures()), (List)(fieldSignatures()),
+                           (List)(staticFieldSignatures()));
+    }
+
+    /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
+    final void clearCache() {
+        this.permittedCache.clear();
+        this.permittedCache = new ConcurrentHashMap<String, Boolean>();
+    }
+
+    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
+        String key = canonicalMethodSig(method);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
+        for (MethodSignature s : methodSignatures()) {
+            if (s.matches(method)) {
+                output = true;
+                break;
+            }
+        }
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+        String key = canonicalConstructorSig(constructor);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (NewSignature s : newSignatures()) {
             if (s.matches(constructor)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+        String key = canonicalStaticMethodSig(method);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (MethodSignature s : staticMethodSignatures()) {
             if (s.matches(method)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
+        String key = canonicalFieldSig(field);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (FieldSignature s : fieldSignatures()) {
             if (s.matches(field)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
-        for (FieldSignature s : fieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
+        return permitsFieldGet(field, receiver);
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
+        String key = canonicalStaticFieldSig(field);
+        Boolean b = permittedCache.get(key);
+        if (b != null) {
+            return b;
+        }
+
+        boolean output = false;
         for (FieldSignature s : staticFieldSignatures()) {
             if (s.matches(field)) {
-                return true;
+                output = true;
+                break;
             }
         }
-        return false;
+        permittedCache.put(key, output);
+        return output;
     }
 
     @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
-        for (FieldSignature s : staticFieldSignatures()) {
-            if (s.matches(field)) {
-                return true;
-            }
-        }
-        return false;
+        return permitsStaticFieldGet(field);
     }
 
     public static @Nonnull String getName(@Nonnull Class<?> c) {
@@ -128,14 +193,6 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return o == null ? "null" : getName(o.getClass());
     }
 
-    private static String[] argumentTypes(Class<?>[] argumentTypes) {
-        String[] s = new String[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            s[i] = getName(argumentTypes[i]);
-        }
-        return s;
-    }
-
     private static boolean is(String thisIdentifier, String identifier) {
         return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
     }
@@ -143,12 +200,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     public static abstract class Signature implements Comparable<Signature> {
         /** Form as in {@link StaticWhitelist} entries. */
         @Override public abstract String toString();
-        final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
-            for (String type : types) {
-                b.append(' ').append(type);
-            }
-            return b;
-        }
+
         abstract String signaturePart();
         @Override public int compareTo(Signature o) {
             int r = signaturePart().compareTo(o.signaturePart());
@@ -171,6 +223,61 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             }
             return r;
         }
+
+        public boolean isWildcard() {
+            return false;
+        }
+    }
+
+    // Utility methods for creating canonical string representations of the signature
+    static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+        for (String type : types) {
+            b.append(' ').append(type);
+        }
+        return b;
+    }
+
+    static String[] argumentTypes(Class<?>[] argumentTypes) {
+        String[] s = new String[argumentTypes.length];
+        for (int i = 0; i < argumentTypes.length; i++) {
+            s[i] = getName(argumentTypes[i]);
+        }
+        return s;
+    }
+
+    /** Canonical name for a field access. */
+    static String canonicalFieldString(@Nonnull Field field) {
+        return getName(field.getDeclaringClass()) + ' ' + field.getName();
+    }
+
+    /** Canonical name for a method call. */
+    static String canonicalMethodString(@Nonnull Method method) {
+        return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
+    }
+
+    /** Canonical name for a constructor call. */
+    static String canonicalConstructorString(@Nonnull Constructor cons) {
+        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
+    }
+
+    static String canonicalMethodSig(@Nonnull Method method) {
+        return "method "+canonicalMethodString(method);
+    }
+
+    static String canonicalStaticMethodSig(@Nonnull Method method) {
+        return "staticMethod "+canonicalMethodString(method);
+    }
+
+    static String canonicalConstructorSig(@Nonnull Constructor cons) {
+        return "new "+canonicalConstructorString(cons);
+    }
+
+    static String canonicalFieldSig(@Nonnull Field field) {
+        return "field "+canonicalFieldString(field);
+    }
+
+    static String canonicalStaticFieldSig(@Nonnull Field field) {
+        return "staticField "+canonicalFieldString(field);
     }
 
     public static class MethodSignature extends Signature {
@@ -213,6 +320,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             } catch (NoSuchMethodException x) {
                 return false;
             }
+        }
+
+        @Override
+        public boolean isWildcard() {
+            return "*".equals(method);
         }
     }
 
@@ -286,6 +398,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             } catch (NoSuchFieldException x) {
                 return false;
             }
+        }
+
+        @Override
+        public boolean isWildcard() {
+            return "*".equals(field);
         }
     }
 
