@@ -29,10 +29,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -115,11 +113,11 @@ public class EnumeratingWhitelistTest {
         EnumeratingWhitelist.FieldSignature fSig = new EnumeratingWhitelist.FieldSignature(Fancy.class, "myF");
         EnumeratingWhitelist.FieldSignature staticFSig = new EnumeratingWhitelist.StaticFieldSignature(Fancy.class.getName(), "myStaticF");
 
-        Assert.assertEquals(mSig.toString(), Whitelist.canonicalMethodSig(m));
-        Assert.assertEquals(staticMSig.toString(), Whitelist.canonicalStaticMethodSig(staticM));
-        Assert.assertEquals(conSig.toString(), Whitelist.canonicalConstructorSig(con));
-        Assert.assertEquals(fSig.toString(), Whitelist.canonicalFieldSig(f));
-        Assert.assertEquals(staticFSig.toString(), Whitelist.canonicalStaticFieldSig(staticF));
+        Assert.assertEquals(mSig.toString(), EnumeratingWhitelist.canonicalMethodSig(m));
+        Assert.assertEquals(staticMSig.toString(), EnumeratingWhitelist.canonicalStaticMethodSig(staticM));
+        Assert.assertEquals(conSig.toString(), EnumeratingWhitelist.canonicalConstructorSig(con));
+        Assert.assertEquals(fSig.toString(), EnumeratingWhitelist.canonicalFieldSig(f));
+        Assert.assertEquals(staticFSig.toString(), EnumeratingWhitelist.canonicalStaticFieldSig(staticF));
     }
 
     @Test
@@ -190,7 +188,7 @@ public class EnumeratingWhitelistTest {
 
         assertTrue(myList.permitsFieldGet(f, new C()));  // No cache, so we fall back to direct search and hit the wildcard, then cache permitted
         assertTrue(myList.permitsFieldGet(f, new C()));  // Should hit cache for that specific method
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(Whitelist.canonicalFieldSig(f)));  // Verifies it can cache that
+        assertEquals(Boolean.TRUE, myList.permittedCache.get(EnumeratingWhitelist.canonicalFieldSig(f)));  // Verifies it can cache that
     }
 
 }

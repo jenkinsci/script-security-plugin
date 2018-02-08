@@ -69,66 +69,6 @@ public abstract class Whitelist implements ExtensionPoint {
 
     public abstract boolean permitsStaticFieldSet(@Nonnull Field field, @CheckForNull Object value);
 
-    // Utility methods for creating canonical string representations of the signature
-    public static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
-        for (String type : types) {
-            b.append(' ').append(type);
-        }
-        return b;
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String[] argumentTypes(Class<?>[] argumentTypes) {
-        String[] s = new String[argumentTypes.length];
-        for (int i = 0; i < argumentTypes.length; i++) {
-            s[i] = EnumeratingWhitelist.getName(argumentTypes[i]);
-        }
-        return s;
-    }
-
-    /** Canonical name for a field access. */
-    @Restricted(NoExternalUse.class)
-    public static String canonicalFieldString(@Nonnull Field field) {
-        return EnumeratingWhitelist.getName(field.getDeclaringClass()) + ' ' + field.getName();
-    }
-
-    /** Canonical name for a method call. */
-    @Restricted(NoExternalUse.class)
-    public static String canonicalMethodString(@Nonnull Method method) {
-        return joinWithSpaces(new StringBuilder(EnumeratingWhitelist.getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
-    }
-
-    /** Canonical name for a constructor call. */
-    @Restricted(NoExternalUse.class)
-    public static String canonicalConstructorString(@Nonnull Constructor cons) {
-        return joinWithSpaces(new StringBuilder(EnumeratingWhitelist.getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String canonicalMethodSig(@Nonnull Method method) {
-        return "method "+canonicalMethodString(method);
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String canonicalStaticMethodSig(@Nonnull Method method) {
-        return "staticMethod "+canonicalMethodString(method);
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String canonicalConstructorSig(@Nonnull Constructor cons) {
-        return "new "+canonicalConstructorString(cons);
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String canonicalFieldSig(@Nonnull Field field) {
-        return "field "+canonicalFieldString(field);
-    }
-
-    @Restricted(NoExternalUse.class)
-    public static String canonicalStaticFieldSig(@Nonnull Field field) {
-        return "staticField "+canonicalFieldString(field);
-    }
-
     /**
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.
      * @return an aggregated default list

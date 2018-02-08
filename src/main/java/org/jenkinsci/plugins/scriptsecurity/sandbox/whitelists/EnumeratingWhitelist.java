@@ -29,12 +29,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -56,7 +57,8 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<String, Boolean>();  // Not private to facilitate testing
 
-    private void cacheSignatureList(List<Signature> ...sigs) {
+    @SafeVarargs
+    private final void cacheSignatureList(List<Signature> ...sigs) {
         for (List<Signature> list : sigs) {
             for (Signature s : list) {
                 if (!s.isWildcard()) { // Cache entries for wildcard signatures will never be accessed and just waste space
@@ -66,21 +68,24 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    /** Prepopulates the "permitted" cache. */
-    public void precache() {
+    /** Prepopulates the "permitted" cache, resetting if populated already.  Should be called when method signatures change or after initialization. */
+    final void precache() {
+        if (!permittedCache.isEmpty()) {
+            this.permittedCache.clear();  // No sense calling clearCache
+        }
         cacheSignatureList((List)methodSignatures(), (List)(newSignatures()),
                            (List)(staticMethodSignatures()), (List)(fieldSignatures()),
                            (List)(staticFieldSignatures()));
     }
 
-    /** Frees up memory used for the cache. */
-    void clearCache() {
+    /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
+    final void clearCache() {
         this.permittedCache.clear();
         this.permittedCache = new ConcurrentHashMap<String, Boolean>();
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
-        String key = Whitelist.canonicalMethodSig(method);
+        String key = canonicalMethodSig(method);
         Boolean b = permittedCache.get(key);
         if (b != null) {
             return b;
@@ -98,7 +103,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
-        String key = Whitelist.canonicalConstructorSig(constructor);
+        String key = canonicalConstructorSig(constructor);
         Boolean b = permittedCache.get(key);
         if (b != null) {
             return b;
@@ -116,7 +121,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
-        String key = Whitelist.canonicalStaticMethodSig(method);
+        String key = canonicalStaticMethodSig(method);
         Boolean b = permittedCache.get(key);
         if (b != null) {
             return b;
@@ -134,7 +139,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsFieldGet(Field field, Object receiver) {
-        String key = Whitelist.canonicalFieldSig(field);
+        String key = canonicalFieldSig(field);
         Boolean b = permittedCache.get(key);
         if (b != null) {
             return b;
@@ -156,7 +161,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldGet(Field field) {
-        String key = Whitelist.canonicalStaticFieldSig(field);
+        String key = canonicalStaticFieldSig(field);
         Boolean b = permittedCache.get(key);
         if (b != null) {
             return b;
@@ -224,6 +229,67 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         public boolean isWildcard() {
             return false;
         }
+    }
+
+    // Utility methods for creating canonical string representations of the signature
+    @Restricted(NoExternalUse.class)
+    static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+        for (String type : types) {
+            b.append(' ').append(type);
+        }
+        return b;
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String[] argumentTypes(Class<?>[] argumentTypes) {
+        String[] s = new String[argumentTypes.length];
+        for (int i = 0; i < argumentTypes.length; i++) {
+            s[i] = getName(argumentTypes[i]);
+        }
+        return s;
+    }
+
+    /** Canonical name for a field access. */
+    @Restricted(NoExternalUse.class)
+    static String canonicalFieldString(@Nonnull Field field) {
+        return getName(field.getDeclaringClass()) + ' ' + field.getName();
+    }
+
+    /** Canonical name for a method call. */
+    @Restricted(NoExternalUse.class)
+    static String canonicalMethodString(@Nonnull Method method) {
+        return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
+    }
+
+    /** Canonical name for a constructor call. */
+    @Restricted(NoExternalUse.class)
+    static String canonicalConstructorString(@Nonnull Constructor cons) {
+        return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String canonicalMethodSig(@Nonnull Method method) {
+        return "method "+canonicalMethodString(method);
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String canonicalStaticMethodSig(@Nonnull Method method) {
+        return "staticMethod "+canonicalMethodString(method);
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String canonicalConstructorSig(@Nonnull Constructor cons) {
+        return "new "+canonicalConstructorString(cons);
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String canonicalFieldSig(@Nonnull Field field) {
+        return "field "+canonicalFieldString(field);
+    }
+
+    @Restricted(NoExternalUse.class)
+    static String canonicalStaticFieldSig(@Nonnull Field field) {
+        return "staticField "+canonicalFieldString(field);
     }
 
     public static class MethodSignature extends Signature {
