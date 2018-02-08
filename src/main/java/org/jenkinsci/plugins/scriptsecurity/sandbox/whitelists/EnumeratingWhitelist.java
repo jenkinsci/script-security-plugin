@@ -191,11 +191,13 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    static @Nonnull String getName(@CheckForNull Object o) {
+    @Restricted(NoExternalUse.class)
+    public static @Nonnull String getName(@CheckForNull Object o) {
         return o == null ? "null" : getName(o.getClass());
     }
 
-    private static boolean is(String thisIdentifier, String identifier) {
+    @Restricted(NoExternalUse.class)
+    public static boolean is(String thisIdentifier, String identifier) {
         return thisIdentifier.equals("*") || identifier.equals(thisIdentifier);
     }
 
