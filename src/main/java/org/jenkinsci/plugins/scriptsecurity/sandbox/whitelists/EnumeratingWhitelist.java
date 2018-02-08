@@ -182,7 +182,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return permitsStaticFieldGet(field);
     }
 
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
+    static @Nonnull String getName(@Nonnull Class<?> c) {
         Class<?> e = c.getComponentType();
         if (e == null) {
             return c.getName();
@@ -191,7 +191,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    public static @Nonnull String getName(@CheckForNull Object o) {
+    static @Nonnull String getName(@CheckForNull Object o) {
         return o == null ? "null" : getName(o.getClass());
     }
 
