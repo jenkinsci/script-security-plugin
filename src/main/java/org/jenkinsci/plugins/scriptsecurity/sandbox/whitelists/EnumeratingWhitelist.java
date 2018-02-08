@@ -53,7 +53,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    private HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();
+    HashMap<String, Boolean> permittedCache = new HashMap<String, Boolean>();  // Not private to facilitate testing
 
     private void cacheSignatureList(List<Signature> ...sigs) {
         for (List<Signature> list : sigs) {
