@@ -39,7 +39,11 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 /**
- * A whitelist based on listing signatures and searching them.
+ * A whitelist based on listing signatures and searching them. Lists of signatures should not change
+ * from invocation to invocation.
+ *
+ * If that's a need it is better to directly extend {@link Whitelist} and roll a custom implementation OR
+ *  extend ProxyWhitelist and add some custom delegates.
  */
 public abstract class EnumeratingWhitelist extends Whitelist {
 

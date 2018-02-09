@@ -50,6 +50,9 @@ public class AclAwareWhitelist extends Whitelist {
      */
     public AclAwareWhitelist(Whitelist unrestricted, Whitelist restricted) {
         this.unrestricted = unrestricted;
+        if (this.unrestricted instanceof EnumeratingWhitelist) {
+            ((EnumeratingWhitelist) this.unrestricted).precache();
+        }
         this.restricted = restricted;
     }
 
