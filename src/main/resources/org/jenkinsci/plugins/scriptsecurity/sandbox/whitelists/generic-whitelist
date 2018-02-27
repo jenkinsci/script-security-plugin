@@ -364,6 +364,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Iter
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number
