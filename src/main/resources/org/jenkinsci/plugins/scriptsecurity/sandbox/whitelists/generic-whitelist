@@ -76,6 +76,7 @@ method java.lang.Number shortValue
 method java.lang.Object clone
 method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
+method java.lang.Object hashCode
 method java.lang.Object toString
 method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
