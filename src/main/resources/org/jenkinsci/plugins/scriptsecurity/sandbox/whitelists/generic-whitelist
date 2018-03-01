@@ -482,6 +482,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods unique java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods unique java.util.List
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods with java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods withDefault java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods withDefault java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods withLazyDefault java.util.List groovy.lang.Closure
