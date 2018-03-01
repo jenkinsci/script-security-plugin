@@ -307,6 +307,9 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResult java.ut
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResult java.util.Map java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResults java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResults java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods get java.util.Map java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
@@ -350,6 +353,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Col
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Iterator java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join long[] java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join short[] java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods last java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.lang.String java.lang.Object
