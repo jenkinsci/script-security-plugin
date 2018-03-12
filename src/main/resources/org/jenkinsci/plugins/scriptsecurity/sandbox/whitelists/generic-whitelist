@@ -76,6 +76,7 @@ method java.lang.Number shortValue
 method java.lang.Object clone
 method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
+method java.lang.Object hashCode
 method java.lang.Object toString
 method java.lang.String contains java.lang.CharSequence
 method java.lang.String endsWith java.lang.String
@@ -178,6 +179,7 @@ method java.util.Map size
 method java.util.Map values
 method java.util.Map$Entry getKey
 method java.util.Map$Entry getValue
+staticMethod java.util.Objects hash java.lang.Object[]
 staticMethod java.util.Objects requireNonNull java.lang.Object
 staticMethod java.util.Objects requireNonNull java.lang.Object java.lang.String
 new java.util.Random
