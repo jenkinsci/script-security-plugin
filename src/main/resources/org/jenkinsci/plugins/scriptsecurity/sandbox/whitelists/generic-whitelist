@@ -216,6 +216,14 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iter
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int int boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.util.List int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.util.List int boolean
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.util.List int int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.util.List int int boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collect java.util.Collection groovy.lang.Closure
