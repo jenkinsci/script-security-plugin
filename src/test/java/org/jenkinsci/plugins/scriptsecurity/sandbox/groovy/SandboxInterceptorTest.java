@@ -1022,4 +1022,26 @@ public class SandboxInterceptorTest {
                 "a:null b:2 c:3 d:4",
                 script);
     }
-}
+
+    public static class NonArrayConstructorList extends ArrayList<String> {
+        public NonArrayConstructorList(boolean choiceOne, boolean choiceTwo) {
+            if (choiceOne) {
+                this.add("one");
+            }
+            if (choiceTwo) {
+                this.add("two");
+            }
+        }
+    }
+
+    @Issue("JENKINS-50380")
+    @Test
+    public void checkedCastWhenAssignable() throws Exception {
+        String nacl = NonArrayConstructorList.class.getName();
+        // pre groovy-sandbox-1.18, results in unclassified new org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest$NonArrayConstructorList java.lang.String
+        assertEvaluate(new StaticWhitelist("new org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest$NonArrayConstructorList boolean boolean",
+                        "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.util.Collection java.lang.String"),
+                "one",
+                nacl + " foo = new " + nacl + "(true, false); return foo.join('')");
+
+    }}
