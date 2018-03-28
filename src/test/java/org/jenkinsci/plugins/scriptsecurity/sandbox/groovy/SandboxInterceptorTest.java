@@ -225,14 +225,14 @@ public class SandboxInterceptorTest {
             fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
-            assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
+            assertEquals("No such field found: field " + clazz + " nonexistent", x.getMessage());
         }
         try {
             evaluate(new StaticWhitelist("new " + clazz), "new " + clazz + "().nonexistent = 'edited'");
             fail();
         } catch (RejectedAccessException x) {
             assertEquals(null, x.getSignature());
-            assertEquals("unclassified field " + clazz + " nonexistent", x.getMessage());
+            assertEquals("No such field found: field " + clazz + " nonexistent", x.getMessage());
         }
         assertRejected(new StaticWhitelist("new " + clazz), "method " + clazz + " getProp5", "new " + clazz + "().prop5");
         assertEvaluate(new StaticWhitelist("new " + clazz, "method " + clazz + " getProp5"), "DEFAULT", "new " + clazz + "().prop5");

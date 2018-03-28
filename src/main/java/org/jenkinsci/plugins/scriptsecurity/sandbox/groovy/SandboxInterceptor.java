@@ -141,7 +141,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     @Override public Object onNewInstance(GroovyInterceptor.Invoker invoker, Class receiver, Object... args) throws Throwable {
         Constructor<?> c = GroovyCallSiteSelector.constructor(receiver, args);
         if (c == null) {
-            throw new RejectedAccessException("unclassified new " + EnumeratingWhitelist.getName(receiver) + printArgumentTypes(args));
+            throw new RejectedAccessException("No such constructor found: new " + EnumeratingWhitelist.getName(receiver) + printArgumentTypes(args));
         } else if (whitelist.permitsConstructor(c, args)) {
             return super.onNewInstance(invoker, receiver, args);
         } else {
@@ -153,7 +153,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Method m = GroovyCallSiteSelector.staticMethod(receiver, method, args);
         if (m == null) {
             // TODO consider DefaultGroovyStaticMethods
-            throw new RejectedAccessException("unclassified staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
+            throw new RejectedAccessException("No such static method found: staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {
@@ -385,7 +385,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     public Object onSuperCall(Invoker invoker, Class senderType, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
-            throw new RejectedAccessException("unclassified super.method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+            throw new RejectedAccessException("No such method found: super.method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onSuperCall(invoker, senderType, receiver, method, args);
         } else {
@@ -394,7 +394,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     private static RejectedAccessException unclassifiedField(Object receiver, String property) {
-        return new RejectedAccessException("unclassified field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+        return new RejectedAccessException("No such field found: field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
     }
 
     // TODO Java 8: @FunctionalInterface
@@ -448,7 +448,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
         }
-        throw new RejectedAccessException("unclassified getAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]");
+        throw new RejectedAccessException("No such getAt method found: method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]");
     }
 
     @Override public Object onSetArray(Invoker invoker, Object receiver, Object index, Object value) throws Throwable {
@@ -475,7 +475,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
         }
-        throw new RejectedAccessException("unclassified putAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]=" + EnumeratingWhitelist.getName(value));
+        throw new RejectedAccessException("No such putAt method found: putAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]=" + EnumeratingWhitelist.getName(value));
     }
 
     private static String printArgumentTypes(Object[] args) {
