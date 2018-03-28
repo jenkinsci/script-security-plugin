@@ -137,6 +137,7 @@ method java.util.Collection add java.lang.Object
 method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
 method java.util.Collection isEmpty
+method java.util.Collection remove java.lang.Object
 method java.util.Collection removeAll java.util.Collection
 method java.util.Collection retainAll java.util.Collection
 method java.util.Collection size
@@ -148,6 +149,7 @@ new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
 method java.util.Iterator next
 method java.util.List get int
+method java.util.List remove int
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
 staticField java.util.Locale CHINESE
