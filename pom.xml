@@ -48,7 +48,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.18</version>
+      <version>1.19-20180329.140543-1</version> <!-- TODO: https://github.com/jenkinsci/groovy-sandbox/pull/46 -->
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
