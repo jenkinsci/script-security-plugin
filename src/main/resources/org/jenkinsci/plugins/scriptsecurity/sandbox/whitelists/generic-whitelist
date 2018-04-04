@@ -384,6 +384,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Obje
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Iterator groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
