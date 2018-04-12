@@ -1044,4 +1044,40 @@ public class SandboxInterceptorTest {
                 "one",
                 nacl + " foo = new " + nacl + "(true, false); return foo.join('')");
 
-    }}
+    }
+
+    public static class SimpleNamedBean {
+        private String name;
+
+        @Whitelisted
+        public SimpleNamedBean(String n) {
+            this.name = n;
+        }
+
+        @Whitelisted
+        public String getName() {
+            return name;
+        }
+
+        // This is not whitelisted for test purposes to be sure we still do checks.
+        public String getOther() {
+            return name;
+        }
+    }
+
+    @Issue("JENKINS-50470")
+    @Test
+    public void checkedGetPropertyOnCollection() throws Exception {
+        String snb = SimpleNamedBean.class.getName();
+
+        // Before JENKINS-50470 fix, this would error out on "unclassified field java.util.ArrayList name"
+        assertEvaluate(new AnnotatedWhitelist(), Arrays.asList("a", "b", "c"),
+                "def l = [new " + snb + "('a'), new " + snb +"('b'), new " + snb + "('c')]\n" +
+                        "return l.name\n");
+
+        // We should still be calling checkedGetProperty properly for the objects within the collection.
+        assertRejected(new AnnotatedWhitelist(), "method org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest$SimpleNamedBean getOther",
+                "def l = [new " + snb + "('a'), new " + snb +"('b'), new " + snb + "('c')]\n" +
+                        "return l.other\n");
+    }
+}
