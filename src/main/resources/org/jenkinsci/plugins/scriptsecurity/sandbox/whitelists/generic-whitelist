@@ -53,6 +53,7 @@ method java.lang.Comparable compareTo java.lang.Object
 new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
+new java.lang.Exception java.lang.String
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
