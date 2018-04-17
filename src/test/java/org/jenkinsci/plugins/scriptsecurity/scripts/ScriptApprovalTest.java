@@ -26,6 +26,8 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
@@ -87,7 +89,11 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         HtmlPage managePage = wc.goTo("manage");
 
         List<?> scriptApprovalLinks = managePage.getByXPath("//a[@href='scriptApproval']");
-        assertEquals(2, scriptApprovalLinks.size()); // the icon link and the textual link
+        int expectedLinkCount = 2;
+        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.102"))) {
+            expectedLinkCount = 1; // https://github.com/jenkinsci/jenkins/pull/2857 made major changes to management page
+        }
+        assertEquals(expectedLinkCount, scriptApprovalLinks.size()); // the icon link and the textual link
 
         String managePageBodyText = managePage.getBody().getTextContent();
         assertThat(managePageBodyText, Matchers.containsString("1 dangerous signatures previously approved which ought not have been."));
