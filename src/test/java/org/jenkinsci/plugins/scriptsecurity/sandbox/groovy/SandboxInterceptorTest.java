@@ -1080,4 +1080,10 @@ public class SandboxInterceptorTest {
                 "def l = [new " + snb + "('a'), new " + snb +"('b'), new " + snb + "('c')]\n" +
                         "return l.other\n");
     }
+
+    @Issue("JENKINS-50843")
+    @Test
+    public void callClosureElementOfMapAsMethod() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "hello", "def m = [ f: {return 'hello'} ]; m.f()");
+    }
 }

@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.collect.ImmutableSet;
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
@@ -35,6 +36,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,6 +114,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
             // we're iterating over the whole list before we decide to fail out on the first failure we found.
             if (foundDgmMethod != null) {
                 throw StaticWhitelist.rejectStaticMethod(foundDgmMethod);
+            }
+
+            // allow calling Closure elements of Maps as methods
+            if (receiver instanceof Map) {
+                Object element = onMethodCall(invoker, receiver, "get", method);
+                if (element instanceof Closure) {
+                    return onMethodCall(invoker, element, "call", args);
+                }
             }
 
             // if no matching method, look for catchAll "invokeMethod"
