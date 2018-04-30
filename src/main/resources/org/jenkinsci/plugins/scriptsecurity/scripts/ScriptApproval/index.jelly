@@ -24,6 +24,16 @@ THE SOFTWARE.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form">
+    <style>
+        tr.selected td {
+            background-color: #6886b9;
+            color: #fff;
+        }
+        table.approvals {
+            border:1px solid;
+            border-collapse:collapse
+        }
+    </style>
     <l:layout title="In-process Script Approval" permission="${app.RUN_SCRIPTS}">
         <st:include page="sidepanel.jelly" it="${app}"/>
         <l:main-panel>
@@ -72,6 +82,16 @@ THE SOFTWARE.
                 }
                 function clearDangerousApprovedSignatures() {
                     mgr.clearDangerousApprovedSignatures(function(r) {
+                        updateApprovedSignatures(r);
+                    });
+                }
+                function clearSelectedSignatures() {
+                    var rows = document.getElementsByClassName('selected');
+                    var signatures = [];
+                    for(row of rows) {
+                        signatures.push(row.innerText);
+                    }
+                    mgr.clearSelectedSignatures(signatures, function(r) {
                         updateApprovedSignatures(r);
                     });
                 }
@@ -174,6 +194,15 @@ THE SOFTWARE.
                         renderClasspaths(r);
                     });
                 }
+
+                function selectRow(row) {
+                    var tr = row.parentElement
+                    if(tr.hasClassName("selected")) {
+                        tr.removeClassName("selected");
+                    } else {
+                        tr.addClassName("selected");
+                    }
+                }
                 
                 Event.observe(window, "load", function(){
                     mgr.getClasspathRenderInfo(function(r) {
@@ -203,6 +232,10 @@ THE SOFTWARE.
                 You can also remove all previous script approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
             </p>
+            <p>
+                Remove selected signatures:
+                <button onclick="clearSelectedSignatures()">Clear selected</button>
+            </p>
             <hr/>
             <j:choose>
                 <j:when test="${it.pendingSignatures.isEmpty()}">
@@ -230,9 +263,9 @@ THE SOFTWARE.
                 </j:otherwise>
             </j:choose>
             <p>Signatures already approved:</p>
-            <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
-                <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-            </textarea>
+            <table class="approvals" id="approvedSignatures">
+                    <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+            </table>
             <p>Signatures already approved assuming permission check:</p>
             <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
@@ -247,6 +280,10 @@ THE SOFTWARE.
             <p>
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
+            </p>
+            <p>
+                Remove selected signatures:
+                <button onclick="clearSelectedSignatures()">Clear selected</button>
             </p>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 Or you can just remove the dangerous ones:

@@ -842,6 +842,33 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return reconfigure();
     }
 
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized String[][] clearSelectedSignatures(String[] signatures) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        for(String sig : signatures) {
+            Iterator<String> it = approvedSignatures.iterator();
+            while (it.hasNext()) {
+                if (sig.equals(it.next())) {
+                    it.remove();
+                    break;
+                }
+            }
+
+            it = aclApprovedSignatures.iterator();
+            while (it.hasNext()) {
+                if (sig.equals(it.next())) {
+                    it.remove();
+                    it = approvedSignatures.iterator();
+                    break;
+                }
+            }
+        }
+
+        save();
+        return reconfigure();
+    }
+
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
         ArrayList<ApprovedClasspathEntry> r = new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
