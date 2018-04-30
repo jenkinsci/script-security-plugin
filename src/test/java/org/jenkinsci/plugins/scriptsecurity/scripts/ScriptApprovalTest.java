@@ -136,6 +136,27 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
     }
 
+    @Test public void clearSelectedMethodLifeCycle() throws Exception {
+        ScriptApproval sa = ScriptApproval.get();
+
+        String signature1 = "method java.io.Writer write java.lang.String";
+        String signature2 = "method java.lang.AutoCloseable close";
+
+        sa.approveSignature(WHITELISTED_SIGNATURE);
+        sa.approveSignature(DANGEROUS_SIGNATURE);
+        sa.approveSignature(signature1);
+        sa.approveSignature(signature2);
+        assertEquals(4, sa.getApprovedSignatures().length);
+
+        String[] toBeRemoved = {WHITELISTED_SIGNATURE};
+        sa.clearSelectedSignatures(toBeRemoved);
+        assertEquals(3, sa.getApprovedSignatures().length);
+
+        toBeRemoved = new String[]{signature1, signature2};
+        sa.clearSelectedSignatures(toBeRemoved);
+        assertEquals(1, sa.getApprovedSignatures().length);
+    }
+
     private Script script(String groovy) {
         return new Script(groovy);
     }
