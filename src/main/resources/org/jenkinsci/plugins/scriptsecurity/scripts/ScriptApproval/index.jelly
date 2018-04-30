@@ -266,16 +266,18 @@ THE SOFTWARE.
             <table class="approvals" id="approvedSignatures">
                     <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
             </table>
-            <p>Signatures already approved assuming permission check:</p>
-            <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
-                <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-            </textarea>
+            <j:if test="${!empty(aclApprovedSignatures)}">
+                <p>Signatures already approved assuming permission check:</p>
+                <table class="approvals" id="aclApprovedSignatures">
+                    <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                </table>
+            </j:if>
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
-                <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
-                    <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-                </textarea>
+                <table class="approvals" id="dangerousApprovedSignatures">
+                    <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                </table>
             </j:if>
             <p>
                 You can also remove all previous signature approvals:
