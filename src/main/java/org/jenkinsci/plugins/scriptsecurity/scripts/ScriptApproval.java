@@ -809,7 +809,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         save();
     }
 
-    // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] clearApprovedSignatures() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
@@ -859,7 +858,6 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             while (it.hasNext()) {
                 if (sig.equals(it.next())) {
                     it.remove();
-                    it = approvedSignatures.iterator();
                     break;
                 }
             }

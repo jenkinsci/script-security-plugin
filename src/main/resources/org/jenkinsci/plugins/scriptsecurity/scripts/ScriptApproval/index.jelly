@@ -69,10 +69,93 @@ THE SOFTWARE.
                 }
                 function updateApprovedSignatures(r) {
                     var both = r.responseObject();
-                    $('approvedSignatures').value = both[0].join('\n');
-                    $('aclApprovedSignatures').value = both[1].join('\n');
-                    $('dangerousApprovedSignatures').value = both[2].join('\n');
+
+                    if(both[0].length > 0) {
+                        var newApprovedSignatures = document.createElement('tbody');
+                        var oldApprovedSignatures = $('approvedSignaturesBody');
+                        newApprovedSignatures.setAttribute('class', 'approvals');
+                        newApprovedSignatures.setAttribute('id', 'approvedSignaturesBody');
+                        both[0].forEach(function (approvedSig) {
+                            var tr = document.createElement('tr');
+
+                            var td = document.createElement('td');
+                            td.setAttribute('onclick', 'selectRow(this)');
+                            td.setAttribute('class', 'text_data');
+
+                            var txt = document.createTextNode(approvedSig);
+
+                            td.appendChild(txt);
+                            tr.appendChild(td);
+                            newApprovedSignatures.appendChild(tr);
+                        });
+
+                        if(oldApprovedSignatures === null) {
+                            $('approvedSignatures').appendChild(newApprovedSignatures);
+                        } else {
+                            $('approvedSignatures').replaceChild(newApprovedSignatures, oldApprovedSignatures);
+                        }
+                        if(both[0].length === 0 &amp;&amp; $('approvedSignatures').firstChild !== null) {
+                            $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
+                        }
+                    }
+
+                    if(both[1].length > 0) {
+                        var newApprovedAclSignatures = document.createElement('tbody');
+                        var oldApprovedAclSignatures = $('aclApprovedSignaturesBody');
+                        newApprovedAclSignatures.setAttribute('class', 'approvals');
+                        newApprovedAclSignatures.setAttribute('id', 'aclApprovedSignaturesBody');
+                        both[1].forEach(function (aclApprovedSig) {
+                            var tr = document.createElement('tr');
+
+                            var td = document.createElement('td');
+                            td.setAttribute('onclick', 'selectRow(this)');
+                            td.setAttribute('class', 'text_data');
+
+                            var txt = document.createTextNode(aclApprovedSig);
+
+                            td.appendChild(txt);
+                            tr.appendChild(td);
+                            newApprovedAclSignatures.appendChild(tr);
+                        });
+
+                        if(oldApprovedAclSignatures === null) {
+                            $('aclApprovedSignatures').appendChild(newApprovedAclSignatures);
+                        } else {
+                            $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
+                        }
+                    }
+                    if(both[1].length === 0 &amp;&amp; $('aclApprovedSignatures').firstChild !== null) {
+                        $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
+                    }
+
+                    var newApprovedDangerousSignatures = document.createElement('tbody');
+                    var oldApprovedDangerousSignatures = $('dangerousApprovedSignaturesBody');
+                    newApprovedDangerousSignatures.setAttribute('class', 'approvals');
+                    newApprovedDangerousSignatures.setAttribute('id', 'dangerousApprovedSignaturesBody');
+                    both[2].forEach(function (aclApprovedSig) {
+                        var tr = document.createElement('tr');
+
+                        var td = document.createElement('td');
+                        td.setAttribute('onclick', 'selectRow(this)');
+                        td.setAttribute('class', 'text_data');
+
+                        var txt = document.createTextNode(aclApprovedSig);
+
+                        td.appendChild(txt);
+                        tr.appendChild(td);
+                        newApprovedDangerousSignatures.appendChild(tr);
+                    });
+
+                    if(oldApprovedDangerousSignatures === null) {
+                        $('dangerousApprovedSignatures').appendChild(newApprovedDangerousSignatures);
+                    } else {
+                        $('dangerousApprovedSignatures').replaceChild(newApprovedDangerousSignatures, oldApprovedDangerousSignatures);
+                    }
+                    if(both[2].length === 0 &amp;&amp; $('dangerousApprovedSignatures').firstChild !== null) {
+                        $('dangerousApprovedSignatures').removeChild($('dangerousApprovedSignatures').firstChild);
+                    }
                 }
+
                 function approveSignature(signature, hash) {
                     mgr.approveSignature(signature, function(r) {
                         updateApprovedSignatures(r);
@@ -277,28 +360,38 @@ THE SOFTWARE.
                 </j:otherwise>
             </j:choose>
             <p>Signatures already approved:</p>
-            <table class="approvals" id="approvedSignatures">
-                    <tbody class="approvals">
-                        <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
-                    </tbody>
-            </table>
-            <j:if test="${!empty(aclApprovedSignatures)}">
-                <p>Signatures already approved assuming permission check:</p>
-                <table class="approvals" id="aclApprovedSignatures">
-                    <tbody class="approvals">
-                        <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
-                    </tbody>
+                <table class="approvals" id="approvedSignatures">
+                        <tbody class="approvals" id="approvedSignaturesBody">
+                            <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                        </tbody>
                 </table>
-            </j:if>
+            <p>Signatures already approved assuming permission check:</p>
+            <j:choose>
+                <j:when test="${!empty(aclApprovedSignatures)}">
+                    <table class="approvals" id="aclApprovedSignatures">
+                        <tbody class="approvals" id="aclApprovedSignaturesBody">
+                            <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                        </tbody>
+                    </table>
+                </j:when>
+                <j:otherwise>
+                    <table class="approvals" id="aclApprovedSignatures"></table>
+                </j:otherwise>
+            </j:choose>
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
-            <j:if test="${!empty(dangerousApprovedSignatures)}">
-                <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
-                <table class="approvals" id="dangerousApprovedSignatures">
-                    <tbody class="approvals">
-                        <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
-                    </tbody>
-                </table>
-            </j:if>
+            <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
+            <j:choose>
+                <j:when test="${!empty(dangerousApprovedSignatures)}">
+                    <table class="approvals" id="dangerousApprovedSignatures">
+                        <tbody class="approvals" id="dangerousApprovedSignaturesBody">
+                            <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                        </tbody>
+                    </table>
+                </j:when>
+                <j:otherwise>
+                    <table class="approvals" id="dangerousApprovedSignatures"></table>
+                </j:otherwise>
+            </j:choose>
             <p>
                 You can also remove all previous signature approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
