@@ -30,9 +30,23 @@ THE SOFTWARE.
             color: #fff;
         }
         table.approvals {
-            border:1px solid;
-            border-collapse:collapse
+            border-collapse:collapse;
+            height:189px;
+
+            tr {
+                width: 100%;
+                display: inline-table;
+                table-layout: fixed;
+            }
         }
+
+        tbody.approvals {
+            overflow-y:scroll;
+            height:189px;
+            position:absolute;
+            border:1px solid;
+        }
+
     </style>
     <l:layout title="In-process Script Approval" permission="${app.RUN_SCRIPTS}">
         <st:include page="sidepanel.jelly" it="${app}"/>
@@ -264,19 +278,25 @@ THE SOFTWARE.
             </j:choose>
             <p>Signatures already approved:</p>
             <table class="approvals" id="approvedSignatures">
-                    <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    <tbody class="approvals">
+                        <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    </tbody>
             </table>
             <j:if test="${!empty(aclApprovedSignatures)}">
                 <p>Signatures already approved assuming permission check:</p>
                 <table class="approvals" id="aclApprovedSignatures">
-                    <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    <tbody class="approvals">
+                        <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    </tbody>
                 </table>
             </j:if>
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
                 <table class="approvals" id="dangerousApprovedSignatures">
-                    <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    <tbody class="approvals">
+                        <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                    </tbody>
                 </table>
             </j:if>
             <p>
