@@ -88,15 +88,15 @@ THE SOFTWARE.
                         newApprovedSignatures.appendChild(tr);
                     });
 
+                    //case where this is the first approvals to be added
                     if(oldApprovedSignatures === null) {
                         $('approvedSignatures').appendChild(newApprovedSignatures);
                     } else {
                         $('approvedSignatures').replaceChild(newApprovedSignatures, oldApprovedSignatures);
                     }
-                    if(both[0].length === 0) {
-                        if($('approvedSignatures').firstChild !== null) {
-                            $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
-                        }
+                    //case where the last approval has been removed
+                    if(both[0].length === 0 &amp;&amp; $('approvedSignatures').firstChild !== null) {
+                        $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
                     }
 
                     var newApprovedAclSignatures = document.createElement('tbody');
@@ -117,17 +117,13 @@ THE SOFTWARE.
                         newApprovedAclSignatures.appendChild(tr);
                     });
 
-                    //case where this is the first approvals to be added
                     if(oldApprovedAclSignatures === null) {
                         $('aclApprovedSignatures').appendChild(newApprovedAclSignatures);
                     } else {
                         $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
                     }
-                    //case where the last approval has been removed
-                    if(both[1].length === 0) {
-                        if($('aclApprovedSignatures').firstChild !== null) {
-                            $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
-                        }
+                    if(both[1].length === 0 &amp;&amp; $('aclApprovedSignatures').firstChild !== null) {
+                        $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
                     }
 
                     var newApprovedDangerousSignatures = document.createElement('tbody');
@@ -153,10 +149,8 @@ THE SOFTWARE.
                     } else {
                         $('dangerousApprovedSignatures').replaceChild(newApprovedDangerousSignatures, oldApprovedDangerousSignatures);
                     }
-                    if(both[2].length === 0) {
-                        if($('dangerousApprovedSignatures').firstChild !== null) {
-                            $('dangerousApprovedSignatures').removeChild($('dangerousApprovedSignatures').firstChild);
-                        }
+                    if(both[2].length === 0 &amp;&amp; $('dangerousApprovedSignatures').firstChild !== null) {
+                        $('dangerousApprovedSignatures').removeChild($('dangerousApprovedSignatures').firstChild);
                     }
                 }
 
@@ -189,8 +183,8 @@ THE SOFTWARE.
                 function clearSelectedSignatures() {
                     var rows = document.getElementsByClassName('selected');
                     var signatures = [];
-                    for(row of rows) {
-                        signatures.push(row.innerText);
+                    for(var i = 0; i &lt; rows.length; i++) {
+                        signatures.push(rows[i].firstChild.innerText);
                     }
                     mgr.clearSelectedSignatures(signatures, function(r) {
                         updateApprovedSignatures(r);
