@@ -26,7 +26,6 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTable;
-import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
