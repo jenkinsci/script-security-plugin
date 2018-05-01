@@ -115,11 +115,13 @@ THE SOFTWARE.
                         newApprovedAclSignatures.appendChild(tr);
                     });
 
+                    //case where this is the first approvals to be added
                     if(oldApprovedAclSignatures === null) {
                         $('aclApprovedSignatures').appendChild(newApprovedAclSignatures);
                     } else {
                         $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
                     }
+                    //case where the last approval has been removed
                     if(both[1].length === 0 &amp;&amp; $('aclApprovedSignatures').firstChild !== null) {
                         $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
                     }
