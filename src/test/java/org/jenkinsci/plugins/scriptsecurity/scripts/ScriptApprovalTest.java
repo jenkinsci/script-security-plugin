@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlTable;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
@@ -99,8 +100,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertThat(managePageBodyText, Matchers.containsString("1 dangerous signatures previously approved which ought not have been."));
 
         HtmlPage scriptApprovalPage = managePage.getAnchorByHref("scriptApproval").click();
-        HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
-        HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
+        HtmlTable approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
+        HtmlTable dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
 
         assertThat(approvedTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
         assertThat(dangerousTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
