@@ -358,7 +358,11 @@ THE SOFTWARE.
             <p>Signatures already approved:</p>
                 <table class="approvals" id="approvedSignatures">
                         <tbody class="approvals" id="approvedSignaturesBody">
-                            <j:forEach var="line" items="${it.approvedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                            <j:forEach var="line" items="${it.approvedSignatures}">
+                                <tr>
+                                    <td onclick="selectRow(this)" class="text_data">${line}</td>
+                                </tr>
+                            </j:forEach>
                         </tbody>
                 </table>
             <p>Signatures already approved assuming permission check:</p>
@@ -366,7 +370,11 @@ THE SOFTWARE.
                 <j:when test="${!empty(aclApprovedSignatures)}">
                     <table class="approvals" id="aclApprovedSignatures">
                         <tbody class="approvals" id="aclApprovedSignaturesBody">
-                            <j:forEach var="line" items="${it.aclApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                            <j:forEach var="line" items="${it.aclApprovedSignatures}">
+                                <tr>
+                                    <td onclick="selectRow(this)" class="text_data">${line}</td>
+                                </tr>
+                            </j:forEach>
                         </tbody>
                     </table>
                 </j:when>
@@ -380,7 +388,11 @@ THE SOFTWARE.
                 <j:when test="${!empty(dangerousApprovedSignatures)}">
                     <table class="approvals" id="dangerousApprovedSignatures">
                         <tbody class="approvals" id="dangerousApprovedSignaturesBody">
-                            <j:forEach var="line" items="${it.dangerousApprovedSignatures}"><tr><td onclick="selectRow(this)" class="text_data">${line}</td></tr></j:forEach>
+                            <j:forEach var="line" items="${it.dangerousApprovedSignatures}">
+                                <tr>
+                                    <td onclick="selectRow(this)" class="text_data">${line}</td>
+                                </tr>
+                            </j:forEach>
                         </tbody>
                     </table>
                 </j:when>
