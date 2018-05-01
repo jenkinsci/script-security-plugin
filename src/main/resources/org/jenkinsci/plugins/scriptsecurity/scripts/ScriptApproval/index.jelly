@@ -70,59 +70,55 @@ THE SOFTWARE.
                 function updateApprovedSignatures(r) {
                     var both = r.responseObject();
 
-                    if(both[0].length > 0) {
-                        var newApprovedSignatures = document.createElement('tbody');
-                        var oldApprovedSignatures = $('approvedSignaturesBody');
-                        newApprovedSignatures.setAttribute('class', 'approvals');
-                        newApprovedSignatures.setAttribute('id', 'approvedSignaturesBody');
-                        both[0].forEach(function (approvedSig) {
-                            var tr = document.createElement('tr');
+                    var newApprovedSignatures = document.createElement('tbody');
+                    var oldApprovedSignatures = $('approvedSignaturesBody');
+                    newApprovedSignatures.setAttribute('class', 'approvals');
+                    newApprovedSignatures.setAttribute('id', 'approvedSignaturesBody');
+                    both[0].forEach(function (approvedSig) {
+                        var tr = document.createElement('tr');
 
-                            var td = document.createElement('td');
-                            td.setAttribute('onclick', 'selectRow(this)');
-                            td.setAttribute('class', 'text_data');
+                        var td = document.createElement('td');
+                        td.setAttribute('onclick', 'selectRow(this)');
+                        td.setAttribute('class', 'text_data');
 
-                            var txt = document.createTextNode(approvedSig);
+                        var txt = document.createTextNode(approvedSig);
 
-                            td.appendChild(txt);
-                            tr.appendChild(td);
-                            newApprovedSignatures.appendChild(tr);
-                        });
+                        td.appendChild(txt);
+                        tr.appendChild(td);
+                        newApprovedSignatures.appendChild(tr);
+                    });
 
-                        if(oldApprovedSignatures === null) {
-                            $('approvedSignatures').appendChild(newApprovedSignatures);
-                        } else {
-                            $('approvedSignatures').replaceChild(newApprovedSignatures, oldApprovedSignatures);
-                        }
-                        if(both[0].length === 0 &amp;&amp; $('approvedSignatures').firstChild !== null) {
-                            $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
-                        }
+                    if(oldApprovedSignatures === null) {
+                        $('approvedSignatures').appendChild(newApprovedSignatures);
+                    } else {
+                        $('approvedSignatures').replaceChild(newApprovedSignatures, oldApprovedSignatures);
+                    }
+                    if(both[0].length === 0 &amp;&amp; $('approvedSignatures').firstChild !== null) {
+                        $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
                     }
 
-                    if(both[1].length > 0) {
-                        var newApprovedAclSignatures = document.createElement('tbody');
-                        var oldApprovedAclSignatures = $('aclApprovedSignaturesBody');
-                        newApprovedAclSignatures.setAttribute('class', 'approvals');
-                        newApprovedAclSignatures.setAttribute('id', 'aclApprovedSignaturesBody');
-                        both[1].forEach(function (aclApprovedSig) {
-                            var tr = document.createElement('tr');
+                    var newApprovedAclSignatures = document.createElement('tbody');
+                    var oldApprovedAclSignatures = $('aclApprovedSignaturesBody');
+                    newApprovedAclSignatures.setAttribute('class', 'approvals');
+                    newApprovedAclSignatures.setAttribute('id', 'aclApprovedSignaturesBody');
+                    both[1].forEach(function (aclApprovedSig) {
+                        var tr = document.createElement('tr');
 
-                            var td = document.createElement('td');
-                            td.setAttribute('onclick', 'selectRow(this)');
-                            td.setAttribute('class', 'text_data');
+                        var td = document.createElement('td');
+                        td.setAttribute('onclick', 'selectRow(this)');
+                        td.setAttribute('class', 'text_data');
 
-                            var txt = document.createTextNode(aclApprovedSig);
+                        var txt = document.createTextNode(aclApprovedSig);
 
-                            td.appendChild(txt);
-                            tr.appendChild(td);
-                            newApprovedAclSignatures.appendChild(tr);
-                        });
+                        td.appendChild(txt);
+                        tr.appendChild(td);
+                        newApprovedAclSignatures.appendChild(tr);
+                    });
 
-                        if(oldApprovedAclSignatures === null) {
-                            $('aclApprovedSignatures').appendChild(newApprovedAclSignatures);
-                        } else {
-                            $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
-                        }
+                    if(oldApprovedAclSignatures === null) {
+                        $('aclApprovedSignatures').appendChild(newApprovedAclSignatures);
+                    } else {
+                        $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
                     }
                     if(both[1].length === 0 &amp;&amp; $('aclApprovedSignatures').firstChild !== null) {
                         $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
