@@ -93,8 +93,10 @@ THE SOFTWARE.
                     } else {
                         $('approvedSignatures').replaceChild(newApprovedSignatures, oldApprovedSignatures);
                     }
-                    if(both[0].length === 0 &amp;&amp; $('approvedSignatures').firstChild !== null) {
-                        $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
+                    if(both[0].length === 0) {
+                        if($('approvedSignatures').firstChild !== null) {
+                            $('approvedSignatures').removeChild($('approvedSignatures').firstChild);
+                        }
                     }
 
                     var newApprovedAclSignatures = document.createElement('tbody');
@@ -122,8 +124,10 @@ THE SOFTWARE.
                         $('aclApprovedSignatures').replaceChild(newApprovedAclSignatures, oldApprovedAclSignatures);
                     }
                     //case where the last approval has been removed
-                    if(both[1].length === 0 &amp;&amp; $('aclApprovedSignatures').firstChild !== null) {
-                        $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
+                    if(both[1].length === 0) {
+                        if($('aclApprovedSignatures').firstChild !== null) {
+                            $('aclApprovedSignatures').removeChild($('aclApprovedSignatures').firstChild);
+                        }
                     }
 
                     var newApprovedDangerousSignatures = document.createElement('tbody');
@@ -149,8 +153,10 @@ THE SOFTWARE.
                     } else {
                         $('dangerousApprovedSignatures').replaceChild(newApprovedDangerousSignatures, oldApprovedDangerousSignatures);
                     }
-                    if(both[2].length === 0 &amp;&amp; $('dangerousApprovedSignatures').firstChild !== null) {
-                        $('dangerousApprovedSignatures').removeChild($('dangerousApprovedSignatures').firstChild);
+                    if(both[2].length === 0) {
+                        if($('dangerousApprovedSignatures').firstChild !== null) {
+                            $('dangerousApprovedSignatures').removeChild($('dangerousApprovedSignatures').firstChild);
+                        }
                     }
                 }
 
