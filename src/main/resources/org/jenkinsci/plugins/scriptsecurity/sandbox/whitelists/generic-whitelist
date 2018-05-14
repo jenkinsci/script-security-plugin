@@ -216,6 +216,7 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String java.util.TimeZone
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString java.util.Date
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods abs java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.Collection java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
@@ -324,6 +325,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods findResults java.u
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.util.List
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods get java.util.Map java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
