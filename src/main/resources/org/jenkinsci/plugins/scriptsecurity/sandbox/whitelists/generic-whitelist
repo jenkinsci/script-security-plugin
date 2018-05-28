@@ -482,6 +482,8 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.l
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripIndent java.lang.String int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods stripMargin java.lang.String java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods subMap java.util.Map java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods subMap java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sum java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sum java.lang.Object[] java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sum java.util.Collection
