@@ -111,6 +111,111 @@ staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
+method java.time.LocalDate getDayOfMonth
+method java.time.LocalDate getDayOfWeek
+method java.time.LocalDate getDayOfYear
+method java.time.LocalDate getMonth
+method java.time.LocalDate getMonthValue
+method java.time.LocalDate getYear
+method java.time.LocalDate minusDays long
+method java.time.LocalDate minusMonths long
+method java.time.LocalDate minusWeeks long
+method java.time.LocalDate minusYears long
+staticMethod java.time.LocalDate now
+staticMethod java.time.LocalDate parse java.lang.CharSequence
+staticMethod java.time.LocalDate parse java.lang.CharSequence java.time.format.DateTimeFormatter
+method java.time.LocalDate plusDays long
+method java.time.LocalDate plusMonths long
+method java.time.LocalDate plusWeeks long
+method java.time.LocalDate plusYears long
+method java.time.LocalDate withDayOfMonth int
+method java.time.LocalDate withDayOfYear int
+method java.time.LocalDate withMonth int
+method java.time.LocalDate withYear int
+method java.time.LocalDateTime getDayOfMonth
+method java.time.LocalDateTime getDayOfWeek
+method java.time.LocalDateTime getDayOfYear
+method java.time.LocalDateTime getHour
+method java.time.LocalDateTime getMinute
+method java.time.LocalDateTime getMonth
+method java.time.LocalDateTime getMonthValue
+method java.time.LocalDateTime getNano
+method java.time.LocalDateTime getSecond
+method java.time.LocalDateTime getYear
+method java.time.LocalDateTime minusDays long
+method java.time.LocalDateTime minusHours long
+method java.time.LocalDateTime minusMinutes long
+method java.time.LocalDateTime minusMonths long
+method java.time.LocalDateTime minusNanos long
+method java.time.LocalDateTime minusSeconds long
+method java.time.LocalDateTime minusWeeks long
+method java.time.LocalDateTime minusYears long
+staticMethod java.time.LocalDateTime now
+staticMethod java.time.LocalDateTime of java.time.LocalDate java.time.LocalTime
+staticMethod java.time.LocalDateTime parse java.lang.CharSequence
+staticMethod java.time.LocalDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
+method java.time.LocalDateTime plusDays long
+method java.time.LocalDateTime plusHours long
+method java.time.LocalDateTime plusMinutes long
+method java.time.LocalDateTime plusMonths long
+method java.time.LocalDateTime plusNanos long
+method java.time.LocalDateTime plusSeconds long
+method java.time.LocalDateTime plusWeeks long
+method java.time.LocalDateTime plusYears long
+method java.time.LocalDateTime withDayOfMonth int
+method java.time.LocalDateTime withDayOfYear int
+method java.time.LocalDateTime withHour int
+method java.time.LocalDateTime withMinute int
+method java.time.LocalDateTime withMonth int
+method java.time.LocalDateTime withNano int
+method java.time.LocalDateTime withSecond int
+method java.time.LocalDateTime withYear int
+staticField java.time.LocalTime MIDNIGHT
+staticField java.time.LocalTime NOON
+method java.time.LocalTime format java.time.format.DateTimeFormatter
+method java.time.LocalTime getHour
+method java.time.LocalTime getMinute
+method java.time.LocalTime getNano
+method java.time.LocalTime getSecond
+method java.time.LocalTime minusHours long
+method java.time.LocalTime minusMinutes long
+method java.time.LocalTime minusNanos long
+method java.time.LocalTime minusSeconds long
+staticMethod java.time.LocalTime now
+staticMethod java.time.LocalTime parse java.lang.CharSequence
+staticMethod java.time.LocalTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
+method java.time.LocalTime plusHours long
+method java.time.LocalTime plusMinutes long
+method java.time.LocalTime plusNanos long
+method java.time.LocalTime plusSeconds long
+method java.time.LocalTime toNanoOfDay
+method java.time.LocalTime toSecondOfDay
+method java.time.LocalTime withHour int
+method java.time.LocalTime withMinute int
+method java.time.LocalTime withNano int
+method java.time.LocalTime withSecond int
+method java.time.chrono.ChronoLocalDate format java.time.format.DateTimeFormatter
+method java.time.chrono.ChronoLocalDate getEra
+method java.time.chrono.ChronoLocalDate isLeapYear
+method java.time.chrono.ChronoLocalDate lengthOfMonth
+method java.time.chrono.ChronoLocalDate lengthOfYear
+method java.time.chrono.ChronoLocalDate toEpochDay
+method java.time.chrono.ChronoLocalDateTime format java.time.format.DateTimeFormatter
+staticField java.time.format.DateTimeFormatter BASIC_ISO_DATE
+staticField java.time.format.DateTimeFormatter ISO_DATE
+staticField java.time.format.DateTimeFormatter ISO_DATE_TIME
+staticField java.time.format.DateTimeFormatter ISO_INSTANT
+staticField java.time.format.DateTimeFormatter ISO_LOCAL_DATE
+staticField java.time.format.DateTimeFormatter ISO_LOCAL_DATE_TIME
+staticField java.time.format.DateTimeFormatter ISO_LOCAL_TIME
+staticField java.time.format.DateTimeFormatter ISO_OFFSET_DATE
+staticField java.time.format.DateTimeFormatter ISO_OFFSET_DATE_TIME
+staticField java.time.format.DateTimeFormatter ISO_OFFSET_TIME
+staticField java.time.format.DateTimeFormatter ISO_ORDINAL_DATE
+staticField java.time.format.DateTimeFormatter ISO_TIME
+staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
+staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
+staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticField java.util.Calendar AM
