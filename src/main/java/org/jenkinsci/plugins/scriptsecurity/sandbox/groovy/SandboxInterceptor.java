@@ -124,6 +124,15 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
 
+            // Allow calling closure variables from a script binding as methods
+            if (receiver instanceof Script) {
+                Script s = (Script)receiver;
+                Object var = s.getBinding().getVariable(method);
+                if (var instanceof Closure) {
+                    return onMethodCall(invoker, var, "call", args);
+                }
+            }
+
             // if no matching method, look for catchAll "invokeMethod"
             try {
                 receiver.getClass().getMethod("invokeMethod", String.class, Object.class);

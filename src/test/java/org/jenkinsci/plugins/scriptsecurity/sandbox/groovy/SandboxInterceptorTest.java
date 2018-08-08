@@ -1088,4 +1088,10 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), "a=hello,b=10", "def m = [ f: {a,b -> return \"a=${a},b=${b}\"} ]; m.f('hello',10)");
         assertEvaluate(new GenericWhitelist(), 2, "def m = [ f: {it.size()} ]; m.f(foo:0, bar:1)");
     }
+
+    @Issue("JENKINS-50906")
+    @Test
+    public void scriptBindingClosureVariableCall() throws Exception {
+        assertEvaluate(new GenericWhitelist(), true, "def func = { 1 }; this.func2 = { 1 }; return func() == func2();\n");
+    }
 }
