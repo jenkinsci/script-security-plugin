@@ -113,6 +113,7 @@ method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays toString java.lang.Object[]
+staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
 staticField java.util.Calendar APRIL
 staticField java.util.Calendar AUGUST
@@ -140,6 +141,7 @@ staticField java.util.Calendar MONDAY
 staticField java.util.Calendar MONTH
 staticField java.util.Calendar NOVEMBER
 staticField java.util.Calendar OCTOBER
+staticField java.util.Calendar PM
 staticField java.util.Calendar SATURDAY
 staticField java.util.Calendar SECOND
 staticField java.util.Calendar SEPTEMBER
