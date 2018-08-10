@@ -1093,5 +1093,8 @@ public class SandboxInterceptorTest {
     @Test
     public void scriptBindingClosureVariableCall() throws Exception {
         assertEvaluate(new GenericWhitelist(), true, "def func = { 1 }; this.func2 = { 1 }; return func() == func2();\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { x -> x }; this.func2 = { x -> x }; return func(5) == func2(5);\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { x, y -> x * y }; this.func2 = { x, y -> x * y }; return func(4, 5) == func2(4, 5);\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { it }; this.func2 = { it }; return func(12) == func2(12);\n");
     }
 }
