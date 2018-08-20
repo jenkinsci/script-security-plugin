@@ -605,7 +605,6 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Ignore("TODO last fails with: RejectedAccessException: Scripts not permitted to use new java.util.Properties java.util.Properties")
     @Issue("JENKINS-46757")
     @Test public void properties() throws Exception {
         String script = "def properties = new Properties()";
