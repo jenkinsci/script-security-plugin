@@ -192,6 +192,7 @@ staticField java.util.Locale TRADITIONAL_CHINESE
 staticField java.util.Locale UK
 staticField java.util.Locale US
 method java.util.Map clear
+method java.util.Map remove java.lang.Object
 method java.util.Map containsKey java.lang.Object
 method java.util.Map entrySet
 method java.util.Map get java.lang.Object
