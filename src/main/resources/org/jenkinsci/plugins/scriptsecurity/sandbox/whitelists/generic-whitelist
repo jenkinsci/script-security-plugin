@@ -199,6 +199,7 @@ method java.util.Map isEmpty
 method java.util.Map keySet
 method java.util.Map put java.lang.Object java.lang.Object
 method java.util.Map putAll java.util.Map
+method java.util.Map remove java.lang.Object
 method java.util.Map size
 method java.util.Map values
 method java.util.Map$Entry getKey
