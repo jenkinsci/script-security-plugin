@@ -450,6 +450,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.Set
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.SortedSet java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.SortedSet java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.util.SortedSet java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods pop java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Integer java.lang.Integer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Long java.lang.Integer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Number java.lang.Number
