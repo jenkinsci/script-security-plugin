@@ -65,6 +65,7 @@ public class ProxyWhitelist extends Whitelist {
     private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
 
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
+    @GuardedBy("lock")
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
     // TODO Consider StampedLock when we switch to Java8 for better performance - https://dzone.com/articles/a-look-at-stampedlock
@@ -118,7 +119,7 @@ public class ProxyWhitelist extends Whitelist {
                     ew.clearCache();
                 } else if (delegate instanceof ProxyWhitelist) {
                     ProxyWhitelist pw = (ProxyWhitelist) delegate;
-                    pw.wrappers.put(this, null);
+                    pw.addWrapper(this);
                     for (Whitelist subdelegate : pw.delegates) {
                         if (subdelegate instanceof EnumeratingWhitelist) {
                             ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
@@ -146,6 +147,13 @@ public class ProxyWhitelist extends Whitelist {
             writer.unlock();
         }
     }
+
+    private void addWrapper(ProxyWhitelist pwl){
+        lock.writeLock().lock();
+        wrappers.put(pwl, null);
+        lock.writeLock().unlock();
+    }
+
 
     public ProxyWhitelist(Whitelist... delegates) {
         this(Arrays.asList(delegates));
