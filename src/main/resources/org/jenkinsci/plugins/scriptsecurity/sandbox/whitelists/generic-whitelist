@@ -290,6 +290,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods containsAll Collec
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.String java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.util.Iterator groovy.lang.Closure
