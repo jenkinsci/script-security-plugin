@@ -1,1 +1,1 @@
-buildPlugin(jenkinsVersions: [null])
+buildPlugin()
