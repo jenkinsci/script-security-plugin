@@ -67,11 +67,5 @@
       <version>${version.configuration-as-code}</version>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>io.jenkins.configuration-as-code</groupId>
-      <artifactId>configuration-as-code-support</artifactId>
-      <version>${version.configuration-as-code}</version>
-      <optional>true</optional>
-    </dependency>
   </dependencies>
 </project>
