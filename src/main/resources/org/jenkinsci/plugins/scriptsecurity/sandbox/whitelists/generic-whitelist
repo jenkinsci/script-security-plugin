@@ -13,6 +13,7 @@ staticMethod groovy.json.JsonOutput toJson java.util.Date
 staticMethod groovy.json.JsonOutput toJson java.util.Map
 staticMethod groovy.json.JsonOutput toJson java.util.UUID
 new groovy.json.JsonSlurper
+new groovy.json.JsonBuilder java.lang.Object
 method groovy.json.JsonSlurper parseText java.lang.String
 
 method groovy.lang.Binding hasVariable java.lang.String
