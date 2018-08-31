@@ -242,6 +242,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.C
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asImmutable java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int boolean
