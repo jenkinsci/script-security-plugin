@@ -45,6 +45,7 @@ import javax.annotation.Nonnull;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -127,9 +128,11 @@ final class SandboxInterceptor extends GroovyInterceptor {
             // Allow calling closure variables from a script binding as methods
             if (receiver instanceof Script) {
                 Script s = (Script)receiver;
-                Object var = s.getBinding().getVariable(method);
-                if (var instanceof Closure) {
-                    return onMethodCall(invoker, var, "call", args);
+                if (s.getBinding().hasVariable(method)) {
+                    Object var = s.getBinding().getVariable(method);
+                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", (Object[]) args).isEmpty()){
+                        return onMethodCall(invoker, var, "call", args);
+                    }
                 }
             }
 
