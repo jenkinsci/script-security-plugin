@@ -979,7 +979,7 @@ public class SandboxInterceptorTest {
         String expected = ":def:ghi";
         assertEvaluate(wl, expected, script);
     }
-    
+
     @Issue("JENKINS-46213")
     @Test
     public void varArgsOnStaticDeclaration() throws Exception {
@@ -1097,4 +1097,15 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "def func = { x, y -> x * y }; this.func2 = { x, y -> x * y }; return func(4, 5) == func2(4, 5);\n");
         assertEvaluate(new GenericWhitelist(), true, "def func = { it }; this.func2 = { it }; return func(12) == func2(12);\n");
     }
+
+    @Test
+    public void dateTimeApi() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 8, "def tomorrow = java.time.LocalDate.now().plusDays(1).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE).length()");
+        assertEvaluate(new GenericWhitelist(), "2017-01-06", "def yesterday = java.time.LocalDate.parse('2017-01-07').minusDays(1).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)");
+        assertEvaluate(new GenericWhitelist(), 15, "java.time.LocalTime.now().withHour(15).getHour()");
+        assertEvaluate(new GenericWhitelist(), "20:42:00", "java.time.LocalTime.parse('23:42').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)");
+        assertEvaluate(new GenericWhitelist(), 15, "java.time.LocalDateTime.now().withMinute(15).minute");
+        assertEvaluate(new GenericWhitelist(), "2007-12-03T07:15:30", "java.time.LocalDateTime.parse('2007-12-03T10:15:30').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)");
+    }
+
 }
