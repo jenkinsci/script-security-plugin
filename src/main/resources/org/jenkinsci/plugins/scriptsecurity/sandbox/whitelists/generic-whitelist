@@ -346,6 +346,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods abs java.lang.Numb
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.Collection java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asImmutable java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
