@@ -150,8 +150,12 @@ public class ProxyWhitelist extends Whitelist {
 
     private void addWrapper(ProxyWhitelist pwl){
         lock.writeLock().lock();
-        wrappers.put(pwl, null);
-        lock.writeLock().unlock();
+        try {
+            wrappers.put(pwl, null);
+        }
+        finally {
+            lock.writeLock().unlock();
+        }
     }
 
 
