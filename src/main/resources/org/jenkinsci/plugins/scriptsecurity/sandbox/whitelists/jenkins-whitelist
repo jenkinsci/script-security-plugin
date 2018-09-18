@@ -1,6 +1,16 @@
 # Useful Jenkins API methods:
+method com.cloudbees.jenkins.plugins.pipeline.events.EventTriggerCause getJson
 new hudson.EnvVars
 method hudson.model.AbstractBuild getEnvironments
+method hudson.model.Cause getShortDescription
+method hudson.model.Cause$RemoteCause getAddr
+method hudson.model.Cause$RemoteCause getNote
+method hudson.model.Cause$UpstreamCause getUpstreamBuild
+method hudson.model.Cause$UpstreamCause getUpstreamCauses
+method hudson.model.Cause$UpstreamCause getUpstreamProject
+method hudson.model.Cause$UserCause getUserName
+method hudson.model.Cause$UserIdCause getUserId
+method hudson.model.Cause$UserIdCause getUserName
 staticMethod hudson.model.Environment create hudson.EnvVars
 method hudson.model.Item getParent
 method hudson.model.ModelObject getDisplayName
