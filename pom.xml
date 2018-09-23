@@ -20,7 +20,7 @@
       <java.level>8</java.level>
       <!-- TODO: Remove usBeta once the casc plugin will be released -->
       <useBeta>true</useBeta>
-      <version.configuration-as-code>1.0-rc2</version.configuration-as-code>
+      <version.configuration-as-code>1.0</version.configuration-as-code>
     </properties>
     <licenses>
         <license>
