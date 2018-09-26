@@ -332,7 +332,7 @@ method java.util.concurrent.Callable call
 staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MINUTES
 method java.util.regex.MatchResult group int
-method java.util.regex.MatchResult group java.lang.String
+method java.util.regex.Matcher group java.lang.String
 method java.util.regex.Matcher matches
 method java.util.regex.Matcher replaceAll java.lang.String
 method java.util.regex.Matcher replaceFirst java.lang.String
@@ -524,6 +524,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Iter
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
@@ -537,7 +538,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang.String java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Iterable java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Iterable java.lang.Object
