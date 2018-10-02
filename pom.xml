@@ -16,11 +16,11 @@
     <properties>
       <revision>1.47</revision>
       <changelist>-SNAPSHOT</changelist>
-      <jenkins.version>2.7.3</jenkins.version>
+      <jenkins.version>2.60.3</jenkins.version>
       <java.level>8</java.level>
       <!-- TODO: Remove usBeta once the casc plugin will be released -->
       <useBeta>true</useBeta>
-      <version.configuration-as-code>1.0</version.configuration-as-code>
+      <configuration-as-code.version>1.0</configuration-as-code.version>
     </properties>
     <licenses>
         <license>
@@ -64,7 +64,7 @@
     <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
-      <version>${version.configuration-as-code}</version>
+      <version>${configuration-as-code.version}</version>
       <optional>true</optional>
     </dependency>
   </dependencies>
