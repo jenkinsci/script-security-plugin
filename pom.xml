@@ -18,9 +18,7 @@
       <changelist>-SNAPSHOT</changelist>
       <jenkins.version>2.60.3</jenkins.version>
       <java.level>8</java.level>
-      <!-- TODO: Remove usBeta once the casc plugin will be released -->
-      <useBeta>true</useBeta>
-      <configuration-as-code.version>1.0</configuration-as-code.version>
+      <configuration-as-code.version>1.1</configuration-as-code.version>
     </properties>
     <licenses>
         <license>

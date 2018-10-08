@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:ohad.david@gmail.com">Ohad David</a>
@@ -27,6 +28,7 @@ import java.util.Set;
 @Restricted(NoExternalUse.class)
 public class ScriptApprovalConfigurator extends BaseConfigurator<ScriptApproval> implements RootElementConfigurator<ScriptApproval> {
 
+    private static final Logger LOGGER = Logger.getLogger(ScriptApprovalConfigurator.class.getName());
 
     @Override
     public String getName() {
@@ -51,6 +53,7 @@ public class ScriptApprovalConfigurator extends BaseConfigurator<ScriptApproval>
         try {
             return target.approveSignature(signature);
         } catch (IOException e) {
+            LOGGER.warning("Could not approve signature: " + signature + " ScriptApproval threw IOException: " + e.getMessage());
             throw new UncheckedIOException(e);
         }
     }
