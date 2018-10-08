@@ -49,6 +49,7 @@ method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
 method java.lang.Class getName
 method java.lang.Class getSimpleName
+method java.lang.Class isInstance java.lang.Object
 method java.lang.Comparable compareTo java.lang.Object
 new java.lang.Enum java.lang.String int
 method java.lang.Enum name
@@ -104,6 +105,7 @@ method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
 staticMethod java.lang.String valueOf java.lang.Object
 staticMethod java.lang.System currentTimeMillis
+method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
 new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
@@ -217,6 +219,7 @@ staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
 staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 new java.util.ArrayList java.util.Collection
+staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
@@ -329,6 +332,7 @@ method java.util.concurrent.Callable call
 staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MINUTES
 method java.util.regex.MatchResult group int
+method java.util.regex.Matcher group java.lang.String
 method java.util.regex.Matcher matches
 method java.util.regex.Matcher replaceAll java.lang.String
 method java.util.regex.Matcher replaceFirst java.lang.String
@@ -521,6 +525,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Iter
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.String java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean

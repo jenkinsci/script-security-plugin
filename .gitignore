@@ -3,3 +3,4 @@ work
 
 .idea
 *.iml
+.*.sw*
