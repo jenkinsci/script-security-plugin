@@ -523,9 +523,26 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Obje
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Iterator groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Character java.lang.Character
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Character java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Iterable java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Iterable java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Number java.lang.Character
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Object[] java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Object[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Object[] java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.String java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Collection java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Map java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Set java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Set java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Set java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.lang.Iterable
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
@@ -540,8 +557,11 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padRight java.lang
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods permutations java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.CharSequence java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Character java.lang.Character
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Character java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Iterable java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Iterable java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Number java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Object[] java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods plus java.lang.Object[] java.lang.Object
