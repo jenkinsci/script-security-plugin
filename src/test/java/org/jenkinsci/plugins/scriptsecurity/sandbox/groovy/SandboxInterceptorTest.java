@@ -56,6 +56,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import static org.hamcrest.Matchers.*;
@@ -1097,4 +1098,19 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "def func = { x, y -> x * y }; this.func2 = { x, y -> x * y }; return func(4, 5) == func2(4, 5);\n");
         assertEvaluate(new GenericWhitelist(), true, "def func = { it }; this.func2 = { it }; return func(12) == func2(12);\n");
     }
+
+    @Issue("SECURITY-1186")
+    @Test
+    public void finalizer() throws Exception {
+        try {
+            evaluate(new GenericWhitelist(), "class Test { public void finalize() { } }; null");
+            fail("Finalizers should be rejected");
+        } catch (MultipleCompilationErrorsException e) {
+            assertThat(e.getErrorCollector().getErrorCount(), equalTo(1));
+            Exception innerE = e.getErrorCollector().getException(0);
+            assertThat(innerE, instanceOf(SecurityException.class));
+            assertThat(innerE.getMessage(), containsString("Object.finalize()"));
+        }
+    }
+
 }
