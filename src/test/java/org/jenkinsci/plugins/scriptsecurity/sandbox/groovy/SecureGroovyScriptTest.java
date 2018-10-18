@@ -38,6 +38,8 @@ import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
 import hudson.model.Result;
+import hudson.model.User;
+import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
+import jenkins.security.NotReallyRoleSensitiveCallable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
@@ -803,4 +806,47 @@ public class SecureGroovyScriptTest {
         }
     }
     
+    @Issue("SECURITY-1186")
+    @Test public void testFinalizersForbiddenInSandbox() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("class Test { public void finalize() { } }; null", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("Object.finalize()", b);
+    }
+
+    @Issue("SECURITY-1186")
+    @Test public void testFinalizersAllowedWithWholeScriptApproval() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("dev");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("dev");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        final FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("class Test { public void finalize() { } }; null", false, null)));
+
+        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
+            public Void call() throws Exception {
+                FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+                r.assertLogContains("UnapprovedUsageException", b);
+                return null;
+            }
+        });
+
+        Set<ScriptApproval.PendingScript> ps = ScriptApproval.get().getPendingScripts();
+        assertEquals(1, ps.size());
+        ScriptApproval.get().approveScript(ps.iterator().next().getHash());
+
+        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
+            public Void call() throws Exception {
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
+                return null;
+            }
+        });
+    }
+
 }

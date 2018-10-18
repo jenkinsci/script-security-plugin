@@ -56,6 +56,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import static org.hamcrest.Matchers.*;
@@ -1106,6 +1107,20 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), "20:42:00", "java.time.LocalTime.parse('23:42').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)");
         assertEvaluate(new GenericWhitelist(), 15, "java.time.LocalDateTime.now().withMinute(15).minute");
         assertEvaluate(new GenericWhitelist(), "2007-12-03T07:15:30", "java.time.LocalDateTime.parse('2007-12-03T10:15:30').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)");
+    }
+
+    @Issue("SECURITY-1186")
+    @Test
+    public void finalizer() throws Exception {
+        try {
+            evaluate(new GenericWhitelist(), "class Test { public void finalize() { } }; null");
+            fail("Finalizers should be rejected");
+        } catch (MultipleCompilationErrorsException e) {
+            assertThat(e.getErrorCollector().getErrorCount(), equalTo(1));
+            Exception innerE = e.getErrorCollector().getException(0);
+            assertThat(innerE, instanceOf(SecurityException.class));
+            assertThat(innerE.getMessage(), containsString("Object.finalize()"));
+        }
     }
 
 }
