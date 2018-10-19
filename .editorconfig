@@ -1,0 +1,51 @@
+# download the plugin for your IDE from http://editorconfig.org/#download
+root = true
+
+## default style
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+charset = utf-8
+
+# Docstrings and comments use max_line_length = 79
+# Use 2 spaces for ruby/cucumber
+[*.rb]
+indent_size = 2
+
+[*.go]
+indent_size = tab
+indent_style = tab
+tab_width = 2
+
+[*.js]
+indent_size = 2
+
+# gherkins
+[*.feature]
+indent_size = 2
+
+[*.py]
+max_line_length = 119
+indent_size = 4
+
+# Use 2 spaces for the HTML files
+[*.html]
+indent_size = 2
+
+# The JSON files contain newlines inconsistently
+[*.json]
+indent_size = 2
+insert_final_newline = ignore
+
+[*.xyaml]
+indent_size = 2
+
+[*.yaml]
+indent_size = 2
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab

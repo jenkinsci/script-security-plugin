@@ -28,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
@@ -36,6 +37,8 @@ import hudson.model.Item;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
+import java.io.IOException;
+import java.io.Closeable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -68,6 +71,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
@@ -277,6 +281,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
+
+    /**
+     * Prepares the Groovy script to be executed.
+     * @param loader see parameter explanation under {@link #evaluate(ClassLoader, Binding)}
+     * @param binding see parameter explanation under {@link #evaluate(ClassLoader, Binding)}
+     * @return the prepared script
+     */
+    public PreparedScript prepare(ClassLoader loader, Binding binding) throws IllegalAccessException, IOException {
+      return new PreparedScript(loader, binding);
+    }
+
     /**
      * Runs the Groovy script, using the sandbox if so configured.
      * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
@@ -287,63 +302,96 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedUsageException in case of a non-sandbox issue
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
-    @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
     public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
-        if (!calledConfiguring) {
-            throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
+        try (PreparedScript scriptInstance = prepare(loader, binding)) {
+            return scriptInstance.run();
         }
-        URLClassLoader urlcl = null;
-        ClassLoader memoryProtectedLoader = null;
-        List<ClasspathEntry> cp = getClasspath();
-        if (!cp.isEmpty()) {
-            List<URL> urlList = new ArrayList<URL>(cp.size());
-            
-            for (ClasspathEntry entry : cp) {
-                ScriptApproval.get().using(entry);
-                urlList.add(entry.getURL());
-            }
-            
-            loader = urlcl = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
-        }
-        boolean canDoCleanup = false;
+    }
 
-        try {
-            loader = GroovySandbox.createSecureClassLoader(loader);
+    /**
+     * Allows access to execute a script multiple times without preparation and clean-up overhead.
+     * While the intricate logic to do this continues to be hidden from users.
+     */
+    public final class PreparedScript implements Closeable {
 
-            Field loaderF = null;
-            try {
-                loaderF = GroovyShell.class.getDeclaredField("loader");
-                loaderF.setAccessible(true);
-                canDoCleanup = true;
-            } catch (NoSuchFieldException nsme) {
-                LOGGER.log(Level.FINE, "GroovyShell fields have changed, field loader no longer exists -- memory leak fixes won't work");
-            }
+        private final GroovyShell sh;
+        private final Script preparedScript;
+        private ClassLoader memoryProtectedLoader = null;
+        private GroovyInterceptor scriptSandbox = null;
+        private URLClassLoader urlcl = null;
+        private boolean canDoCleanup = false;
 
-            GroovyShell sh;
-            if (sandbox) {
-                CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
-                sh = new GroovyShell(loader, binding, cc);
+        /**
+         * @see @see SecureGroovyScript#evaluate()
+        */
+        @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
+        private PreparedScript(ClassLoader loader, Binding binding) throws IllegalAccessException, IOException {
+            List<ClasspathEntry> cp = getClasspath();
+            if (!cp.isEmpty()) {
+                List<URL> urlList = new ArrayList<URL>(cp.size());
 
-                if (canDoCleanup) {
-                    memoryProtectedLoader = new CleanGroovyClassLoader(loader, cc);
-                    loaderF.set(sh, memoryProtectedLoader);
+                for (ClasspathEntry entry : cp) {
+                    ScriptApproval.get().using(entry);
+                    urlList.add(entry.getURL());
                 }
 
+                loader = urlcl = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
+            }
+
+            try {
+                loader = GroovySandbox.createSecureClassLoader(loader);
+                Field loaderF = null;
                 try {
-                    return GroovySandbox.run(sh.parse(script), Whitelist.all());
+                    loaderF = GroovyShell.class.getDeclaredField("loader");
+                    loaderF.setAccessible(true);
+                    canDoCleanup = true;
+                } catch (NoSuchFieldException nsme) {
+                    LOGGER.log(Level.FINE, "GroovyShell fields have changed, field loader no longer exists -- memory leak fixes won't work");
+                }
+
+                if (sandbox) {
+                    CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+                    sh = new GroovyShell(loader, binding, cc);
+
+                    if (canDoCleanup) {
+                        memoryProtectedLoader = new CleanGroovyClassLoader(loader, cc);
+                        loaderF.set(sh, memoryProtectedLoader);
+                    }
+
+                    preparedScript = sh.parse(script);
+                    scriptSandbox = GroovySandbox.createSandbox(preparedScript, Whitelist.all());
+                } else {
+                    sh = new GroovyShell(loader, binding);
+                    if (canDoCleanup) {
+                        memoryProtectedLoader = new CleanGroovyClassLoader(loader);
+                        loaderF.set(sh, memoryProtectedLoader);
+                    }
+
+                    preparedScript = sh.parse(ScriptApproval.get().using(script, GroovyLanguage.get()));
+                }
+            } catch (Exception e) {
+                close();
+                throw e;
+            }
+        }
+
+        public Object run() throws Exception {
+            if (sandbox) {
+                scriptSandbox.register();
+                try {
+                    return preparedScript.run();
                 } catch (RejectedAccessException x) {
                     throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
+                } finally {
+                    scriptSandbox.unregister();
                 }
             } else {
-                sh = new GroovyShell(loader, binding);
-                if (canDoCleanup) {
-                    memoryProtectedLoader = new CleanGroovyClassLoader(loader);
-                    loaderF.set(sh, memoryProtectedLoader);
-                }
-                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+                return preparedScript.run();
             }
+        }
 
-        } finally {
+        @Override
+        public void close() throws IOException {
             try {
                 if (canDoCleanup) {
                     cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());

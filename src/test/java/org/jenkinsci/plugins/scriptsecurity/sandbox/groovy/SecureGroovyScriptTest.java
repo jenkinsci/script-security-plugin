@@ -802,5 +802,32 @@ public class SecureGroovyScriptTest {
             assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
         }
     }
-    
+
+    @Test public void testSandboxUsesSelectedBinding() throws Exception {
+        SecureGroovyScript sgs = new SecureGroovyScript("return a++", true, null);
+        Binding b = new Binding();
+        b.setVariable("a", 5);
+        try(SecureGroovyScript.PreparedScript script = sgs.configuringWithKeyItem().prepare(Jenkins.getInstance().getPluginManager().uberClassLoader, b)) {
+            Object res = script.run();
+            assertTrue((int) res == 5);
+            assertTrue((int) b.getVariable("a") == 6);
+            res = script.run();
+            assertTrue((int) res == 6);
+            assertTrue((int) b.getVariable("a") == 7);
+        }
+    }
+
+    @Test public void testNonSandboxUsesSelectedBinding() throws Exception {
+        SecureGroovyScript sgs = new SecureGroovyScript("return a++", false, null);
+        Binding b = new Binding();
+        b.setVariable("a", 5);
+        try (SecureGroovyScript.PreparedScript script = sgs.configuringWithKeyItem().prepare(Jenkins.getInstance().getPluginManager().uberClassLoader, b)) {
+            Object res = script.run();
+            assertTrue((int) res == 5);
+            assertTrue((int) b.getVariable("a") == 6);
+            res = script.run();
+            assertTrue((int) res == 6);
+            assertTrue((int) b.getVariable("a") == 7);
+        }
+    }
 }
