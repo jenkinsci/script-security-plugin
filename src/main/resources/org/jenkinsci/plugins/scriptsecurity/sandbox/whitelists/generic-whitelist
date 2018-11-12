@@ -94,7 +94,6 @@ method java.lang.String lastIndexOf int
 method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String int
-method java.lang.String length
 method java.lang.String matches java.lang.String
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
