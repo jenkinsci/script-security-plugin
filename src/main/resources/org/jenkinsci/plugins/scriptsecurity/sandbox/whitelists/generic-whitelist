@@ -85,9 +85,15 @@ method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
 staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
+method java.lang.String indexOf int
+method java.lang.String indexOf int int
 method java.lang.String indexOf java.lang.String
+method java.lang.String indexOf java.lang.String int
 method java.lang.String isEmpty
+method java.lang.String lastIndexOf int
+method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
+method java.lang.String lastIndexOf java.lang.String int
 method java.lang.String matches java.lang.String
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
