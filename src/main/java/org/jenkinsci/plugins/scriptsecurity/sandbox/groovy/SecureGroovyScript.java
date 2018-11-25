@@ -221,7 +221,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             ClassLoader encounteredLoader = klazz.getClassLoader();
             if (encounteredLoader != loader) {
                 it.remove();
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(Level.FINEST)) {
                   LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
                 }
             }
