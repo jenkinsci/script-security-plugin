@@ -164,7 +164,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return;
         }
         cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
-        LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+        }
         cleanUpGlobalClassValue(loader);
         GroovyClassLoader gcl = (GroovyClassLoader) loader;
         for (Class<?> clazz : gcl.getLoadedClasses()) {
@@ -219,7 +221,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             ClassLoader encounteredLoader = klazz.getClassLoader();
             if (encounteredLoader != loader) {
                 it.remove();
-                LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                if (LOGGER.isLoggable(Level.FINER)) {
+                  LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                }
             }
         }
         LOGGER.log(Level.FINE, "cleaning up {0} associated with {1}", new Object[] {toRemove.toString(), loader.toString()});
@@ -270,7 +274,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             while (iterator.hasNext()) {
                 if (iterator.next().getKey().get() == clazz) {
                     iterator.remove();
-                    LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                    if (LOGGER.isLoggable(Level.FINER)) {
+                      LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                    }
                     break;
                 }
             }
