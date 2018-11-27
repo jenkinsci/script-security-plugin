@@ -24,6 +24,15 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import jenkins.model.GlobalConfiguration;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Util;
@@ -32,24 +41,6 @@ import hudson.model.RootAction;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
-import jenkins.model.GlobalConfiguration;
-import jenkins.model.Jenkins;
-import net.sf.json.JSON;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -75,11 +66,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import jenkins.model.Jenkins;
+import net.sf.json.JSON;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 /**
  * Manages approved scripts.
  */
-@Extension public class ScriptApproval extends GlobalConfiguration implements RootAction {
+@Symbol("scriptApproval")
+@Extension
+public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     private static final Logger LOG = Logger.getLogger(ScriptApproval.class.getName());
 
