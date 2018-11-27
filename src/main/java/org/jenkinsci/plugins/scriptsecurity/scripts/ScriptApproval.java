@@ -704,10 +704,6 @@ import javax.annotation.Nonnull;
         return null;
     }
 
-    @Override public String getDisplayName() {
-        return null;
-    }
-
     @Override public String getUrlName() {
         return "scriptApproval";
     }
