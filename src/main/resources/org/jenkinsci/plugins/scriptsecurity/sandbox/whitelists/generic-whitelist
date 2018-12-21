@@ -286,6 +286,7 @@ method java.util.Iterator hasNext
 method java.util.Iterator next
 method java.util.List get int
 method java.util.List remove int
+method java.util.List subList int int
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
 staticField java.util.Locale CHINESE
