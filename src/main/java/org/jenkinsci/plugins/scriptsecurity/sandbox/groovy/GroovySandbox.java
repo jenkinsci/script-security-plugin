@@ -25,9 +25,12 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.grape.GrabAnnotationTransformation;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -58,8 +61,18 @@ public class GroovySandbox {
      * @return a compiler configuration set up to use the sandbox
      */
     public static @Nonnull CompilerConfiguration createSecureCompilerConfiguration() {
-        CompilerConfiguration cc = new CompilerConfiguration();
+        CompilerConfiguration cc = createBaseCompilerConfiguration();
         cc.addCompilationCustomizers(new SandboxTransformer());
+        return cc;
+    }
+
+    /**
+     * Prepares a compiler configuration that rejects certain AST transformations. Used by {@link #createSecureCompilerConfiguration()}.
+     */
+    public static @Nonnull CompilerConfiguration createBaseCompilerConfiguration() {
+        CompilerConfiguration cc = new CompilerConfiguration();
+        cc.addCompilationCustomizers(new RejectASTTransformsCustomizer());
+        cc.setDisabledGlobalASTTransformations(new HashSet<>(Collections.singletonList(GrabAnnotationTransformation.class.getName())));
         return cc;
     }
 

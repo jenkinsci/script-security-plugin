@@ -74,11 +74,14 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
+import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
 
 public class SandboxInterceptorTest {
 
     @Rule public ErrorCollector errors = new ErrorCollector();
+
+    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -816,6 +819,30 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "jenkins.model.Jenkins.instance");
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.getInstance()");
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.instance");
+    }
+
+    @Issue("SECURITY-1266")
+    @Test
+    public void blockedASTTransformsASTTest() throws Exception {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+
+        thrown.expect(MultipleCompilationErrorsException.class);
+        thrown.expectMessage("Annotation ASTTest cannot be used in the sandbox");
+
+        shell.parse("import groovy.transform.*\n" +
+                "@ASTTest(value={ assert true })\n" +
+                "@Field int x\n");
+    }
+
+    @Issue("SECURITY-1266")
+    @Test
+    public void blockedASTTransformsGrab() throws Exception {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        thrown.expect(MultipleCompilationErrorsException.class);
+        thrown.expectMessage("Annotation Grab cannot be used in the sandbox");
+
+        shell.parse("@Grab(group='foo', module='bar', version='1.0')\n" +
+                "def foo\n");
     }
 
     private static Object evaluate(Whitelist whitelist, String script) {
