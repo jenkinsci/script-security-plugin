@@ -658,6 +658,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sum java.util.Coll
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sum java.util.Collection java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tail java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.lang.CharSequence int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList boolean[]
