@@ -224,6 +224,7 @@ staticField java.time.format.DateTimeFormatter ISO_TIME
 staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
 staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
+staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
