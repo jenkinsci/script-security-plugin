@@ -72,6 +72,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * Convenience structure encapsulating a Groovy script that may either be approved whole or sandboxed.
@@ -407,9 +408,11 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
+        @RequirePOST
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
             try {
-                new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader).parse(value);
+                new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader,
+                        GroovySandbox.createSecureCompilerConfiguration()).parse(value);
             } catch (CompilationFailedException x) {
                 return FormValidation.error(x.getLocalizedMessage());
             }

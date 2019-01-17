@@ -57,6 +57,8 @@ import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.Expand;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
+
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.*;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
@@ -848,5 +850,28 @@ public class SecureGroovyScriptTest {
             }
         });
     }
+
+    @Issue("SECURITY-1292")
+    @Test
+    public void blockASTTest() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.*\n" +
+                "import jenkins.model.Jenkins\n" +
+                "import hudson.model.FreeStyleProject\n" +
+                "@ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
+                "@Field int x\n" +
+                "echo 'hello'\n", false).toString(), containsString("Annotation ASTTest cannot be used in the sandbox"));
+
+        assertNull(r.jenkins.getItem("should-not-exist"));
+    }
+
+    @Issue("SECURITY-1292")
+    @Test
+    public void blockGrab() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@Grab(group='foo', module='bar', version='1.0')\ndef foo\n", false).toString(),
+                containsString("Annotation Grab cannot be used in the sandbox"));
+    }
+
 
 }
