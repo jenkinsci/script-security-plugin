@@ -873,5 +873,91 @@ public class SecureGroovyScriptTest {
                 containsString("Annotation Grab cannot be used in the sandbox"));
     }
 
+    @Issue("SECURITY-1318")
+    @Test
+    public void blockGrapes() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@Grapes([@Grab(group='foo', module='bar', version='1.0')])\ndef foo\n", false).toString(),
+                containsString("Annotation Grapes cannot be used in the sandbox"));
+    }
 
+    @Issue("SECURITY-1318")
+    @Test
+    public void blockGrabConfig() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@GrabConfig(autoDownload=false)\ndef foo\n", false).toString(),
+                containsString("Annotation GrabConfig cannot be used in the sandbox"));
+    }
+
+    @Issue("SECURITY-1318")
+    @Test
+    public void blockGrabExclude() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@GrabExclude(group='org.mortbay.jetty', module='jetty-util')\ndef foo\n", false).toString(),
+                containsString("Annotation GrabExclude cannot be used in the sandbox"));
+    }
+
+    @Issue("SECURITY-1319")
+    @Test
+    public void blockGrabResolver() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@GrabResolver(name='restlet.org', root='http://maven.restlet.org')\ndef foo\n", false).toString(),
+                containsString("Annotation GrabResolver cannot be used in the sandbox"));
+    }
+
+    @Issue("SECURITY-1318")
+    @Test
+    public void blockArbitraryAnnotation() throws Exception {
+        try {
+            System.setProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS", "groovy.transform.Field,groovy.transform.Immutable");
+            SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+            assertThat(d.doCheckScript("@Field\ndef foo\n", false).toString(),
+                    containsString("Annotation Field cannot be used in the sandbox"));
+        } finally {
+            System.clearProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS");
+        }
+    }
+
+    @Issue("SECURITY-1321")
+    @Test
+    public void blockAnnotationCollector() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.*\n" +
+                "import jenkins.model.Jenkins\n" +
+                "import hudson.model.FreeStyleProject\n" +
+                "@AnnotationCollector([ASTTest]) @interface Lol {}\n" +
+                "@Lol(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
+                "@Field int x\n" +
+                "echo 'hello'\n", false).toString(), containsString("Annotation AnnotationCollector cannot be used in the sandbox"));
+
+        assertNull(r.jenkins.getItem("should-not-exist"));
+    }
+
+    @Issue("SECURITY-1320")
+    @Test
+    public void blockFQCN() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.*\n" +
+                "import jenkins.model.Jenkins\n" +
+                "import hudson.model.FreeStyleProject\n" +
+                "@groovy.transform.ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
+                "@Field int x\n" +
+                "echo 'hello'\n", false).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+
+        assertNull(r.jenkins.getItem("should-not-exist"));
+    }
+
+    @Issue("SECURITY-1320")
+    @Test
+    public void blockImportAsBlockedAnnotation() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.ASTTest as lolwut\n" +
+                "import jenkins.model.Jenkins\n" +
+                "import hudson.model.FreeStyleProject\n" +
+                "@lolwut(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
+                "int x\n" +
+                "echo 'hello'\n", false).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+
+        assertNull(r.jenkins.getItem("should-not-exist"));
+    }
 }

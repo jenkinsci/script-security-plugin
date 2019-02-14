@@ -26,22 +26,32 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.collect.ImmutableList;
 import groovy.lang.Grab;
+import groovy.lang.GrabConfig;
+import groovy.lang.GrabExclude;
+import groovy.lang.GrabResolver;
+import groovy.lang.Grapes;
 import groovy.transform.ASTTest;
+import groovy.transform.AnnotationCollector;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 
-import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RejectASTTransformsCustomizer extends CompilationCustomizer {
-    private static final List<Class<? extends Annotation>> BLOCKED_TRANSFORMS = ImmutableList.of(ASTTest.class, Grab.class);
+    private static final List<String> BLOCKED_TRANSFORMS = ImmutableList.of(ASTTest.class.getCanonicalName(), Grab.class.getCanonicalName(),
+            GrabConfig.class.getCanonicalName(), GrabExclude.class.getCanonicalName(), GrabResolver.class.getCanonicalName(),
+            Grapes.class.getCanonicalName(), AnnotationCollector.class.getCanonicalName());
 
     public RejectASTTransformsCustomizer() {
         super(CompilePhase.CONVERSION);
@@ -64,6 +74,28 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
             return source;
         }
 
+        @Override
+        public void visitImports(ModuleNode node) {
+            if (node != null) {
+                for (ImportNode importNode : node.getImports()) {
+                    checkImportForBlockedAnnotation(importNode);
+                }
+                for (ImportNode importStaticNode : node.getStaticImports().values()) {
+                    checkImportForBlockedAnnotation(importStaticNode);
+                }
+            }
+        }
+
+        private void checkImportForBlockedAnnotation(ImportNode node) {
+            if (node != null && node.getType() != null) {
+                for (String blockedAnnotation : getBlockedTransforms()) {
+                    if (blockedAnnotation.equals(node.getType().getName()) || blockedAnnotation.endsWith("." + node.getType().getName())) {
+                        throw new SecurityException("Annotation " + node.getType().getName() + " cannot be used in the sandbox.");
+                    }
+                }
+            }
+        }
+
         /**
          * If the node is annotated with one of the blocked transform annotations, throw a security exception.
          *
@@ -72,12 +104,26 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
         @Override
         public void visitAnnotations(AnnotatedNode node) {
             for (AnnotationNode an : node.getAnnotations()) {
-                for (Class<? extends Annotation> blockedAnnotation : BLOCKED_TRANSFORMS) {
-                    if (blockedAnnotation.getSimpleName().equals(an.getClassNode().getName())) {
-                        throw new SecurityException("Annotation " + blockedAnnotation.getSimpleName() + " cannot be used in the sandbox.");
+                for (String blockedAnnotation : getBlockedTransforms()) {
+                    if (blockedAnnotation.equals(an.getClassNode().getName()) || blockedAnnotation.endsWith("." + an.getClassNode().getName())) {
+                        throw new SecurityException("Annotation " + an.getClassNode().getName() + " cannot be used in the sandbox.");
                     }
                 }
             }
         }
+    }
+
+    private static List<String> getBlockedTransforms() {
+        List<String> blocked = new ArrayList<>(BLOCKED_TRANSFORMS);
+
+        String additionalBlocked = System.getProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS");
+
+        if (additionalBlocked != null) {
+            for (String b : additionalBlocked.split(",")) {
+                blocked.add(b.trim());
+            }
+        }
+
+        return blocked;
     }
 }
