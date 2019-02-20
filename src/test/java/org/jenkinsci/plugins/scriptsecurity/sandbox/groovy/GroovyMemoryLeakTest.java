@@ -2,11 +2,9 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.MetaClass;
 import hudson.model.FreeStyleProject;
+import io.jenkins.lib.versionnumber.JavaSpecificationVersion;
 import org.codehaus.groovy.reflection.ClassInfo;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
@@ -44,6 +42,8 @@ public class GroovyMemoryLeakTest {
 
     @Test
     public void loaderReleased() throws Exception {
+        Assume.assumeTrue(isRunningOnJDK8());
+
         FreeStyleProject p = r.jenkins.createProject(FreeStyleProject.class, "p");
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, null)));
@@ -61,5 +61,9 @@ public class GroovyMemoryLeakTest {
         for (WeakReference<ClassLoader> loaderRef : LOADERS) {
             MemoryAssert.assertGC(loaderRef, false);
         }
+    }
+
+    private boolean isRunningOnJDK8() {
+        return JavaSpecificationVersion.forCurrentJVM().isOlderThanOrEqualTo(JavaSpecificationVersion.JAVA_8);
     }
 }
