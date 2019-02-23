@@ -26,24 +26,39 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.grape.GrabAnnotationTransformation;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import hudson.util.FormValidation;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
 
+import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
+
 /**
  * Allows Groovy scripts (including Groovy Templates) to be run inside a sandbox.
  */
 public class GroovySandbox {
+
+    public static final Logger LOGGER = Logger.getLogger(GroovySandbox.class.getName());
 
     /**
      * Prepares a compiler configuration the sandbox.
@@ -143,8 +158,11 @@ public class GroovySandbox {
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @return the value produced by the script, if any
      * @throws RejectedAccessException in case an attempted call was not whitelisted
+     * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} instead
      */
+    @Deprecated
     public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+        LOGGER.log(Level.WARNING, null, new IllegalStateException(Messages.GroovySandbox_useOfInsecureRunOverload()));
         Whitelist wrapperWhitelist = new ProxyWhitelist(
                 new ClassLoaderWhitelist(script.getClass().getClassLoader()),
                 whitelist);
@@ -155,6 +173,58 @@ public class GroovySandbox {
         } finally {
             sandbox.unregister();
         }
+    }
+
+    /**
+     * Runs a script in the sandbox.
+     * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
+     * @param shell a shell ready for {@link GroovyShell#parse(String)}
+     * @param script a script
+     * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
+     * @return the value produced by the script, if any
+     * @throws RejectedAccessException in case an attempted call was not whitelisted
+     */
+    public static Object run(@Nonnull final GroovyShell shell, @Nonnull final String script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+        try {
+            final Script s = runInSandbox(new Callable<Script>() {
+                @Override
+                public Script call() throws Exception {
+                    return shell.parse(script);
+                }
+            }, whitelist);
+            return runInSandbox(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return s.run();
+                }
+            }, new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist));
+        } catch (RuntimeException x) { // incl. RejectedAccessException
+            throw x;
+        } catch (Exception x) {
+            throw new AssertionError(x);
+        }
+    }
+
+    /**
+     * Checks a script for compilation errors in a sandboxed environment, without going all the way to actual class
+     * creation or initialization.
+     * @param script The script to check
+     * @param classLoader The {@link GroovyClassLoader} to use during compilation.
+     * @return The {@link FormValidation} for the compilation check.
+     */
+    public static @Nonnull FormValidation checkScriptForCompilationErrors(String script, GroovyClassLoader classLoader) {
+        try {
+            CompilationUnit cu = new CompilationUnit(
+                    createSecureCompilerConfiguration(),
+                    new CodeSource(new URL("file", "", DEFAULT_CODE_BASE), (Certificate[]) null),
+                    classLoader);
+            cu.addSource("Script1", script);
+            cu.compile(Phases.CANONICALIZATION);
+        } catch (MalformedURLException | CompilationFailedException e) {
+            return FormValidation.error(e.getLocalizedMessage());
+        }
+
+        return FormValidation.ok();
     }
 
     private GroovySandbox() {}

@@ -337,7 +337,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 }
 
                 try {
-                    return GroovySandbox.run(sh.parse(script), Whitelist.all());
+                    return GroovySandbox.run(sh, script, Whitelist.all());
                 } catch (RejectedAccessException x) {
                     throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
                 }
@@ -408,13 +408,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
+        @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
         @RequirePOST
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
-            try {
-                new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader,
-                        GroovySandbox.createSecureCompilerConfiguration()).parse(value);
-            } catch (CompilationFailedException x) {
-                return FormValidation.error(x.getLocalizedMessage());
+            FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
+                    new GroovyClassLoader(Jenkins.getInstance().getPluginManager().uberClassLoader));
+            if (validationResult.kind != FormValidation.Kind.OK) {
+                return validationResult;
             }
             return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
         }

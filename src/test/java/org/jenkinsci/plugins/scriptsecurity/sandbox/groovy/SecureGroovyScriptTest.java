@@ -960,4 +960,37 @@ public class SecureGroovyScriptTest {
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
+
+    @Issue("SECURITY-1336")
+    @Test
+    public void blockConstructorInvocationInCheck() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import jenkins.model.Jenkins\n" +
+                "import hudson.model.FreeStyleProject\n" +
+                "public class DoNotRunConstructor {\n" +
+                "  public DoNotRunConstructor() {\n" +
+                "    assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\")\n" +
+                "  }\n" +
+                "}\n", false).toString(), containsString("OK"));
+
+        assertNull(r.jenkins.getItem("should-not-exist"));
+    }
+
+    @Issue("SECURITY-1336")
+    @Test
+    public void blockConstructorInvocationAtRuntime() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+            "class DoNotRunConstructor {\n" +
+            "  static void main(String[] args) {}\n" +
+            "  DoNotRunConstructor() {\n" +
+            "    assert jenkins.model.Jenkins.instance.createProject(hudson.model.FreeStyleProject, 'should-not-exist')\n" +
+            "  }\n" +
+            "}\n", true, null)));
+        FreeStyleBuild b = p.scheduleBuild2(0).get();
+        assertNull(r.jenkins.getItem("should-not-exist"));
+        r.assertBuildStatus(Result.FAILURE, b);
+        r.assertLogContains("staticMethod jenkins.model.Jenkins getInstance", b);
+    }
+
 }
