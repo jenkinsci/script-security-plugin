@@ -724,7 +724,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimil
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarMap java.util.Map
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter bitwiseNegate java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object

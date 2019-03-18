@@ -39,6 +39,7 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
 import hudson.util.IOUtils;
+import java.lang.reflect.Constructor;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -592,10 +593,13 @@ public class SandboxInterceptorTest {
             @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
                 return method.getDeclaringClass() == GroovyObject.class && method.getName().equals("getProperty") && receiver instanceof SpecialScript && args[0].equals("magic");
             }
+            @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+                return constructor.getDeclaringClass() == SpecialScript.class;
+            }
         };
-        assertEquals(42, GroovySandbox.run(shell.parse("magic"), wl));
+        assertEquals(42, GroovySandbox.run(shell, "magic", wl));
         try {
-            GroovySandbox.run(shell.parse("boring"), wl);
+            GroovySandbox.run(shell, "boring", wl);
         } catch (MissingPropertyException x) {
             assertEquals("boring", x.getProperty());
         }
@@ -619,12 +623,21 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
     }
 
-    @Issue("SECURITY-566")
+    @Issue({"SECURITY-566", "SECURITY-1353"})
     @Test public void typeCoercion() throws Exception {
         assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).getCountry()");
         assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).country");
         assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).getAvailableLocales()");
         assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).availableLocales");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "(double) Math.max(2, 3)");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "Math.max(2, 3) as double");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "double x = Math.max(2, 3); x");
+        assertRejected(new GenericWhitelist(), "staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter asType java.lang.Object java.lang.Class",
+            "def f = org.codehaus.groovy.runtime.ScriptBytecodeAdapter.asType(['/tmp'], File); echo(/$f/)");
+        assertRejected(new GenericWhitelist(), "staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class",
+            "def f = org.codehaus.groovy.runtime.ScriptBytecodeAdapter.castToType(['/tmp'], File); echo(/$f/)");
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+            "def f = org.kohsuke.groovy.sandbox.impl.Checker.checkedCast(File, ['/tmp'], true, false, false); echo(/$f/)");
     }
 
     @Issue("SECURITY-580")
@@ -847,7 +860,7 @@ public class SandboxInterceptorTest {
 
     private static Object evaluate(Whitelist whitelist, String script) {
         GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        Object actual = GroovySandbox.run(shell.parse(script), whitelist);
+        Object actual = GroovySandbox.run(shell, script, whitelist);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
