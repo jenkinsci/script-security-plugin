@@ -16,8 +16,8 @@
     <properties>
       <revision>1.54.1</revision>
       <changelist>-SNAPSHOT</changelist>
-      <jenkins.version>2.7.3</jenkins.version>
-      <java.level>7</java.level>
+      <jenkins.version>2.60.3</jenkins.version>
+      <java.level>8</java.level>
     </properties>
     <licenses>
         <license>
@@ -50,7 +50,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.20</version>
+      <version>1.21</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
