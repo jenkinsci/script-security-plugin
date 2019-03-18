@@ -14,7 +14,7 @@
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
     <url>https://wiki.jenkins.io/display/JENKINS/Script+Security+Plugin</url>
     <properties>
-      <revision>1.55</revision>
+      <revision>1.54.1</revision>
       <changelist>-SNAPSHOT</changelist>
       <jenkins.version>2.7.3</jenkins.version>
       <java.level>7</java.level>
