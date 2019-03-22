@@ -320,7 +320,6 @@ method java.util.Map putIfAbsent java.lang.Object java.lang.Object
 method java.util.Map remove java.lang.Object
 method java.util.Map replace java.lang.Object java.lang.Object
 method java.util.Map replace java.lang.Object java.lang.Object java.lang.Object
-method java.util.Map replaceAll java.lang.Object
 method java.util.Map size
 method java.util.Map values
 method java.util.Map$Entry getKey
