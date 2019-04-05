@@ -28,13 +28,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.grape.GrabAnnotationTransformation;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
 import groovy.lang.Script;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.cert.Certificate;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.Callable;
@@ -48,17 +49,86 @@ import org.codehaus.groovy.control.Phases;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApprovalNote;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
-
-import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
 
 /**
  * Allows Groovy scripts (including Groovy Templates) to be run inside a sandbox.
  */
-public class GroovySandbox {
+public final class GroovySandbox {
 
     public static final Logger LOGGER = Logger.getLogger(GroovySandbox.class.getName());
+    
+    private Whitelist whitelist;
+    private ApprovalContext context;
+    private TaskListener listener;
+
+    /**
+     * TODO
+     */
+    public GroovySandbox() {}
+
+    /**
+     * TODO
+     * @return {@code this}
+     */
+    public GroovySandbox withWhitelist(@Nonnull Whitelist whitelist) {
+        this.whitelist = whitelist;
+        return this;
+    }
+
+    /**
+     * TODO
+     * @return {@code this}
+     */
+    public GroovySandbox withApprovalContext(@Nonnull ApprovalContext context) {
+        this.context = context;
+        return this;
+    }
+
+    /**
+     * TODO
+     * @return {@code this}
+     */
+    public GroovySandbox withTaskListener(@Nonnull TaskListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
+    /**
+     * TODO
+     * @return a scope object, useful for putting this into a {@code try}-with-resources block
+     */
+    @SuppressWarnings("deprecation") // internal use of accessRejected still valid
+    public Scope enter() {
+        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist != null ? whitelist : Whitelist.all());
+        ApprovalContext _context = context != null ? context : ApprovalContext.create();
+        sandbox.register();
+        ScriptApproval.pushRegistrationCallback(x -> {
+            ScriptApproval.get().accessRejected(x, _context);
+            if (listener != null) {
+                ScriptApprovalNote.print(listener, x);
+            }
+        });
+        return () -> {
+            sandbox.unregister();
+            ScriptApproval.popRegistrationCallback();
+        };
+    }
+
+    /**
+     * Handle for exiting the dynamic scope of the Groovy sandbox.
+     * @see #enter
+     */
+    @FunctionalInterface
+    public interface Scope extends AutoCloseable {
+
+        @Override void close();
+
+    }
 
     /**
      * Prepares a compiler configuration the sandbox.
@@ -109,6 +179,7 @@ public class GroovySandbox {
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      */
+    // TODO deprecated use #enter
     public static void runInSandbox(@Nonnull Runnable r, @Nonnull Whitelist whitelist) throws RejectedAccessException {
         GroovyInterceptor sandbox = new SandboxInterceptor(whitelist);
         sandbox.register();
@@ -129,6 +200,7 @@ public class GroovySandbox {
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      * @throws Exception in case the block threw some other exception
      */
+    // TODO deprecated use #enter
     public static <V> V runInSandbox(@Nonnull Callable<V> c, @Nonnull Whitelist whitelist) throws Exception {
         GroovyInterceptor sandbox = new SandboxInterceptor(whitelist);
         sandbox.register();
@@ -184,6 +256,7 @@ public class GroovySandbox {
      * @return the value produced by the script, if any
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      */
+    // TODO deprecated use #GroovySandbox with some new method TBD
     public static Object run(@Nonnull final GroovyShell shell, @Nonnull final String script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
         try {
             final Script s = runInSandbox(new Callable<Script>() {
@@ -226,7 +299,5 @@ public class GroovySandbox {
 
         return FormValidation.ok();
     }
-
-    private GroovySandbox() {}
 
 }

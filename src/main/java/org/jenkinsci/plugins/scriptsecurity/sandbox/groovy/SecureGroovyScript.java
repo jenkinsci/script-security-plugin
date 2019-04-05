@@ -337,7 +337,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 }
 
                 try {
-                    return GroovySandbox.run(sh, script, Whitelist.all());
+                    return GroovySandbox.run(sh, script, Whitelist.all()); // TODO replace with new methods
                 } catch (RejectedAccessException x) {
                     throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
                 }
