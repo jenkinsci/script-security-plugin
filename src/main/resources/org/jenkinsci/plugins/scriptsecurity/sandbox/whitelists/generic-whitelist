@@ -119,6 +119,16 @@ staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
+method java.time.Instant getEpochSecond
+method java.time.Instant getNano
+method java.time.Instant minusMillis long
+method java.time.Instant minusNanos long
+method java.time.Instant minusSeconds long
+staticMethod java.time.Instant now
+staticMethod java.time.Instant parse java.lang.CharSequence
+method java.time.Instant plusMillis long
+method java.time.Instant plusNanos long
+method java.time.Instant plusSeconds long
 method java.time.LocalDate getDayOfMonth
 method java.time.LocalDate getDayOfWeek
 method java.time.LocalDate getDayOfYear
