@@ -334,6 +334,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     loaderF.set(sh, memoryProtectedLoader);
                 }
 
+                // TODO offer overload taking TaskListener
                 return new GroovySandbox().runScript(sh, script);
             } else {
                 sh = new GroovyShell(loader, binding);
