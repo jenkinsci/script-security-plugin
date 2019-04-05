@@ -131,6 +131,26 @@ public final class GroovySandbox {
     }
 
     /**
+     * TODO
+     * @param shell
+     * @param script
+     * @return
+     */
+    public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
+        Script s;
+        try (Scope scope = enter()) {
+            s = shell.parse(script);
+        }
+        GroovySandbox derived = new GroovySandbox().
+            withApprovalContext(context).
+            withTaskListener(listener).
+            withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist));
+        try (Scope scope = derived.enter()) {
+            return s.run();
+        }
+    }
+
+    /**
      * Prepares a compiler configuration the sandbox.
      *
      * <h2>CAUTION</h2>
@@ -212,7 +232,7 @@ public final class GroovySandbox {
     }
 
     /**
-     * @deprecated Use {@link #run} to ensure that methods defined inside the script do not need to be whitelisted.
+     * @deprecated Use {@link #runScript}.
      */
     @Deprecated
     public static void runInSandbox(@Nonnull final Script script, @Nonnull Whitelist whitelist) throws RejectedAccessException {
@@ -230,7 +250,7 @@ public final class GroovySandbox {
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @return the value produced by the script, if any
      * @throws RejectedAccessException in case an attempted call was not whitelisted
-     * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} instead
+     * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} or {@link #runScript}
      */
     @Deprecated
     public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
@@ -255,27 +275,11 @@ public final class GroovySandbox {
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @return the value produced by the script, if any
      * @throws RejectedAccessException in case an attempted call was not whitelisted
+     * @deprecated use {@link #runScript}
      */
-    // TODO deprecated use #GroovySandbox with some new method TBD
+    @Deprecated
     public static Object run(@Nonnull final GroovyShell shell, @Nonnull final String script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
-        try {
-            final Script s = runInSandbox(new Callable<Script>() {
-                @Override
-                public Script call() throws Exception {
-                    return shell.parse(script);
-                }
-            }, whitelist);
-            return runInSandbox(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    return s.run();
-                }
-            }, new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist));
-        } catch (RuntimeException x) { // incl. RejectedAccessException
-            throw x;
-        } catch (Exception x) {
-            throw new AssertionError(x);
-        }
+        return new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
     }
 
     /**

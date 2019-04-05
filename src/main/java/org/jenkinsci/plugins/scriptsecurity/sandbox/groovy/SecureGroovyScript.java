@@ -56,12 +56,10 @@ import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
@@ -336,11 +334,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     loaderF.set(sh, memoryProtectedLoader);
                 }
 
-                try {
-                    return GroovySandbox.run(sh, script, Whitelist.all()); // TODO replace with new methods
-                } catch (RejectedAccessException x) {
-                    throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
-                }
+                return new GroovySandbox().runScript(sh, script);
             } else {
                 sh = new GroovyShell(loader, binding);
                 if (canDoCleanup) {
