@@ -198,15 +198,12 @@ public final class GroovySandbox {
      * @param r a block of code during whose execution all calls are intercepted
      * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
      * @throws RejectedAccessException in case an attempted call was not whitelisted
+     * @deprecated use {@link #enter}
      */
-    // TODO deprecated use #enter
+    @Deprecated
     public static void runInSandbox(@Nonnull Runnable r, @Nonnull Whitelist whitelist) throws RejectedAccessException {
-        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist);
-        sandbox.register();
-        try {
+        try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             r.run();
-        } finally {
-            sandbox.unregister();
         }
     }
 
@@ -219,15 +216,12 @@ public final class GroovySandbox {
      * @return the return value of the block
      * @throws RejectedAccessException in case an attempted call was not whitelisted
      * @throws Exception in case the block threw some other exception
+     * @deprecated use {@link #enter}
      */
-    // TODO deprecated use #enter
+    @Deprecated
     public static <V> V runInSandbox(@Nonnull Callable<V> c, @Nonnull Whitelist whitelist) throws Exception {
-        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist);
-        sandbox.register();
-        try {
+        try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             return c.call();
-        } finally {
-            sandbox.unregister();
         }
     }
 
@@ -258,12 +252,8 @@ public final class GroovySandbox {
         Whitelist wrapperWhitelist = new ProxyWhitelist(
                 new ClassLoaderWhitelist(script.getClass().getClassLoader()),
                 whitelist);
-        GroovyInterceptor sandbox = new SandboxInterceptor(wrapperWhitelist);
-        sandbox.register();
-        try {
+        try (Scope scope = new GroovySandbox().withWhitelist(wrapperWhitelist).enter()) {
             return script.run();
-        } finally {
-            sandbox.unregister();
         }
     }
 
