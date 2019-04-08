@@ -230,11 +230,7 @@ public final class GroovySandbox {
      */
     @Deprecated
     public static void runInSandbox(@Nonnull final Script script, @Nonnull Whitelist whitelist) throws RejectedAccessException {
-        runInSandbox(new Runnable() {
-            public void run() {
-                script.run();
-            }
-        }, whitelist);
+        runInSandbox((Runnable) script.run(), whitelist);
     }
 
     /**
