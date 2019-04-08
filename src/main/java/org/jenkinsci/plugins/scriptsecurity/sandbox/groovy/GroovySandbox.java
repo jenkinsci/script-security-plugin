@@ -30,6 +30,8 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
 import groovy.lang.Script;
+import hudson.ExtensionList;
+import hudson.model.RootAction;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import java.net.MalformedURLException;
@@ -116,6 +118,9 @@ public final class GroovySandbox {
         ApprovalContext _context = context != null ? context : ApprovalContext.create();
         sandbox.register();
         ScriptApproval.pushRegistrationCallback(x -> {
+            if (ExtensionList.lookup(RootAction.class).get(ScriptApproval.class) == null) {
+                return; // running in unit test, ignore
+            }
             ScriptApproval.get().accessRejected(x, _context);
             if (listener != null) {
                 ScriptApprovalNote.print(listener, x);
