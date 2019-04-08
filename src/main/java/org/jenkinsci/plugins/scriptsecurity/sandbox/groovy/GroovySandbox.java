@@ -68,12 +68,13 @@ public final class GroovySandbox {
     private @CheckForNull TaskListener listener;
 
     /**
-     * TODO
+     * Creates a sandbox with default settings.
      */
     public GroovySandbox() {}
 
     /**
-     * TODO
+     * Specify a whitelist.
+     * By default {@link Whitelist#all} is used.
      * @return {@code this}
      */
     public GroovySandbox withWhitelist(@CheckForNull Whitelist whitelist) {
@@ -82,7 +83,8 @@ public final class GroovySandbox {
     }
 
     /**
-     * TODO
+     * Specify an approval context.
+     * By default {@link ApprovalContext#create} is used.
      * @return {@code this}
      */
     public GroovySandbox withApprovalContext(@CheckForNull ApprovalContext context) {
@@ -91,7 +93,8 @@ public final class GroovySandbox {
     }
 
     /**
-     * TODO
+     * Specify a place to print messages.
+     * By default nothing is printed.
      * @return {@code this}
      */
     public GroovySandbox withTaskListener(@CheckForNull TaskListener listener) {
@@ -104,7 +107,7 @@ public final class GroovySandbox {
     }
 
     /**
-     * TODO
+     * Starts a dynamic scope within which calls will be sandboxed.
      * @return a scope object, useful for putting this into a {@code try}-with-resources block
      */
     @SuppressWarnings("deprecation") // internal use of accessRejected still valid
@@ -136,10 +139,10 @@ public final class GroovySandbox {
     }
 
     /**
-     * TODO
-     * @param shell
-     * @param script
-     * @return
+     * Compiles and runs a script within the sandbox.
+     * @param shell the shell to be used; see {@link #createSecureCompilerConfiguration} and similar methods
+     * @param script the script to run
+     * @return the return value of the script
      */
     public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
         Script s;
