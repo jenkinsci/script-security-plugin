@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -62,9 +63,9 @@ public final class GroovySandbox {
 
     public static final Logger LOGGER = Logger.getLogger(GroovySandbox.class.getName());
     
-    private Whitelist whitelist;
-    private ApprovalContext context;
-    private TaskListener listener;
+    private @CheckForNull Whitelist whitelist;
+    private @CheckForNull ApprovalContext context;
+    private @CheckForNull TaskListener listener;
 
     /**
      * TODO
@@ -75,7 +76,7 @@ public final class GroovySandbox {
      * TODO
      * @return {@code this}
      */
-    public GroovySandbox withWhitelist(@Nonnull Whitelist whitelist) {
+    public GroovySandbox withWhitelist(@CheckForNull Whitelist whitelist) {
         this.whitelist = whitelist;
         return this;
     }
@@ -84,7 +85,7 @@ public final class GroovySandbox {
      * TODO
      * @return {@code this}
      */
-    public GroovySandbox withApprovalContext(@Nonnull ApprovalContext context) {
+    public GroovySandbox withApprovalContext(@CheckForNull ApprovalContext context) {
         this.context = context;
         return this;
     }
@@ -93,9 +94,13 @@ public final class GroovySandbox {
      * TODO
      * @return {@code this}
      */
-    public GroovySandbox withTaskListener(@Nonnull TaskListener listener) {
+    public GroovySandbox withTaskListener(@CheckForNull TaskListener listener) {
         this.listener = listener;
         return this;
+    }
+
+    private @Nonnull Whitelist whitelist() {
+        return whitelist != null ? whitelist : Whitelist.all();
     }
 
     /**
@@ -104,7 +109,7 @@ public final class GroovySandbox {
      */
     @SuppressWarnings("deprecation") // internal use of accessRejected still valid
     public Scope enter() {
-        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist != null ? whitelist : Whitelist.all());
+        GroovyInterceptor sandbox = new SandboxInterceptor(whitelist());
         ApprovalContext _context = context != null ? context : ApprovalContext.create();
         sandbox.register();
         ScriptApproval.pushRegistrationCallback(x -> {
@@ -144,7 +149,7 @@ public final class GroovySandbox {
         GroovySandbox derived = new GroovySandbox().
             withApprovalContext(context).
             withTaskListener(listener).
-            withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist));
+            withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist()));
         try (Scope scope = derived.enter()) {
             return s.run();
         }
