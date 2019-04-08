@@ -33,6 +33,7 @@ import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
@@ -282,10 +283,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
+    /** @deprecated use {@link #evaluate(ClassLoader, Binding, TaskListener)} */
+    @Deprecated
+    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+        return evaluate(loader, binding, null);
+    }
+
     /**
      * Runs the Groovy script, using the sandbox if so configured.
      * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
      * @param binding Groovy variable bindings
+     * @param listener a way to print messages
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
@@ -293,7 +301,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
     @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
-    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+    public Object evaluate(ClassLoader loader, Binding binding, @CheckForNull TaskListener listener) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
@@ -334,8 +342,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     loaderF.set(sh, memoryProtectedLoader);
                 }
 
-                // TODO offer overload taking TaskListener
-                return new GroovySandbox().runScript(sh, script);
+                return new GroovySandbox().withTaskListener(listener).runScript(sh, script);
             } else {
                 sh = new GroovyShell(loader, binding);
                 if (canDoCleanup) {
