@@ -33,6 +33,9 @@ method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
 method groovy.lang.Script getBinding
+method groovy.text.SimpleTemplateEngine createTemplate java.io.Reader
+method groovy.text.Template make
+method groovy.text.Template make java.util.Map
 
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
