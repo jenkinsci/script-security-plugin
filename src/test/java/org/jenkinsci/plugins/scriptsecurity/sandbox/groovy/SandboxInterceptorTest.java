@@ -1163,4 +1163,10 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test
+    public void alwaysRejectSystemExit() throws Exception {
+        assertRejected(new StaticWhitelist("staticMethod java.lang.System exit int"),
+                "staticMethod java.lang.System exit int",
+                "System.exit(1)");
+    }
 }

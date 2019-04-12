@@ -639,7 +639,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Deprecated
     public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
         String signature = x.getSignature();
-        if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
+        if (signature != null && !signature.equals("staticMethod java.lang.System exit int") && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             try {
                 save();
             } catch (IOException x2) {

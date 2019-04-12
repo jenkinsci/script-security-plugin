@@ -127,10 +127,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
             // Allow calling closure variables from a script binding as methods
             if (receiver instanceof Script) {
-                Script s = (Script)receiver;
+                Script s = (Script) receiver;
                 if (s.getBinding().hasVariable(method)) {
                     Object var = s.getBinding().getVariable(method);
-                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", (Object[]) args).isEmpty()){
+                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", (Object[]) args).isEmpty()) {
                         return onMethodCall(invoker, var, "call", args);
                     }
                 }
@@ -139,7 +139,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
             // if no matching method, look for catchAll "invokeMethod"
             try {
                 receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
-                return onMethodCall(invoker,receiver,"invokeMethod",method,args);
+                return onMethodCall(invoker, receiver, "invokeMethod", method, args);
             } catch (NoSuchMethodException e) {
                 // fall through
             }
@@ -176,6 +176,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m == null) {
             // TODO consider DefaultGroovyStaticMethods
             throw new RejectedAccessException("No such static method found: staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
+        } else if (m.getDeclaringClass().equals(System.class) && m.getName().equals("exit")) {
+            throw StaticWhitelist.rejectStaticMethod(m);
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {
