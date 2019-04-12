@@ -46,6 +46,7 @@ import javax.annotation.Nonnull;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
@@ -243,6 +244,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         if (BLACKLIST.contains(x.getSignature())) {
             x.setDangerous(true);
         }
+        ScriptApproval.maybeRegister(x);
         return x;
     }
 

@@ -57,7 +57,9 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
@@ -66,6 +68,7 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -631,7 +634,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
      * @param x an exception with the details
      * @param context any additional information about where or by whom this script was run
      * @return {@code x}, for convenience in rethrowing
+     * @deprecated Unnecessary if using {@link GroovySandbox#enter}.
      */
+    @Deprecated
     public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
         String signature = x.getSignature();
         if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
@@ -642,6 +647,25 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             }
         }
         return x;
+    }
+
+    private static final ThreadLocal<Stack<Consumer<RejectedAccessException>>> callbacks = ThreadLocal.withInitial(Stack::new);
+
+    @Restricted(NoExternalUse.class)
+    public static void maybeRegister(@Nonnull RejectedAccessException x) {
+        for (Consumer<RejectedAccessException> callback : callbacks.get()) {
+            callback.accept(x);
+        }
+    }
+
+    @Restricted(NoExternalUse.class)
+    public static void pushRegistrationCallback(Consumer<RejectedAccessException> callback) {
+        callbacks.get().push(callback);
+    }
+
+    @Restricted(NoExternalUse.class)
+    public static void popRegistrationCallback() {
+        callbacks.get().pop();
     }
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
