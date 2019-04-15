@@ -54,16 +54,16 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
-    public static final String[] PERMANENTLY_BLACKLISTED_METHODS = {
+    private static final String[] PERMANENTLY_BLACKLISTED_METHODS = {
             "method java.lang.Runtime exit int",
             "method java.lang.Runtime halt int",
     };
 
-    public static final String[] PERMANENTLY_BLACKLISTED_STATIC_METHODS = {
+    private static final String[] PERMANENTLY_BLACKLISTED_STATIC_METHODS = {
             "staticMethod java.lang.System exit int",
     };
 
-    public static final String[] PERMANENTLY_BLACKLISTED_CONSTRUCTORS = new String[0];
+    private static final String[] PERMANENTLY_BLACKLISTED_CONSTRUCTORS = new String[0];
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();

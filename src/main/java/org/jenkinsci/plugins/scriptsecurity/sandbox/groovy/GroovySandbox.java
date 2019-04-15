@@ -123,7 +123,7 @@ public final class GroovySandbox {
                 return; // running in unit test, ignore
             }
             String signature = x.getSignature();
-            if (signature != null && !StaticWhitelist.isPermanentlyBlacklisted(signature)) {
+            if (!StaticWhitelist.isPermanentlyBlacklisted(signature)) {
                 ScriptApproval.get().accessRejected(x, _context);
             }
             if (listener != null) {
