@@ -151,6 +151,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
             // no such method exists
             throw new MissingMethodException(method, receiver.getClass(), args);
+        } else if (StaticWhitelist.isPermanentlyBlacklistedMethod(m)) {
+            throw StaticWhitelist.rejectMethod(m);
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else if (method.equals("invokeMethod") && args.length == 2 && args[0] instanceof String && args[1] instanceof Object[]) {
@@ -164,6 +166,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Constructor<?> c = GroovyCallSiteSelector.constructor(receiver, args);
         if (c == null) {
             throw new RejectedAccessException("No such constructor found: new " + EnumeratingWhitelist.getName(receiver) + printArgumentTypes(args));
+        } else if (StaticWhitelist.isPermanentlyBlacklistedConstructor(c)) {
+            throw StaticWhitelist.rejectNew(c);
         } else if (whitelist.permitsConstructor(c, args)) {
             return super.onNewInstance(invoker, receiver, args);
         } else {
@@ -176,7 +180,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m == null) {
             // TODO consider DefaultGroovyStaticMethods
             throw new RejectedAccessException("No such static method found: staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
-        } else if (m.getDeclaringClass().equals(System.class) && m.getName().equals("exit")) {
+        } else if (StaticWhitelist.isPermanentlyBlacklistedStaticMethod(m)) {
             throw StaticWhitelist.rejectStaticMethod(m);
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);

@@ -1164,9 +1164,17 @@ public class SandboxInterceptorTest {
     }
 
     @Test
-    public void alwaysRejectSystemExit() throws Exception {
+    public void alwaysRejectPermanentlyBlacklisted() throws Exception {
         assertRejected(new StaticWhitelist("staticMethod java.lang.System exit int"),
                 "staticMethod java.lang.System exit int",
                 "System.exit(1)");
+        assertRejected(new StaticWhitelist("method java.lang.Runtime exit int", "staticMethod java.lang.Runtime getRuntime"),
+                "method java.lang.Runtime exit int",
+                "Runtime r = Runtime.getRuntime();\n" +
+                        "r.exit(1)");
+        assertRejected(new StaticWhitelist("staticMethod java.lang.Runtime getRuntime", "method java.lang.Runtime halt int"),
+                "method java.lang.Runtime halt int",
+                "Runtime r = Runtime.getRuntime();\n" +
+                        "r.halt(1)");
     }
 }

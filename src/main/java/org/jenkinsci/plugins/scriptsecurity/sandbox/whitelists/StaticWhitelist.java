@@ -54,6 +54,16 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * Whitelist based on a static file.
  */
 public final class StaticWhitelist extends EnumeratingWhitelist {
+    public static final String[] PERMANENTLY_BLACKLISTED_METHODS = {
+            "method java.lang.Runtime exit int",
+            "method java.lang.Runtime halt int",
+    };
+
+    public static final String[] PERMANENTLY_BLACKLISTED_STATIC_METHODS = {
+            "staticMethod java.lang.System exit int",
+    };
+
+    public static final String[] PERMANENTLY_BLACKLISTED_CONSTRUCTORS = new String[0];
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
@@ -95,6 +105,57 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return line;
     }
 
+    /**
+     * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_METHODS}
+     */
+    public static boolean isPermanentlyBlacklistedMethod(@Nonnull Method m) {
+        String signature = canonicalMethodSig(m);
+
+        for (String s : PERMANENTLY_BLACKLISTED_METHODS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_STATIC_METHODS}
+     */
+    public static boolean isPermanentlyBlacklistedStaticMethod(@Nonnull Method m) {
+        String signature = canonicalStaticMethodSig(m);
+
+        for (String s : PERMANENTLY_BLACKLISTED_STATIC_METHODS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the given constructor is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_CONSTRUCTORS}
+     */
+    public static boolean isPermanentlyBlacklistedConstructor(@Nonnull Constructor c) {
+        String signature = canonicalConstructorSig(c);
+
+        for (String s : PERMANENTLY_BLACKLISTED_CONSTRUCTORS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Parse a signature line into a {@link Signature}.
+     * @param line The signature string
+     * @return the equivalent {@link Signature}
+     * @throws IOException if the signature string could not be parsed.
+     */
     static Signature parse(String line) throws IOException {
         String[] toks = line.split(" ");
         if (toks[0].equals("method")) {
@@ -125,6 +186,31 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         } else {
             throw new IOException(line);
         }
+    }
+
+    /**
+     * Checks if the signature is permanently blacklisted, and so shouldn't show up in the pending approval list.
+     * @param signature the signature to check
+     * @return true if the signature is permanently blacklisted, false otherwise.
+     */
+    public static boolean isPermanentlyBlacklisted(String signature) {
+        for (String s : PERMANENTLY_BLACKLISTED_METHODS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+        for (String s : PERMANENTLY_BLACKLISTED_STATIC_METHODS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+        for (String s : PERMANENTLY_BLACKLISTED_CONSTRUCTORS) {
+            if (s.equals(signature)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void add(String line) throws IOException {
