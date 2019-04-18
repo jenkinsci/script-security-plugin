@@ -52,6 +52,7 @@ import org.codehaus.groovy.control.Phases;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApprovalNote;
@@ -121,7 +122,10 @@ public final class GroovySandbox {
             if (ExtensionList.lookup(RootAction.class).get(ScriptApproval.class) == null) {
                 return; // running in unit test, ignore
             }
-            ScriptApproval.get().accessRejected(x, _context);
+            String signature = x.getSignature();
+            if (!StaticWhitelist.isPermanentlyBlacklisted(signature)) {
+                ScriptApproval.get().accessRejected(x, _context);
+            }
             if (listener != null) {
                 ScriptApprovalNote.print(listener, x);
             }
