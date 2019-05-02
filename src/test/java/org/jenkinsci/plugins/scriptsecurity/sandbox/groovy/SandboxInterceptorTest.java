@@ -346,7 +346,7 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Issue({"JENKINS-25119", "JENKINS-27725"})
+    @Issue({"JENKINS-25119", "JENKINS-27725", "JENKINS-57299"})
     @Test public void defaultGroovyMethods() throws Exception {
         assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
         assertEvaluate(new GenericWhitelist(), 123, "'123'.toInteger();");
@@ -360,6 +360,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "'42'.number");
         // TODO should also cover set* methods, though these seem rare
         // TODO check DefaultGroovyStaticMethods also (though there are few useful & safe calls there)
+        // cover drop and dropRight methods:
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(2, 3, 4), "[1, 2, 3, 4].drop(1)");
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 2, 3), "[1, 2, 3, 4].dropRight(1)");
+        // cover take and takeRight methods:
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 2), "[1, 2, 3, 4].take(2)");
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(3, 4), "[1, 2, 3, 4].takeRight(2)");
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
