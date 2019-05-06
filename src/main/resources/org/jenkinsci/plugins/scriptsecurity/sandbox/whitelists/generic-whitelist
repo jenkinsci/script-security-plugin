@@ -34,13 +34,31 @@ method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
 method groovy.lang.Script getBinding
 
+# Useful to show stacktrace to the user.
+new java.io.PrintWriter java.io.Writer
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
 method java.io.PrintWriter print java.lang.String
 
 # Useful general stuff:
 new java.io.StringReader java.lang.String
+method java.io.StringReader close
+method java.io.StringReader read
+method java.io.StringReader read char[]
+method java.io.StringReader read char[] int int
+method java.io.StringReader reset
+method java.io.StringReader skip int
 new java.io.StringWriter
+method java.io.StringWriter append char
+method java.io.StringWriter append java.lang.CharSequence
+method java.io.StringWriter append java.lang.CharSequence int int
+method java.io.StringWriter close
+method java.io.StringWriter flush
+method java.io.StringWriter write char[]
+method java.io.StringWriter write char[] int int
+method java.io.StringWriter int
+method java.io.StringWriter write java.lang.String
+method java.io.StringWriter write java.lang.String int int
 new java.lang.Boolean java.lang.String
 staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
@@ -283,8 +301,10 @@ new java.util.Date
 new java.util.Date long
 new java.util.HashSet
 new java.util.HashSet java.util.Collection
+new java.util.LinkedHashSet
 method java.util.Iterator hasNext
 method java.util.Iterator next
+method java.util.List add int java.lang.Object
 method java.util.List get int
 method java.util.List remove int
 method java.util.List subList int int
@@ -616,6 +636,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Ma
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods retainAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.Iterator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.util.Map groovy.lang.Closure
