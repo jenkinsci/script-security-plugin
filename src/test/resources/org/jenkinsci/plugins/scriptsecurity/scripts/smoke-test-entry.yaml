@@ -1,0 +1,8 @@
+unclassified:
+  scriptApproval:
+    approvedSignatures:
+    - method java.net.URI getHost
+
+jenkins:
+  systemMessage: Testing
+  quietPeriod: 10

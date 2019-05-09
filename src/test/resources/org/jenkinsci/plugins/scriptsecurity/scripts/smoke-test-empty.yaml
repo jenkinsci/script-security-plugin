@@ -1,0 +1,3 @@
+jenkins:
+  systemMessage: Testing
+  quietPeriod: 10
