@@ -12,6 +12,8 @@ import org.junit.Test;
 import static io.jenkins.plugins.casc.misc.Util.getUnclassifiedRoot;
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -35,6 +37,6 @@ public class JcascTest {
         CNode yourAttribute = getUnclassifiedRoot(context).get("scriptApproval");
         String exported = toYamlString(yourAttribute);
         String expected = toStringFromYamlFile(this, "smoke_test_expected.yaml");
-        assertEquals(exported, expected);
+        assertThat(exported, containsString(expected));
     }
 }
