@@ -1,12 +1,16 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.base.Optional;
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import groovy.lang.GroovyShell;
 import java.net.URL;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,23 +26,9 @@ class SandboxResolvingClassLoader extends ClassLoader {
     
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    @SuppressWarnings("rawtypes")
-    private static final LoadingCache<ClassLoader, LoadingCache<String, Optional<Class>>> parentClassCache = makeParentCache(new CacheFunction<Optional<Class>>() {
-        @Override public Optional<Class> compute(ClassLoader parentLoader, String name) {
-            try {
-                Class c = parentLoader.loadClass(name);
-                return Optional.of(c);
-            } catch (ClassNotFoundException x) {
-                return Optional.absent();
-            }
-        }
-    });
+    private static final LoadingCache<ClassLoader, Cache<String, Optional<Class<?>>>> parentClassCache = makeParentCache();
 
-    private static final LoadingCache<ClassLoader, LoadingCache<String, Optional<URL>>> parentResourceCache = makeParentCache(new CacheFunction<Optional<URL>>() {
-        @Override public Optional<URL> compute(ClassLoader parentLoader, String name) {
-            return Optional.fromNullable(parentLoader.getResource(name));
-        }
-    });
+    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache();
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
@@ -48,7 +38,14 @@ class SandboxResolvingClassLoader extends ClassLoader {
         if (name.startsWith("org.kohsuke.groovy.sandbox.")) {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
-            Class<?> c = parentClassCache.getUnchecked(getParent()).getUnchecked(name).orNull();
+            ClassLoader parentLoader = getParent();
+            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
+                try {
+                    return Optional.of(parentLoader.loadClass(name));
+                } catch (ClassNotFoundException x) {
+                    return Optional.absent();
+                }
+            }).orNull();
             if (c != null) {
                 if (resolve) {
                     super.resolveClass(c);
@@ -65,33 +62,37 @@ class SandboxResolvingClassLoader extends ClassLoader {
     }
 
     @Override public URL getResource(String name) {
-        return parentResourceCache.getUnchecked(getParent()).getUnchecked(name).orNull();
+        ClassLoader parentLoader = getParent();
+        return load(parentResourceCache, name, parentLoader, () -> Optional.fromNullable(parentLoader.getResource(name))).orNull();
     }
 
-    private interface CacheFunction<T> {
-        T compute(ClassLoader parentLoader, String name);
-    }
-
-    private static <T> LoadingCache<ClassLoader, LoadingCache<String, T>> makeParentCache(final CacheFunction<T> function) {
-        return CacheBuilder.newBuilder().weakKeys().build(new CacheLoader<ClassLoader,LoadingCache<String, T>>() {
-            @Override public LoadingCache<String, T> load(final ClassLoader parentLoader) {
-                return CacheBuilder.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES).build(new CacheLoader<String, T>() {
-                    @Override public T load(String name) {
-                        Thread t = Thread.currentThread();
-                        String origName = t.getName();
-                        t.setName(origName + " loading " + name);
-                        long start = System.nanoTime(); // http://stackoverflow.com/q/19052316/12916
-                        try {
-                            return function.compute(parentLoader, name);
-                        } finally {
-                            t.setName(origName);
-                            long ms = (System.nanoTime() - start) / 1000000;
-                            if (ms > 1000) {
-                                LOGGER.log(Level.INFO, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
-                            }
-                        }
+    // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
+    private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
+        try {
+            return cache.getUnchecked(parentLoader).get(name, () -> {
+                Thread t = Thread.currentThread();
+                String origName = t.getName();
+                t.setName(origName + " loading " + name);
+                long start = System.nanoTime(); // http://stackoverflow.com/q/19052316/12916
+                try {
+                    return supplier.get();
+                } finally {
+                    t.setName(origName);
+                    long ms = (System.nanoTime() - start) / 1000000;
+                    if (ms > 1000) {
+                        LOGGER.log(Level.INFO, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
                     }
-                });
+                }
+            });
+        } catch (ExecutionException x) {
+            throw new UncheckedExecutionException(x); // should not be possible anyway
+        }
+    }
+
+    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache() {
+        return CacheBuilder.newBuilder().weakKeys().build(new CacheLoader<ClassLoader, Cache<String, T>>() {
+            @Override public Cache<String, T> load(ClassLoader parentLoader) {
+                return CacheBuilder.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES).build();
             }
         });
     }
