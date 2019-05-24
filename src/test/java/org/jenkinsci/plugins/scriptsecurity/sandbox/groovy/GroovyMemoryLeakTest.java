@@ -1,22 +1,26 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.MetaClass;
+import hudson.PluginManager;
 import hudson.model.FreeStyleProject;
-import io.jenkins.lib.versionnumber.JavaSpecificationVersion;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import org.apache.commons.text.CharacterPredicates;
 import org.codehaus.groovy.reflection.ClassInfo;
-import org.junit.*;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
+import org.junit.After;
+import static org.junit.Assert.*;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
 import org.jvnet.hudson.test.MemoryAssert;
-
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-
-import static org.junit.Assert.assertFalse;
 
 /**
  * Tests for memory leak cleanup successfully purging the most common memory leak.
@@ -35,18 +39,19 @@ public class GroovyMemoryLeakTest {
     private static final List<WeakReference<ClassLoader>> LOADERS = new ArrayList<>();
 
     public static void register(Object o) {
-        ClassLoader loader = o.getClass().getClassLoader();
-        System.err.println("registering " + o + " from " + loader);
-        LOADERS.add(new WeakReference<>(loader));
+        System.err.println("registering " + o);
+        for (ClassLoader loader = o.getClass().getClassLoader(); !(loader instanceof PluginManager.UberClassLoader); loader = loader.getParent()) {
+            System.err.println("…from " + loader);
+            LOADERS.add(new WeakReference<>(loader));
+        }
     }
 
     @Test
     public void loaderReleased() throws Exception {
-        Assume.assumeTrue(isRunningOnJDK8());
-
         FreeStyleProject p = r.jenkins.createProject(FreeStyleProject.class, "p");
+        String cp = CharacterPredicates.class.getProtectionDomain().getCodeSource().getLocation().toString(); // some JAR
         p.getPublishersList().add(new TestGroovyRecorder(
-                new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, null)));
+            new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, Collections.singletonList(new ClasspathEntry(cp)))));
         r.buildAndAssertSuccess(p);
 
         assertFalse(LOADERS.isEmpty());
@@ -63,7 +68,4 @@ public class GroovyMemoryLeakTest {
         }
     }
 
-    private boolean isRunningOnJDK8() {
-        return JavaSpecificationVersion.forCurrentJVM().isOlderThanOrEqualTo(JavaSpecificationVersion.JAVA_8);
-    }
 }
