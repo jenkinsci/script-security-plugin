@@ -33,6 +33,7 @@ import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
@@ -56,12 +57,10 @@ import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
@@ -72,6 +71,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * Convenience structure encapsulating a Groovy script that may either be approved whole or sandboxed.
@@ -164,7 +164,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return;
         }
         cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
-        LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+        if (LOGGER.isLoggable(Level.FINER)) {
+          LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+        }
         cleanUpGlobalClassValue(loader);
         GroovyClassLoader gcl = (GroovyClassLoader) loader;
         for (Class<?> clazz : gcl.getLoadedClasses()) {
@@ -219,7 +221,9 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             ClassLoader encounteredLoader = klazz.getClassLoader();
             if (encounteredLoader != loader) {
                 it.remove();
-                LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                  LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                }
             }
         }
         LOGGER.log(Level.FINE, "cleaning up {0} associated with {1}", new Object[] {toRemove.toString(), loader.toString()});
@@ -270,17 +274,26 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             while (iterator.hasNext()) {
                 if (iterator.next().getKey().get() == clazz) {
                     iterator.remove();
-                    LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                    if (LOGGER.isLoggable(Level.FINER)) {
+                      LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                    }
                     break;
                 }
             }
         }
     }
 
+    /** @deprecated use {@link #evaluate(ClassLoader, Binding, TaskListener)} */
+    @Deprecated
+    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+        return evaluate(loader, binding, null);
+    }
+
     /**
      * Runs the Groovy script, using the sandbox if so configured.
      * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
      * @param binding Groovy variable bindings
+     * @param listener a way to print messages
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
@@ -288,7 +301,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
     @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
-    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+    public Object evaluate(ClassLoader loader, Binding binding, @CheckForNull TaskListener listener) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
@@ -329,11 +342,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     loaderF.set(sh, memoryProtectedLoader);
                 }
 
-                try {
-                    return GroovySandbox.run(sh.parse(script), Whitelist.all());
-                } catch (RejectedAccessException x) {
-                    throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
-                }
+                return new GroovySandbox().withTaskListener(listener).runScript(sh, script);
             } else {
                 sh = new GroovyShell(loader, binding);
                 if (canDoCleanup) {
@@ -401,11 +410,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
+        @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
+        @RequirePOST
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
-            try {
-                new GroovyShell(Jenkins.getInstance().getPluginManager().uberClassLoader).parse(value);
-            } catch (CompilationFailedException x) {
-                return FormValidation.error(x.getLocalizedMessage());
+            FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
+                    new GroovyClassLoader(Jenkins.getInstance().getPluginManager().uberClassLoader));
+            if (validationResult.kind != FormValidation.Kind.OK) {
+                return validationResult;
             }
             return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
         }

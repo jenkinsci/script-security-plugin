@@ -104,5 +104,9 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getMetaPropertyVal
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getProperties java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object
 
+# SECURITY-1353
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter asType java.lang.Object java.lang.Class
+staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class
+
 # TODO do we need a @Blacklisted annotation?
 method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild

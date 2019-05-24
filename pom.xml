@@ -3,19 +3,21 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.0</version>
+    <version>3.43</version>
     <relativePath />
   </parent>
 
     <artifactId>script-security</artifactId>
-    <version>1.45-SNAPSHOT</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
     <name>Script Security Plugin</name>
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
     <url>https://wiki.jenkins.io/display/JENKINS/Script+Security+Plugin</url>
     <properties>
-      <jenkins.version>2.7.3</jenkins.version>
-      <java.level>7</java.level>
+      <revision>1.59</revision>
+      <changelist>-SNAPSHOT</changelist>
+      <jenkins.version>2.60.3</jenkins.version>
+      <java.level>8</java.level>
     </properties>
     <licenses>
         <license>
@@ -27,7 +29,7 @@
         <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-      <tag>HEAD</tag>
+        <tag>${scmTag}</tag>
   </scm>
 
   <repositories>
@@ -48,13 +50,19 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.19</version>
+      <version>1.21</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
           <artifactId>groovy</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci</groupId>
+      <artifactId>version-number</artifactId>
+      <version>1.6</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

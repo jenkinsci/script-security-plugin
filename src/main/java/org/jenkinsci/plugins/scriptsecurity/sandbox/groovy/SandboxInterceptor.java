@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.collect.ImmutableSet;
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
@@ -35,6 +36,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +45,7 @@ import javax.annotation.Nonnull;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -114,10 +117,29 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 throw StaticWhitelist.rejectStaticMethod(foundDgmMethod);
             }
 
+            // allow calling Closure elements of Maps as methods
+            if (receiver instanceof Map) {
+                Object element = onMethodCall(invoker, receiver, "get", method);
+                if (element instanceof Closure) {
+                    return onMethodCall(invoker, element, "call", args);
+                }
+            }
+
+            // Allow calling closure variables from a script binding as methods
+            if (receiver instanceof Script) {
+                Script s = (Script) receiver;
+                if (s.getBinding().hasVariable(method)) {
+                    Object var = s.getBinding().getVariable(method);
+                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", (Object[]) args).isEmpty()) {
+                        return onMethodCall(invoker, var, "call", args);
+                    }
+                }
+            }
+
             // if no matching method, look for catchAll "invokeMethod"
             try {
                 receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
-                return onMethodCall(invoker,receiver,"invokeMethod",method,args);
+                return onMethodCall(invoker, receiver, "invokeMethod", method, args);
             } catch (NoSuchMethodException e) {
                 // fall through
             }
@@ -129,6 +151,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
             // no such method exists
             throw new MissingMethodException(method, receiver.getClass(), args);
+        } else if (StaticWhitelist.isPermanentlyBlacklistedMethod(m)) {
+            throw StaticWhitelist.rejectMethod(m);
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else if (method.equals("invokeMethod") && args.length == 2 && args[0] instanceof String && args[1] instanceof Object[]) {
@@ -142,6 +166,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Constructor<?> c = GroovyCallSiteSelector.constructor(receiver, args);
         if (c == null) {
             throw new RejectedAccessException("No such constructor found: new " + EnumeratingWhitelist.getName(receiver) + printArgumentTypes(args));
+        } else if (StaticWhitelist.isPermanentlyBlacklistedConstructor(c)) {
+            throw StaticWhitelist.rejectNew(c);
         } else if (whitelist.permitsConstructor(c, args)) {
             return super.onNewInstance(invoker, receiver, args);
         } else {
@@ -154,6 +180,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (m == null) {
             // TODO consider DefaultGroovyStaticMethods
             throw new RejectedAccessException("No such static method found: staticMethod " + EnumeratingWhitelist.getName(receiver) + " " + method + printArgumentTypes(args));
+        } else if (StaticWhitelist.isPermanentlyBlacklistedStaticMethod(m)) {
+            throw StaticWhitelist.rejectStaticMethod(m);
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {

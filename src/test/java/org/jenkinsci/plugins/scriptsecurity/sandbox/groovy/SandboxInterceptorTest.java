@@ -39,6 +39,7 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import hudson.Functions;
 import hudson.util.IOUtils;
+import java.lang.reflect.Constructor;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -56,6 +57,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import static org.hamcrest.Matchers.*;
@@ -73,11 +75,14 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
+import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
 
 public class SandboxInterceptorTest {
 
     @Rule public ErrorCollector errors = new ErrorCollector();
+
+    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -341,7 +346,7 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Issue({"JENKINS-25119", "JENKINS-27725"})
+    @Issue({"JENKINS-25119", "JENKINS-27725", "JENKINS-57299"})
     @Test public void defaultGroovyMethods() throws Exception {
         assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String", "'123'.toInteger();");
         assertEvaluate(new GenericWhitelist(), 123, "'123'.toInteger();");
@@ -355,6 +360,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "'42'.number");
         // TODO should also cover set* methods, though these seem rare
         // TODO check DefaultGroovyStaticMethods also (though there are few useful & safe calls there)
+        // cover drop and dropRight methods:
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(2, 3, 4), "[1, 2, 3, 4].drop(1)");
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 2, 3), "[1, 2, 3, 4].dropRight(1)");
+        // cover take and takeRight methods:
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(1, 2), "[1, 2, 3, 4].take(2)");
+        assertEvaluate(new GenericWhitelist(), Arrays.asList(3, 4), "[1, 2, 3, 4].takeRight(2)");
     }
 
     @Test public void whitelistedIrrelevantInsideScript() throws Exception {
@@ -588,10 +599,13 @@ public class SandboxInterceptorTest {
             @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
                 return method.getDeclaringClass() == GroovyObject.class && method.getName().equals("getProperty") && receiver instanceof SpecialScript && args[0].equals("magic");
             }
+            @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+                return constructor.getDeclaringClass() == SpecialScript.class;
+            }
         };
-        assertEquals(42, GroovySandbox.run(shell.parse("magic"), wl));
+        assertEquals(42, GroovySandbox.run(shell, "magic", wl));
         try {
-            GroovySandbox.run(shell.parse("boring"), wl);
+            GroovySandbox.run(shell, "boring", wl);
         } catch (MissingPropertyException x) {
             assertEquals("boring", x.getProperty());
         }
@@ -605,7 +619,6 @@ public class SandboxInterceptorTest {
         }
     }
 
-    @Ignore("TODO last fails with: RejectedAccessException: Scripts not permitted to use new java.util.Properties java.util.Properties")
     @Issue("JENKINS-46757")
     @Test public void properties() throws Exception {
         String script = "def properties = new Properties()";
@@ -616,12 +629,21 @@ public class SandboxInterceptorTest {
         assertEvaluate(new StaticWhitelist("new java.util.Properties"), new Properties(), script);
     }
 
-    @Issue("SECURITY-566")
+    @Issue({"SECURITY-566", "SECURITY-1353"})
     @Test public void typeCoercion() throws Exception {
         assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).getCountry()");
         assertRejected(new StaticWhitelist("staticMethod java.util.Locale getDefault"), "method java.util.Locale getCountry", "interface I {String getCountry()}; (Locale.getDefault() as I).country");
         assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).getAvailableLocales()");
         assertRejected(new ProxyWhitelist(), "staticMethod java.util.Locale getAvailableLocales", "interface I {Locale[] getAvailableLocales()}; (Locale as I).availableLocales");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "(double) Math.max(2, 3)");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "Math.max(2, 3) as double");
+        assertEvaluate(new StaticWhitelist("staticMethod java.lang.Math max int int"), 3.0d, "double x = Math.max(2, 3); x");
+        assertRejected(new GenericWhitelist(), "staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter asType java.lang.Object java.lang.Class",
+            "def f = org.codehaus.groovy.runtime.ScriptBytecodeAdapter.asType(['/tmp'], File); echo(/$f/)");
+        assertRejected(new GenericWhitelist(), "staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.lang.Object java.lang.Class",
+            "def f = org.codehaus.groovy.runtime.ScriptBytecodeAdapter.castToType(['/tmp'], File); echo(/$f/)");
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+            "def f = org.kohsuke.groovy.sandbox.impl.Checker.checkedCast(File, ['/tmp'], true, false, false); echo(/$f/)");
     }
 
     @Issue("SECURITY-580")
@@ -818,9 +840,33 @@ public class SandboxInterceptorTest {
         assertRejected(new StaticWhitelist(), "staticMethod hudson.model.Hudson getInstance", "hudson.model.Hudson.instance");
     }
 
+    @Issue("SECURITY-1266")
+    @Test
+    public void blockedASTTransformsASTTest() throws Exception {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+
+        thrown.expect(MultipleCompilationErrorsException.class);
+        thrown.expectMessage("Annotation ASTTest cannot be used in the sandbox");
+
+        shell.parse("import groovy.transform.*\n" +
+                "@ASTTest(value={ assert true })\n" +
+                "@Field int x\n");
+    }
+
+    @Issue("SECURITY-1266")
+    @Test
+    public void blockedASTTransformsGrab() throws Exception {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        thrown.expect(MultipleCompilationErrorsException.class);
+        thrown.expectMessage("Annotation Grab cannot be used in the sandbox");
+
+        shell.parse("@Grab(group='foo', module='bar', version='1.0')\n" +
+                "def foo\n");
+    }
+
     private static Object evaluate(Whitelist whitelist, String script) {
         GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        Object actual = GroovySandbox.run(shell.parse(script), whitelist);
+        Object actual = GroovySandbox.run(shell, script, whitelist);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
@@ -980,7 +1026,7 @@ public class SandboxInterceptorTest {
         String expected = ":def:ghi";
         assertEvaluate(wl, expected, script);
     }
-    
+
     @Issue("JENKINS-46213")
     @Test
     public void varArgsOnStaticDeclaration() throws Exception {
@@ -1079,5 +1125,62 @@ public class SandboxInterceptorTest {
         assertRejected(new AnnotatedWhitelist(), "method org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest$SimpleNamedBean getOther",
                 "def l = [new " + snb + "('a'), new " + snb +"('b'), new " + snb + "('c')]\n" +
                         "return l.other\n");
+    }
+
+    @Issue("JENKINS-50843")
+    @Test
+    public void callClosureElementOfMapAsMethod() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "hello", "def m = [ f: {return 'hello'} ]; m.f()");
+        assertEvaluate(new GenericWhitelist(), 15, "def m = [ f: {a -> return a*3} ]; m.f(5)");
+        assertEvaluate(new GenericWhitelist(), "a=hello,b=10", "def m = [ f: {a,b -> return \"a=${a},b=${b}\"} ]; m.f('hello',10)");
+        assertEvaluate(new GenericWhitelist(), 2, "def m = [ f: {it.size()} ]; m.f(foo:0, bar:1)");
+    }
+
+    @Issue("JENKINS-50906")
+    @Test
+    public void scriptBindingClosureVariableCall() throws Exception {
+        assertEvaluate(new GenericWhitelist(), true, "def func = { 1 }; this.func2 = { 1 }; return func() == func2();\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { x -> x }; this.func2 = { x -> x }; return func(5) == func2(5);\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { x, y -> x * y }; this.func2 = { x, y -> x * y }; return func(4, 5) == func2(4, 5);\n");
+        assertEvaluate(new GenericWhitelist(), true, "def func = { it }; this.func2 = { it }; return func(12) == func2(12);\n");
+    }
+
+    @Test
+    public void dateTimeApi() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 8, "def tomorrow = java.time.LocalDate.now().plusDays(1).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE).length()");
+        assertEvaluate(new GenericWhitelist(), "2017-01-06", "def yesterday = java.time.LocalDate.parse('2017-01-07').minusDays(1).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)");
+        assertEvaluate(new GenericWhitelist(), 15, "java.time.LocalTime.now().withHour(15).getHour()");
+        assertEvaluate(new GenericWhitelist(), "20:42:00", "java.time.LocalTime.parse('23:42').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_TIME)");
+        assertEvaluate(new GenericWhitelist(), 15, "java.time.LocalDateTime.now().withMinute(15).minute");
+        assertEvaluate(new GenericWhitelist(), "2007-12-03T07:15:30", "java.time.LocalDateTime.parse('2007-12-03T10:15:30').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)");
+    }
+
+    @Issue("SECURITY-1186")
+    @Test
+    public void finalizer() throws Exception {
+        try {
+            evaluate(new GenericWhitelist(), "class Test { public void finalize() { } }; null");
+            fail("Finalizers should be rejected");
+        } catch (MultipleCompilationErrorsException e) {
+            assertThat(e.getErrorCollector().getErrorCount(), equalTo(1));
+            Exception innerE = e.getErrorCollector().getException(0);
+            assertThat(innerE, instanceOf(SecurityException.class));
+            assertThat(innerE.getMessage(), containsString("Object.finalize()"));
+        }
+    }
+
+    @Test
+    public void alwaysRejectPermanentlyBlacklisted() throws Exception {
+        assertRejected(new StaticWhitelist("staticMethod java.lang.System exit int"),
+                "staticMethod java.lang.System exit int",
+                "System.exit(1)");
+        assertRejected(new StaticWhitelist("method java.lang.Runtime exit int", "staticMethod java.lang.Runtime getRuntime"),
+                "method java.lang.Runtime exit int",
+                "Runtime r = Runtime.getRuntime();\n" +
+                        "r.exit(1)");
+        assertRejected(new StaticWhitelist("staticMethod java.lang.Runtime getRuntime", "method java.lang.Runtime halt int"),
+                "method java.lang.Runtime halt int",
+                "Runtime r = Runtime.getRuntime();\n" +
+                        "r.halt(1)");
     }
 }
