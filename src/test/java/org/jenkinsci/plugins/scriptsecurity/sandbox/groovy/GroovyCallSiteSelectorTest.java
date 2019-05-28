@@ -24,7 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.io.ByteStreams;
+import com.google.common.io.NullOutputStream;
 import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
@@ -59,7 +59,7 @@ public class GroovyCallSiteSelectorTest {
     }
 
     @Test public void overloads() throws Exception {
-        PrintWriter receiver = new PrintWriter(ByteStreams.nullOutputStream());
+        PrintWriter receiver = new PrintWriter(new NullOutputStream());
         assertEquals(PrintWriter.class.getMethod("print", Object.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {new Object()}));
         assertEquals(PrintWriter.class.getMethod("print", String.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {"message"}));
         assertEquals(PrintWriter.class.getMethod("print", int.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {42}));

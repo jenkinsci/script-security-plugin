@@ -65,11 +65,6 @@
       <version>${caffeine.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.ben-manes.caffeine</groupId>
-      <artifactId>guava</artifactId>
-      <version>${caffeine.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>version-number</artifactId>
       <version>1.6</version>
