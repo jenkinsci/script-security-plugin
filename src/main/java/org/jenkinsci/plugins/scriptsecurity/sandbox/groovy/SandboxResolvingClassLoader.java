@@ -5,10 +5,10 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Optional;
+import com.google.common.base.Supplier;
 import groovy.lang.GroovyShell;
 import java.net.URL;
 import java.time.Duration;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,9 +37,9 @@ class SandboxResolvingClassLoader extends ClassLoader {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
             ClassLoader parentLoader = getParent();
-            Class<?> c = load(parentClassCache, name, parentLoader, item -> {
+            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
                 try {
-                    return Optional.of(parentLoader.loadClass(item));
+                    return Optional.of(parentLoader.loadClass(name));
                 } catch (ClassNotFoundException x) {
                     return Optional.absent();
                 }
@@ -61,18 +61,19 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     @Override public URL getResource(String name) {
         ClassLoader parentLoader = getParent();
-        return load(parentResourceCache, name, parentLoader, item -> Optional.fromNullable(parentLoader.getResource(item))).orNull();
+        return load(parentResourceCache, name, parentLoader, () -> Optional.fromNullable(parentLoader.getResource(name))).orNull();
     }
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
-    private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Function<String, T> mapping) {
-        return cache.get(parentLoader).get(name, (String item) -> {
+    private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
+        // itemName is ignored but caffeine requires a function<String, T>
+        return cache.get(parentLoader).get(name, (String itemName) -> {
             Thread t = Thread.currentThread();
             String origName = t.getName();
             t.setName(origName + " loading " + name);
             long start = System.nanoTime(); // http://stackoverflow.com/q/19052316/12916
             try {
-                return mapping.apply(item);
+                return supplier.get();
             } finally {
                 t.setName(origName);
                 long ms = (System.nanoTime() - start) / 1000000;
