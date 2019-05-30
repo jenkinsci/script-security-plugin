@@ -38,9 +38,11 @@ class SandboxResolvingClassLoader extends ClassLoader {
      * Marker value for a {@link ClassNotFoundException} negative cache hit.
      * Cannot use null, since the cache API does not permit null values.
      * Cannot use {@code Optional<Class<?>>} since weak values would mean this is always collected.
-     * This value is non-null, guaranteed not to be a legitimate return value, and strongly held.
+     * This value is non-null, not to be a legitimate return value
+     * (no script should be trying to load this implementation detail), and strongly held.
      */
-    private static final Class<?> CLASS_NOT_FOUND = Void.class;
+    private static final Class<?> CLASS_NOT_FOUND = Unused.class;
+    private static final class Unused {}
 
     @Override protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (name.startsWith("org.kohsuke.groovy.sandbox.")) {
