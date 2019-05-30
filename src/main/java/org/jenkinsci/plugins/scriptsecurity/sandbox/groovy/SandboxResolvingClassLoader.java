@@ -1,14 +1,13 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.common.base.Optional;
-import com.google.common.base.Supplier;
 import groovy.lang.GroovyShell;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +70,7 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     @Override public URL getResource(String name) {
         ClassLoader parentLoader = getParent();
-        return load(parentResourceCache, name, parentLoader, () -> Optional.fromNullable(parentLoader.getResource(name))).orNull();
+        return load(parentResourceCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name))).orElse(null);
     }
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
