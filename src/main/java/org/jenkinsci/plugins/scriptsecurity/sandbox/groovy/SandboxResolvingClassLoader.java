@@ -7,6 +7,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import groovy.lang.GroovyShell;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,7 @@ class SandboxResolvingClassLoader extends ClassLoader {
     
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<Class<?>>>> parentClassCache = makeParentCache();
+    private static final LoadingCache<ClassLoader, Cache<String, Optional<WeakReference<Class<?>>>>> parentClassCache = makeParentCache();
 
     private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache();
 
@@ -39,14 +40,19 @@ class SandboxResolvingClassLoader extends ClassLoader {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
             ClassLoader parentLoader = getParent();
-            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
+            Optional<WeakReference<Class<?>>> ref = load(parentClassCache, name, parentLoader, () -> {
                 try {
-                    return Optional.of(parentLoader.loadClass(name));
+                    return Optional.of(new WeakReference<>(parentLoader.loadClass(name)));
                 } catch (ClassNotFoundException x) {
                     return Optional.absent();
                 }
-            }).orNull();
-            if (c != null) {
+            });
+            if (ref.isPresent()) {
+                Class<?> c = ref.get().get();
+                if (c == null) {
+                    // Probably impossible for the class to be collected if its loader was not, but just in case…
+                    c = parentLoader.loadClass(name);
+                }
                 if (resolve) {
                     super.resolveClass(c);
                 }
