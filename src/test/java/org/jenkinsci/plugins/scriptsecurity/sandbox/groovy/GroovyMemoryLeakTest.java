@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
-import org.apache.commons.text.CharacterPredicates;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.junit.After;
@@ -49,9 +48,10 @@ public class GroovyMemoryLeakTest {
     @Test
     public void loaderReleased() throws Exception {
         FreeStyleProject p = r.jenkins.createProject(FreeStyleProject.class, "p");
-        String cp = CharacterPredicates.class.getProtectionDomain().getCodeSource().getLocation().toString(); // some JAR
-        p.getPublishersList().add(new TestGroovyRecorder(
-            new SecureGroovyScript(GroovyMemoryLeakTest.class.getName()+".register(this)", false, Collections.singletonList(new ClasspathEntry(cp)))));
+        String cp = GroovyMemoryLeakTest.class.getResource("somejar.jar").toString();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+            GroovyMemoryLeakTest.class.getName() + ".register(this); new somepkg.SomeClass()",
+            false, Collections.singletonList(new ClasspathEntry(cp)))));
         r.buildAndAssertSuccess(p);
 
         assertFalse(LOADERS.isEmpty());
