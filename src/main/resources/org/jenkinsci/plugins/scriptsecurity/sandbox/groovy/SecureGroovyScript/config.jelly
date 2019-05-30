@@ -26,9 +26,8 @@ THE SOFTWARE.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <f:entry field="script" title="${%Groovy Script}">
-        <!-- TODO <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.JENKINS-15604"/> -->
-        <!-- TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1 means no true Groovy support -->
-        <f:textarea checkMethod="post"/> <!-- TODO codemirror-mode="clike" codemirror-config="'onBlur': cmChange" -->
+        <!-- The })// at the end of codemirror-config is a hack to work around Jenkins core replacing any onBlur we provide (see textarea.js) -->
+        <f:textarea checkMethod="post" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save();editor.getTextArea().onchange();} })//" />
     </f:entry>
     <f:entry field="sandbox">
         <f:checkbox title="${%Use Groovy Sandbox}" default="${!h.hasPermission(app.RUN_SCRIPTS)}" />
