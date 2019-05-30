@@ -21,16 +21,26 @@ import java.util.logging.Logger;
  * @see <a href="https://issues.jenkins-ci.org/browse/JENKINS-23784">JENKINS-23784</a>
  */
 class SandboxResolvingClassLoader extends ClassLoader {
-    
+
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<Class<?>>>> parentClassCache = makeParentCache();
+    private static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache();
+    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
     }
+
+    /**
+     * Marker value for a {@link ClassNotFoundException} negative cache hit.
+     * Cannot use null, since the cache API does not permit null values.
+     * Cannot use {@code Optional<Class<?>>} since weak values would mean this is always collected.
+     * This value is non-null, not a legitimate return value
+     * (no script should be trying to load this implementation detail), and strongly held.
+     */
+    private static final Class<?> CLASS_NOT_FOUND = Unused.class;
+    private static final class Unused {}
 
     @Override protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (name.startsWith("org.kohsuke.groovy.sandbox.")) {
@@ -39,12 +49,12 @@ class SandboxResolvingClassLoader extends ClassLoader {
             ClassLoader parentLoader = getParent();
             Class<?> c = load(parentClassCache, name, parentLoader, () -> {
                 try {
-                    return Optional.of(parentLoader.loadClass(name));
+                    return parentLoader.loadClass(name);
                 } catch (ClassNotFoundException x) {
-                    return Optional.absent();
+                    return CLASS_NOT_FOUND;
                 }
-            }).orNull();
-            if (c != null) {
+            });
+            if (c != CLASS_NOT_FOUND) {
                 if (resolve) {
                     super.resolveClass(c);
                 }
@@ -84,12 +94,12 @@ class SandboxResolvingClassLoader extends ClassLoader {
         });
     }
 
-    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache() {
-        return Caffeine.newBuilder().weakKeys().build(
-                new CacheLoader<ClassLoader, Cache<String, T>>() {
-                    @Override public Cache<String, T> load(ClassLoader parentLoader) {
-                        return Caffeine.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(Duration.ofMinutes(15)).build();
-                    }
-                });
+    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValues) {
+        Caffeine<Object, Object> builder = Caffeine.newBuilder().weakKeys();
+        if (weakValues) {
+            builder = builder.weakValues();
+        }
+
+        return builder.build(parentLoader -> Caffeine.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(Duration.ofMinutes(15)).build());
     }
 }
