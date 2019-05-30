@@ -7,7 +7,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import groovy.lang.GroovyShell;
-import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -27,32 +26,35 @@ class SandboxResolvingClassLoader extends ClassLoader {
     
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<WeakReference<Class<?>>>>> parentClassCache = makeParentCache();
+    private static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache();
+    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
     }
+
+    /**
+     * Marker value for a {@link ClassNotFoundException} negative cache hit.
+     * Cannot use null, since the cache API does not permit null values.
+     * Cannot use {@code Optional<Class<?>>} since weak values would mean this is always collected.
+     * This value is non-null, guaranteed not to be a legitimate return value, and strongly held.
+     */
+    private static final Class<?> CLASS_NOT_FOUND = Void.class;
 
     @Override protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (name.startsWith("org.kohsuke.groovy.sandbox.")) {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
             ClassLoader parentLoader = getParent();
-            Optional<WeakReference<Class<?>>> ref = load(parentClassCache, name, parentLoader, () -> {
+            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
                 try {
-                    return Optional.of(new WeakReference<>(parentLoader.loadClass(name)));
+                    return parentLoader.loadClass(name);
                 } catch (ClassNotFoundException x) {
-                    return Optional.absent();
+                    return CLASS_NOT_FOUND;
                 }
             });
-            if (ref.isPresent()) {
-                Class<?> c = ref.get().get();
-                if (c == null) {
-                    // Probably impossible for the class to be collected if its loader was not, but just in case…
-                    c = parentLoader.loadClass(name);
-                }
+            if (c != CLASS_NOT_FOUND) {
                 if (resolve) {
                     super.resolveClass(c);
                 }
@@ -95,8 +97,12 @@ class SandboxResolvingClassLoader extends ClassLoader {
         }
     }
 
-    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache() {
-        return CacheBuilder.newBuilder().weakKeys().build(new CacheLoader<ClassLoader, Cache<String, T>>() {
+    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValues) {
+        CacheBuilder<Object, Object> builder = CacheBuilder.newBuilder().weakKeys();
+        if (weakValues) {
+            builder = builder.weakValues();
+        }
+        return builder.build(new CacheLoader<ClassLoader, Cache<String, T>>() {
             @Override public Cache<String, T> load(ClassLoader parentLoader) {
                 return CacheBuilder.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES).build();
             }
