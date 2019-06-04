@@ -155,7 +155,11 @@ public final class GroovySandbox {
      */
     public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
         Script s;
-        try (Scope scope = enter()) {
+        GroovySandbox derivedForParsing = new GroovySandbox()
+                .withApprovalContext(context)
+                .withTaskListener(listener)
+                .withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(shell.getClassLoader()), whitelist()));
+        try (Scope scope = derivedForParsing.enter()) {
             s = shell.parse(script);
         }
         GroovySandbox derived = new GroovySandbox().

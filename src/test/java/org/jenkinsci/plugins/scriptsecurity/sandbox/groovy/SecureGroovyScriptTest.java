@@ -995,7 +995,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("JENKINS-56682")
     @Test
-    public void testScriptFieldsAddedViaAtField() throws Exception {
+    public void testScriptAtFieldInitializers() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "import groovy.transform.Field\n" +
