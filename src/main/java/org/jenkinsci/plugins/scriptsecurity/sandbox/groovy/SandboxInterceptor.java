@@ -265,11 +265,19 @@ final class SandboxInterceptor extends GroovyInterceptor {
 
     @Override public Object onGetProperty(GroovyInterceptor.Invoker invoker, final Object receiver, final String property) throws Throwable {
         MissingPropertyException mpe = null;
-        if (receiver instanceof Script) { // SimpleTemplateEngine "out" variable, and anything else added in a binding
+        if (receiver instanceof Script) { // SimpleTemplateEngine "out" variable, anything else added in a binding, and @Field variables.
             try {
                 ((Script) receiver).getBinding().getVariable(property); // do not let it go to Script.super.getProperty
                 return super.onGetProperty(invoker, receiver, property);
             } catch (MissingPropertyException x) {
+                if (receiver.getClass() != Script.class) { // Only check declared fields of subclasses, not Script itself
+                    try {
+                        receiver.getClass().getDeclaredField(property); // Do not check inherited fields (which include metaclass and binding).
+                        return super.onGetProperty(invoker, receiver, property);
+                    } catch (NoSuchFieldException x2) {
+                        // Doesn't add any useful info beyond the MissingPropertyException.
+                    }
+                }
                 mpe = x; // throw only if we are not whitelisted
             }
         }
