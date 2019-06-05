@@ -154,20 +154,12 @@ public final class GroovySandbox {
      * @return the return value of the script
      */
     public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
-        Script s;
-        GroovySandbox derivedForParsing = new GroovySandbox()
-                .withApprovalContext(context)
-                .withTaskListener(listener)
-                .withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(shell.getClassLoader()), whitelist()));
-        try (Scope scope = derivedForParsing.enter()) {
-            s = shell.parse(script);
-        }
         GroovySandbox derived = new GroovySandbox().
             withApprovalContext(context).
             withTaskListener(listener).
-            withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(s.getClass().getClassLoader()), whitelist()));
+            withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(shell.getClassLoader()), whitelist()));
         try (Scope scope = derived.enter()) {
-            return s.run();
+            return shell.parse(script).run();
         }
     }
 

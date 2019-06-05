@@ -375,7 +375,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * Otherwise the defining loader will be an {@code InnerLoader}, and not necessarily the same instance from load to load.
      * @see GroovyClassLoader#getTimeStamp
      */
-    private static final class CleanGroovyClassLoader extends GroovyClassLoader {
+    static final class CleanGroovyClassLoader extends GroovyClassLoader {
 
         CleanGroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
             super(loader, config);

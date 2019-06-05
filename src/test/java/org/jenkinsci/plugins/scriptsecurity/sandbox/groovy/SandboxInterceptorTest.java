@@ -40,6 +40,7 @@ import groovy.text.Template;
 import hudson.Functions;
 import hudson.util.IOUtils;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -865,8 +866,18 @@ public class SandboxInterceptorTest {
     }
 
     private static Object evaluate(Whitelist whitelist, String script) {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        Object actual = GroovySandbox.run(shell, script, whitelist);
+        CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+        GroovyShell shell = new GroovyShell(cc);
+        try {
+            Field loaderF = GroovyShell.class.getDeclaredField("loader");
+            loaderF.setAccessible(true);
+            ClassLoader loader = GroovyShell.class.getClassLoader();
+            ClassLoader memoryProtectedLoader = new SecureGroovyScript.CleanGroovyClassLoader(GroovySandbox.createSecureClassLoader(loader), cc);
+            loaderF.set(shell, memoryProtectedLoader);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new AssertionError("Groovy class loader fields have changed", e);
+        }
+        Object actual = new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
@@ -1182,5 +1193,27 @@ public class SandboxInterceptorTest {
                 "method java.lang.Runtime halt int",
                 "Runtime r = Runtime.getRuntime();\n" +
                         "r.halt(1)");
+    }
+
+    @Test
+    public void scriptInitializersAtFieldSyntax() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 3,
+                "import groovy.transform.Field\n" +
+                "@Field static int foo = 1\n" +
+                "@Field int bar = foo + 1\n" +
+                "@Field int baz = bar + 1\n" +
+                "baz");
+    }
+
+    @Test
+    public void scriptInitializersClassSyntax() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 2,
+                "import org.codehaus.groovy.runtime.InvokerHelper\n" +
+                "class MyScript extends Script {\n" +
+                "  { MyScript.foo++ }\n" + // Instance initializers seem to be context sensitive, if placed below the field it is treated as a closure...
+                "  static { MyScript.foo++ }\n" +
+                "  static int foo = 0\n" +
+                "  def run() { MyScript.foo }\n" +
+                "}\n");
     }
 }
