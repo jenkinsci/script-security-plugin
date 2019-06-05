@@ -58,11 +58,5 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci</groupId>
-      <artifactId>version-number</artifactId>
-      <version>1.9</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 </project>
