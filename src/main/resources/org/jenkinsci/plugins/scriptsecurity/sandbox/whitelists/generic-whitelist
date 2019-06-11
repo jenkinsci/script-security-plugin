@@ -40,25 +40,26 @@ new java.io.PrintWriter java.io.Writer
 method java.io.PrintWriter print java.lang.Object
 method java.io.PrintWriter print java.lang.String
 
+method java.io.Reader read
+method java.io.Reader read char[]
+method java.io.Reader read char[] int int
+method java.io.Reader reset
+method java.io.Reader skip long
+
 # Useful general stuff:
 new java.io.StringReader java.lang.String
-method java.io.StringReader close
-method java.io.StringReader read
-method java.io.StringReader read char[]
-method java.io.StringReader read char[] int int
-method java.io.StringReader reset
-method java.io.StringReader skip int
 new java.io.StringWriter
-method java.io.StringWriter append char
-method java.io.StringWriter append java.lang.CharSequence
-method java.io.StringWriter append java.lang.CharSequence int int
-method java.io.StringWriter close
-method java.io.StringWriter flush
-method java.io.StringWriter write char[]
-method java.io.StringWriter write char[] int int
-method java.io.StringWriter int
-method java.io.StringWriter write java.lang.String
-method java.io.StringWriter write java.lang.String int int
+
+method java.io.Writer write char[]
+method java.io.Writer write char[] int int
+method java.io.Writer write int
+method java.io.Writer write java.lang.String
+method java.io.Writer write java.lang.String int int
+
+method java.lang.Appendable append char
+method java.lang.Appendable append java.lang.CharSequence
+method java.lang.Appendable append java.lang.CharSequence int int
+method java.lang.AutoCloseable close
 new java.lang.Boolean java.lang.String
 staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
@@ -73,6 +74,7 @@ new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 new java.lang.Exception java.lang.String
+method java.lang.Flushable flush
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
@@ -301,9 +303,9 @@ new java.util.Date
 new java.util.Date long
 new java.util.HashSet
 new java.util.HashSet java.util.Collection
-new java.util.LinkedHashSet
 method java.util.Iterator hasNext
 method java.util.Iterator next
+new java.util.LinkedHashSet
 method java.util.List add int java.lang.Object
 method java.util.List get int
 method java.util.List remove int
