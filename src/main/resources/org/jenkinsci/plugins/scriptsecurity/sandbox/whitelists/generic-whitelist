@@ -364,6 +364,7 @@ method java.util.concurrent.Callable call
 staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MINUTES
 method java.util.regex.MatchResult group int
+method java.util.regex.Matcher find
 method java.util.regex.Matcher group java.lang.String
 method java.util.regex.Matcher matches
 method java.util.regex.Matcher replaceAll java.lang.String
@@ -498,6 +499,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods get java.util.Map java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object[] groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String int
