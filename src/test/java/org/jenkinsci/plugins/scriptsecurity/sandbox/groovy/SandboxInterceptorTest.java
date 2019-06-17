@@ -1195,6 +1195,7 @@ public class SandboxInterceptorTest {
                         "r.halt(1)");
     }
 
+    @Issue("JENKINS-56682")
     @Test
     public void scriptInitializersAtFieldSyntax() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3,
@@ -1205,6 +1206,7 @@ public class SandboxInterceptorTest {
                 "baz");
     }
 
+    @Issue("JENKINS-56682")
     @Test
     public void scriptInitializersClassSyntax() throws Exception {
         assertEvaluate(new GenericWhitelist(), 2,
