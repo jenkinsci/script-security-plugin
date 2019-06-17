@@ -1210,9 +1210,8 @@ public class SandboxInterceptorTest {
     @Test
     public void scriptInitializersClassSyntax() throws Exception {
         assertEvaluate(new GenericWhitelist(), 2,
-                "import org.codehaus.groovy.runtime.InvokerHelper\n" +
                 "class MyScript extends Script {\n" +
-                "  { MyScript.foo++ }\n" + // Instance initializers seem to be context sensitive, if placed below the field it is treated as a closure...
+                "  { MyScript.foo++ }\n" + // The instance initializer seems to be context sensitive, if placed below the field it is treated as a closure...
                 "  static { MyScript.foo++ }\n" +
                 "  static int foo = 0\n" +
                 "  def run() { MyScript.foo }\n" +
