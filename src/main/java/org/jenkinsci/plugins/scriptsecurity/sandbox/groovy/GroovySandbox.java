@@ -238,21 +238,9 @@ public final class GroovySandbox {
         }
     }
 
+    // TODO: Delete after 2020-01-01 because the method is insecure in most scenarios. Known callers have already
+    // migrated to safer methods, but we want to give users time to update plugins to avoid unnecessary breakage.
     /**
-     * @deprecated Use {@link #runScript}.
-     */
-    @Deprecated
-    public static void runInSandbox(@Nonnull final Script script, @Nonnull Whitelist whitelist) throws RejectedAccessException {
-        runInSandbox((Runnable) script.run(), whitelist);
-    }
-
-    /**
-     * Runs a script in the sandbox.
-     * You must have used {@link #createSecureCompilerConfiguration} to prepare the Groovy shell.
-     * @param script a script ready to {@link Script#run}, created for example by {@link GroovyShell#parse(String)}
-     * @param whitelist the whitelist to use, such as {@link Whitelist#all()}
-     * @return the value produced by the script, if any
-     * @throws RejectedAccessException in case an attempted call was not whitelisted
      * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} or {@link #runScript}
      */
     @Deprecated
