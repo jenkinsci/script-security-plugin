@@ -9,6 +9,7 @@ import io.jenkins.plugins.casc.model.CNode;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import static io.jenkins.plugins.casc.misc.Util.getSecurityRoot;
 import static io.jenkins.plugins.casc.misc.Util.getUnclassifiedRoot;
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -32,7 +33,7 @@ public class JcascTest {
     public void smokeTestExport() throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
-        CNode yourAttribute = getUnclassifiedRoot(context).get("scriptApproval");
+        CNode yourAttribute = getSecurityRoot(context).get("scriptApproval");
         String exported = toYamlString(yourAttribute);
         String expected = toStringFromYamlFile(this, "smoke_test_expected.yaml");
         assertEquals(exported, expected);

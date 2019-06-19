@@ -1,4 +1,4 @@
-unclassified:
+security:
   scriptApproval:
     approvedSignatures:
     - method java.net.URI getHost

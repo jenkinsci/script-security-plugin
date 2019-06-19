@@ -70,7 +70,7 @@
       <!--<version>1.6</version>-->
       <!--<scope>test</scope>-->
     <!--</dependency>-->
-    <dependency>
+        <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
       <version>${configuration-as-code.version}</version>
