@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import jenkins.model.GlobalConfiguration;
+import jenkins.model.GlobalConfigurationCategory;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
@@ -103,6 +104,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Override
     protected XmlFile getConfigFile() {
         return new XmlFile(XSTREAM2, new File(Jenkins.getInstance().getRootDir(),getUrlName() + ".xml"));
+    }
+
+    @Override
+    public GlobalConfigurationCategory getCategory() {
+        return GlobalConfigurationCategory.get(GlobalConfigurationCategory.Security.class);
     }
 
     /** Gets the singleton instance. */
