@@ -10,7 +10,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import static io.jenkins.plugins.casc.misc.Util.getSecurityRoot;
-import static io.jenkins.plugins.casc.misc.Util.getUnclassifiedRoot;
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.junit.Assert.assertEquals;
