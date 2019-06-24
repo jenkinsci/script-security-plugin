@@ -34,13 +34,32 @@ method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
 method groovy.lang.Script getBinding
 
+# Useful to show stacktrace to the user.
+new java.io.PrintWriter java.io.Writer
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
 method java.io.PrintWriter print java.lang.String
 
+method java.io.Reader read
+method java.io.Reader read char[]
+method java.io.Reader read char[] int int
+method java.io.Reader reset
+method java.io.Reader skip long
+
 # Useful general stuff:
 new java.io.StringReader java.lang.String
 new java.io.StringWriter
+
+method java.io.Writer write char[]
+method java.io.Writer write char[] int int
+method java.io.Writer write int
+method java.io.Writer write java.lang.String
+method java.io.Writer write java.lang.String int int
+
+method java.lang.Appendable append char
+method java.lang.Appendable append java.lang.CharSequence
+method java.lang.Appendable append java.lang.CharSequence int int
+method java.lang.AutoCloseable close
 new java.lang.Boolean java.lang.String
 staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
@@ -55,6 +74,7 @@ new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 new java.lang.Exception java.lang.String
+method java.lang.Flushable flush
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
@@ -286,6 +306,8 @@ new java.util.HashSet
 new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
 method java.util.Iterator next
+new java.util.LinkedHashSet
+method java.util.List add int java.lang.Object
 method java.util.List get int
 method java.util.List remove int
 method java.util.List subList int int
@@ -345,6 +367,7 @@ method java.util.concurrent.Callable call
 staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MINUTES
 method java.util.regex.MatchResult group int
+method java.util.regex.Matcher find
 method java.util.regex.Matcher group java.lang.String
 method java.util.regex.Matcher matches
 method java.util.regex.Matcher replaceAll java.lang.String
@@ -401,7 +424,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collectNested java.util.Collection java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods combinations java.lang.Iterable groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains Object[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains boolean[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains byte[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains char[] java.lang.Object
@@ -409,9 +431,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains double[] 
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains float[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains int[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains java.lang.Iterable java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains java.lang.Object[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains long[] java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains short[] java.lang.Object
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods containsAll Collection[] java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods containsAll java.lang.Iterable java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods count java.lang.Object[] java.lang.Object
@@ -479,6 +502,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods first java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods flatten java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods get java.util.Map java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object[] groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.IntRange
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String groovy.lang.Range
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.String int
@@ -617,6 +641,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Ma
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods retainAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.Iterator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.List
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverseEach java.util.Map groovy.lang.Closure
@@ -672,6 +697,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.lang.Ite
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.util.List int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods takeRight java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods takeRight java.util.List int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods times java.lang.Number groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList boolean[]

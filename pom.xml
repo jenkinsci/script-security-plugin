@@ -14,7 +14,7 @@
     <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
     <url>https://wiki.jenkins.io/display/JENKINS/Script+Security+Plugin</url>
     <properties>
-      <revision>1.60</revision>
+      <revision>1.61</revision>
       <changelist>-SNAPSHOT</changelist>
       <jenkins.version>2.60.3</jenkins.version>
       <java.level>8</java.level>
@@ -62,12 +62,6 @@
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
       <version>2.7.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jenkins-ci</groupId>
-      <artifactId>version-number</artifactId>
-      <version>1.6</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
