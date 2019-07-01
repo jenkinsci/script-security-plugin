@@ -26,9 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
-import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
-import hudson.model.Item;
 import hudson.model.Result;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
@@ -42,7 +40,6 @@ import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
-import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
 
@@ -124,38 +121,34 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.approveSignature(WHITELISTED_SIGNATURE);
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearApprovedSignatures();
         assertEquals(0, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-    
+
         sa.approveSignature(WHITELISTED_SIGNATURE);
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearDangerousApprovedSignatures();
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
     }
 
     @Issue("JENKINS-57563")
-    @LocalData("upgrade")
+    @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance'
     @Test
     public void upgradeSmokes() throws Exception {
-        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
-                grant(Jenkins.RUN_SCRIPTS, Jenkins.READ, Item.READ).everywhere().to("runScriptsUser").
-                grant(Jenkins.READ, Item.READ).everywhere().to("otherUser"));
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
         r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException: "
-                + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
+                        + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
                 r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
     }
 
