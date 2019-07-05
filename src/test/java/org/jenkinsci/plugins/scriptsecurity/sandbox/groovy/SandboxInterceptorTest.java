@@ -868,6 +868,15 @@ public class SandboxInterceptorTest {
     private static Object evaluate(Whitelist whitelist, String script) {
         CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
         GroovyShell shell = new GroovyShell(cc);
+        /* TODO: This duplicates code in SecureGroovyScript and CpsGroovyShell. I think we could create a new method
+           in GroovySandbox with a signature like `public static void setGroovyClassLoader(GroovyShell, ClassLoader)`
+           that sets the loader field after wrapping the passed loader in CleanGroovyClassLoader, and then have
+           SecureGroovyScript call that method to avoid duplication. To also avoid the duplication in CpsGroovyShell,
+           I think we'd also need to introduce a new subtype of GroovyShell that automatically called that method in the
+           constructor (might need to tweak the memory leak fixes in workflow-cps to be able to use it from CpsGroovyShell).
+           We could also add a method like the following to GroovySandbox and recommend downstream users use it instead
+           of directly instantiating GroovyShell: `public static GroovyShell prepareSecureGroovyShell(ClassLoader, Binding, CompilerConfiguration)`.
+        */
         try {
             Field loaderF = GroovyShell.class.getDeclaredField("loader");
             loaderF.setAccessible(true);
