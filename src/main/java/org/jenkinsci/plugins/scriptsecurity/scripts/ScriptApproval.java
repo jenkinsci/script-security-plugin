@@ -662,11 +662,21 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     @DataBoundSetter
-    public synchronized void setApprovedSignatures(String[] signatures) {
+    public synchronized void setApprovedSignatures(String[] signatures) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedSignatures.clear();
-        approvedSignatures.addAll(Arrays.asList(signatures));
+        List<String> goodSignatures = new ArrayList<>(signatures.length);
+        for (String signature : signatures) {
+            try {
+                StaticWhitelist.parse(signature);
+                goodSignatures.add(signature);
+            } catch (IOException e) {
+                LOG.warning("Ignoring malformed signature: " + signature);
+            }
+        }
+        approvedSignatures.addAll(goodSignatures);
         save();
+        reconfigure();
     }
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
