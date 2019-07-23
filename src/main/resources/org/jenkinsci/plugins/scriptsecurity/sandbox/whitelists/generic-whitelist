@@ -385,6 +385,7 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString jav
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods abs java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.Collection java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
@@ -474,6 +475,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachWithIndex java
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachWithIndex java.util.Set groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods eachWithIndex java.util.SortedSet groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods every java.lang.Iterable groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods every java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods every java.util.Iterator groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods every java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods find java.lang.Object[] groovy.lang.Closure
