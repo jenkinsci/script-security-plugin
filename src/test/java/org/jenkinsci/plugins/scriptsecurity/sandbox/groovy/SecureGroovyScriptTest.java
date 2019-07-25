@@ -993,4 +993,68 @@ public class SecureGroovyScriptTest {
         r.assertLogContains("staticMethod jenkins.model.Jenkins getInstance", b);
     }
 
+    @Issue("SECURITY-1465")
+    @Test public void blockLhsInMethodPointerExpression() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "({" +
+                "  System.getProperties()\n" +
+                "  1" +
+                "}().&toString)()", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("staticMethod java.lang.System getProperties", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockRhsInMethodPointerExpression() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "1.&(System.getProperty('sandboxTransformsMethodPointerRhs'))()", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("staticMethod java.lang.System getProperty java.lang.String", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
+        // See additional info on this test case in `SandboxTransformerTest.sandboxWillNotCastNonStandardCollections()` over in groovy-sandbox.
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "def i = 0\n" +
+                "(({-> if(i) {\n" +
+                "    return ['secret.txt'] as Object[]\n" +
+                "  } else {\n" +
+                "    i = 1\n" +
+                "    return null\n" +
+                "  }\n" +
+                "} as Collection) as File) as Object[]", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        // Before the security fix, fails with FileNotFoundException, bypassing the sandbox!
+        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockCastingSafeUserDefinedImplementationsOfCollection() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "({-> return ['secret.txt'] as Object[]} as Collection) as File", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        // Before the security fix, fails because `new File(String)` is not whitelisted, so not a problem, but we have
+        // no good way to distinguish this case from the one in blockCastingUnsafeUserDefinedImplementationsOfCollection.
+        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockEnumConstants() throws Exception {
+        FreeStyleProject p1 = r.createFreeStyleProject();
+        p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "jenkins.YesNoMaybe.MAYBE", true, null)));
+        FreeStyleBuild b1 = r.assertBuildStatus(Result.FAILURE, p1.scheduleBuild2(0));
+        r.assertLogContains("staticField jenkins.YesNoMaybe MAYBE", b1);
+
+        FreeStyleProject p2 = r.createFreeStyleProject();
+        p2.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "if ((jenkins.YesNoMaybe.class as Object[]).size() != 3) throw new Exception('blocked enum access')", true, null)));
+        FreeStyleBuild b2 = r.assertBuildStatus(Result.FAILURE, p2.scheduleBuild2(0));
+        r.assertLogContains("staticField jenkins.YesNoMaybe YES", b2);
+    }
 }
