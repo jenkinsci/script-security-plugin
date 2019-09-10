@@ -671,7 +671,8 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                 StaticWhitelist.parse(signature);
                 goodSignatures.add(signature);
             } catch (IOException e) {
-                LOG.warning("Ignoring malformed signature: " + signature);
+                LOG.warning("Ignoring malformed signature: " + signature
+                        + " (Occurred exception: " + e.toString() + ")");
             }
         }
         approvedSignatures.addAll(goodSignatures);
