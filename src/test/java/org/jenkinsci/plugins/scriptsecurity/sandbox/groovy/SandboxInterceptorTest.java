@@ -1163,4 +1163,38 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("SECURITY-1538")
+    @Test public void blockMethodNameInMethodCalls() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "1.({ Jenkins.getInstance(); 'toString' }())()");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockPropertyNameInAssignment() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class Test { def x = 0 }\n" +
+                "def t = new Test()\n" +
+                "t.({ Jenkins.getInstance(); 'x' }()) = 1\n");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockPropertyNameInPrefixPostfixExpressions() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class Test { def x = 0 }\n" +
+                "def t = new Test()\n" +
+                "t.({ Jenkins.getInstance(); 'x' }())++\n");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockSubexpressionsInPrefixPostfixExpressions() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "++({ Jenkins.getInstance(); 1 }())\n");
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "({ Jenkins.getInstance(); 1 }())++\n");
+    }
 }
