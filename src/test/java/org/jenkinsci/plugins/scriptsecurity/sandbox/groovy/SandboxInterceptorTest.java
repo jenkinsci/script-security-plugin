@@ -1197,4 +1197,17 @@ public class SandboxInterceptorTest {
                 "import jenkins.model.Jenkins\n" +
                 "({ Jenkins.getInstance(); 1 }())++\n");
     }
+
+    @Issue("SECURITY-1579")
+    @Test public void blockInitialExpressionsInConstructorsCallingSuper() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class B {}\n" +
+                "class A extends B {\n" +
+                "  A(x = Jenkins.getInstance()) {\n" +
+                "    super()\n" +
+                "  }\n" +
+                "}\n" +
+                "new A()\n");
+    }
 }
