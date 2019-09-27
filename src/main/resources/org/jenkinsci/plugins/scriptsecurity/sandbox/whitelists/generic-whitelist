@@ -386,9 +386,31 @@ method net.sf.json.JSON size
 
 
 # More Groovy:
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods downto java.util.Calendar java.util.Calendar groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods downto java.util.Date java.util.Date groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Calendar java.lang.String
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods format java.util.Date java.lang.String java.util.TimeZone
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getAt java.util.Calendar int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getAt java.util.Date int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateString java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getDateTimeString java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getTimeString java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Calendar java.util.Calendar
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Calendar
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods plus java.util.Date int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Calendar
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods putAt java.util.Calendar int int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods putAt java.util.Date int int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods set java.util.Calendar java.util.Map
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods set java.util.Date java.util.Map
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods toCalendar java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods upto java.util.Calendar java.util.Calendar groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods upto java.util.Date java.util.Date groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods abs java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.Collection java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
