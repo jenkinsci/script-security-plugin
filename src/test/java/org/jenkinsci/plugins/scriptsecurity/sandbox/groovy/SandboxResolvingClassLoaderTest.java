@@ -24,7 +24,9 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,6 +40,7 @@ public class SandboxResolvingClassLoaderTest {
     private final ClassLoader parentLoader = SandboxResolvingClassLoaderTest.class.getClassLoader();
     private final SandboxResolvingClassLoader loader = new SandboxResolvingClassLoader(parentLoader);
 
+    @Issue("JENKINS-59587")
     @Test public void classCacheDoesNotHoldClassValuesTooWeakly() throws Exception {
         // Load a class that does exist.
         assertThat(loader.loadClass("java.lang.String", false), equalTo(String.class));
@@ -55,5 +58,10 @@ public class SandboxResolvingClassLoaderTest {
         System.gc();
         assertThat(parentClassCache.get(parentLoader).getIfPresent("java.lang.String"), equalTo(String.class));
         assertThat(parentClassCache.get(parentLoader).getIfPresent("this.does.not.Exist"), equalTo(CLASS_NOT_FOUND));
+        CacheStats stats = parentClassCache.get(parentLoader).stats();
+        // Before the fix for JENKINS-59587, the original inner cache was removed after the call to `System.gc()`, so
+        // the miss count was 2 and the hit count was 0.
+        assertThat(stats.missCount(), equalTo(2L)); // The two calls to `loadClass()`
+        assertThat(stats.hitCount(), equalTo(4L)); // The four calls to `getIfPresent()`
     }
 }
