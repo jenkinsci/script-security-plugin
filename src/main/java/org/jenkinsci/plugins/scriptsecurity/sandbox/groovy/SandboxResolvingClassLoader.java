@@ -23,9 +23,9 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    private static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
+    static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
+    static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
@@ -38,7 +38,7 @@ class SandboxResolvingClassLoader extends ClassLoader {
      * This value is non-null, not a legitimate return value
      * (no script should be trying to load this implementation detail), and strongly held.
      */
-    private static final Class<?> CLASS_NOT_FOUND = Unused.class;
+    static final Class<?> CLASS_NOT_FOUND = Unused.class;
     private static final class Unused {}
 
     @Override protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -93,12 +93,20 @@ class SandboxResolvingClassLoader extends ClassLoader {
         });
     }
 
-    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValues) {
-        Caffeine<Object, Object> builder = Caffeine.newBuilder().weakKeys();
-        if (weakValues) {
-            builder = builder.weakValues();
+    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValuesInnerCache) {
+        // The outer cache has weak keys, so that we do not leak class loaders, but strong values, because the
+        // inner caches are only referenced by the outer cache internally.
+        Caffeine<Object, Object> outerBuilder = Caffeine.newBuilder().recordStats().weakKeys();
+        // The inner cache has strong keys, since they are just strings, and expires entries 15 minutes after they are
+        // added to the cache, so that classes defined by dynamically installed plugins become available even if there
+        // were negative cache hits prior to the installation (ideally this would be done with a listener). The values
+        // for the inner cache may be weak if needed, for example parentClassCache uses weak values to avoid leaking
+        // classes and their loaders.
+        Caffeine<Object, Object> innerBuilder = Caffeine.newBuilder().recordStats().expireAfterWrite(Duration.ofMinutes(15));
+        if (weakValuesInnerCache) {
+            innerBuilder.weakValues();
         }
 
-        return builder.build(parentLoader -> Caffeine.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(Duration.ofMinutes(15)).build());
+        return outerBuilder.build(parentLoader -> innerBuilder.build());
     }
 }
