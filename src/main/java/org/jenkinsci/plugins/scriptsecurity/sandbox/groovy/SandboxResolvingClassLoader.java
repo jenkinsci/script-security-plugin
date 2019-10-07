@@ -1,12 +1,15 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import groovy.lang.GroovyShell;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,9 +26,9 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
+    static final LoadingCache<ClassLoader, AsyncCache<String, WeakReference<Class<?>>>> parentClassCache = makeParentCache();
 
-    static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
+    static final LoadingCache<ClassLoader, AsyncCache<String, Optional<URL>>> parentResourceCache = makeParentCache();
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
@@ -46,35 +49,52 @@ class SandboxResolvingClassLoader extends ClassLoader {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
             ClassLoader parentLoader = getParent();
-            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
+            Future<WeakReference<Class<?>>> future = load(parentClassCache, name, parentLoader, () -> {
                 try {
-                    return parentLoader.loadClass(name);
+                    return new WeakReference<>(parentLoader.loadClass(name));
                 } catch (ClassNotFoundException x) {
-                    return CLASS_NOT_FOUND;
+                    return new WeakReference<>(CLASS_NOT_FOUND);
                 }
             });
-            if (c != CLASS_NOT_FOUND) {
-                if (resolve) {
-                    super.resolveClass(c);
-                }
-                return c;
-            } else {
-                throw new ClassNotFoundException(name) {
-                    @Override public synchronized Throwable fillInStackTrace() {
-                        return this; // super call is too expensive
+            Thread t = Thread.currentThread();
+            String origName = t.getName();
+            t.setName(origName + " loading " + name);
+            try {
+                Class<?> c = future.get().get();
+                if (c != CLASS_NOT_FOUND) {
+                    if (resolve) {
+                        super.resolveClass(c);
                     }
-                };
+                    return c;
+                } else {
+                    throw new StacklessClassNotFoundException(name);
+                }
+            } catch (ExecutionException e) {
+                throw new StacklessClassNotFoundException(name, e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new StacklessClassNotFoundException(name, e);
+            } finally {
+                t.setName(origName);
             }
         }
     }
 
     @Override public URL getResource(String name) {
         ClassLoader parentLoader = getParent();
-        return load(parentResourceCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name))).orElse(null);
+        Future<Optional<URL>> future = load(parentResourceCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name)));
+        try {
+            return future.get().orElse(null);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
-    private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
+    private static <T> Future<T> load(LoadingCache<ClassLoader, AsyncCache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
         // itemName is ignored but caffeine requires a function<String, T>
         return cache.get(parentLoader).get(name, (String itemName) -> {
             Thread t = Thread.currentThread();
@@ -93,20 +113,29 @@ class SandboxResolvingClassLoader extends ClassLoader {
         });
     }
 
-    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValuesInnerCache) {
+    private static <T> LoadingCache<ClassLoader, AsyncCache<String, T>> makeParentCache() {
         // The outer cache has weak keys, so that we do not leak class loaders, but strong values, because the
         // inner caches are only referenced by the outer cache internally.
         Caffeine<Object, Object> outerBuilder = Caffeine.newBuilder().recordStats().weakKeys();
         // The inner cache has strong keys, since they are just strings, and expires entries 15 minutes after they are
         // added to the cache, so that classes defined by dynamically installed plugins become available even if there
-        // were negative cache hits prior to the installation (ideally this would be done with a listener). The values
-        // for the inner cache may be weak if needed, for example parentClassCache uses weak values to avoid leaking
-        // classes and their loaders.
+        // were negative cache hits prior to the installation (ideally this would be done with a listener).
         Caffeine<Object, Object> innerBuilder = Caffeine.newBuilder().recordStats().expireAfterWrite(Duration.ofMinutes(15));
-        if (weakValuesInnerCache) {
-            innerBuilder.weakValues();
+
+        return outerBuilder.build(parentLoader -> innerBuilder.buildAsync());
+    }
+
+    private static class StacklessClassNotFoundException extends java.lang.ClassNotFoundException {
+        public StacklessClassNotFoundException(String message) {
+            super(message);
         }
 
-        return outerBuilder.build(parentLoader -> innerBuilder.build());
+        public StacklessClassNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        @Override public synchronized Throwable fillInStackTrace() {
+            return this; // super call is too expensive
+        }
     }
 }
