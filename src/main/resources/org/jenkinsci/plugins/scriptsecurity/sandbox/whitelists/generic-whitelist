@@ -167,11 +167,8 @@ staticField java.text.DateFormat TIMEZONE_FIELD
 staticField java.text.DateFormat WEEK_OF_MONTH_FIELD
 staticField java.text.DateFormat WEEK_OF_YEAR_FIELD
 staticField java.text.DateFormat YEAR_FIELD
-method java.text.DateFormat format java.lang.Object
-method java.text.DateFormat format java.lang.Object java.lang.StringBuffer java.text.FieldPosition
 method java.text.DateFormat format java.util.Date
 method java.text.DateFormat format java.util.Date java.lang.StringBuffer java.text.FieldPosition
-method java.text.DateFormat formatToCharacterIterator java.lang.Object
 staticMethod java.text.DateFormat getAvailableLocales
 method java.text.DateFormat getCalendar
 staticMethod java.text.DateFormat getDateInstance
@@ -189,8 +186,6 @@ method java.text.DateFormat getTimeZone
 method java.text.DateFormat isLenient
 method java.text.DateFormat parse java.lang.String
 method java.text.DateFormat parse java.lang.String java.text.ParsePosition
-method java.text.DateFormat parseObject java.lang.String
-method java.text.DateFormat parseObject java.lang.String java.text.ParsePosition
 method java.text.DateFormat setCalendar java.util.Calendar
 method java.text.DateFormat setLenient boolean
 method java.text.DateFormat setNumberFormat java.text.NumberFormat
