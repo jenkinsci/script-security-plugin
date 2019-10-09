@@ -145,6 +145,50 @@ new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
+staticField java.text.DateFormat AM_PM_FIELD
+staticField java.text.DateFormat DATE_FIELD
+staticField java.text.DateFormat DAY_OF_WEEK_FIELD
+staticField java.text.DateFormat DAY_OF_WEEK_IN_MONTH_FIELD
+staticField java.text.DateFormat DAY_OF_YEAR_FIELD
+staticField java.text.DateFormat DEFAULT
+staticField java.text.DateFormat ERA_FIELD
+staticField java.text.DateFormat FULL
+staticField java.text.DateFormat HOUR0_FIELD
+staticField java.text.DateFormat HOUR1_FIELD
+staticField java.text.DateFormat HOUR_OF_DAY0_FIELD
+staticField java.text.DateFormat HOUR_OF_DAY1_FIELD
+staticField java.text.DateFormat LONG
+staticField java.text.DateFormat MEDIUM
+staticField java.text.DateFormat MILLISECOND_FIELD
+staticField java.text.DateFormat MINUTE_FIELD
+staticField java.text.DateFormat MONTH_FIELD
+staticField java.text.DateFormat SECOND_FIELD
+staticField java.text.DateFormat SHORT
+staticField java.text.DateFormat TIMEZONE_FIELD
+staticField java.text.DateFormat WEEK_OF_MONTH_FIELD
+staticField java.text.DateFormat WEEK_OF_YEAR_FIELD
+staticField java.text.DateFormat YEAR_FIELD
+method java.text.DateFormat format java.util.Date
+staticMethod java.text.DateFormat getAvailableLocales
+method java.text.DateFormat getCalendar
+staticMethod java.text.DateFormat getDateInstance
+staticMethod java.text.DateFormat getDateInstance int
+staticMethod java.text.DateFormat getDateInstance int java.util.Locale
+staticMethod java.text.DateFormat getDateTimeInstance
+staticMethod java.text.DateFormat getDateTimeInstance int int
+staticMethod java.text.DateFormat getDateTimeInstance int int java.util.Locale
+staticMethod java.text.DateFormat getInstance
+method java.text.DateFormat getNumberFormat
+staticMethod java.text.DateFormat getTimeInstance
+staticMethod java.text.DateFormat getTimeInstance int
+staticMethod java.text.DateFormat getTimeInstance int java.util.Locale
+method java.text.DateFormat getTimeZone
+method java.text.DateFormat isLenient
+method java.text.DateFormat parse java.lang.String
+method java.text.DateFormat setCalendar java.util.Calendar
+method java.text.DateFormat setLenient boolean
+method java.text.DateFormat setNumberFormat java.text.NumberFormat
+method java.text.DateFormat setTimeZone java.util.TimeZone
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
 staticField java.time.DayOfWeek FRIDAY
@@ -272,6 +316,7 @@ staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
+staticField java.util.Calendar ALL_STYLES
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
 staticField java.util.Calendar APRIL
@@ -292,28 +337,81 @@ staticField java.util.Calendar HOUR_OF_DAY
 staticField java.util.Calendar JANUARY
 staticField java.util.Calendar JULY
 staticField java.util.Calendar JUNE
+staticField java.util.Calendar LONG
+staticField java.util.Calendar LONG_FORMAT
+staticField java.util.Calendar LONG_STANDALONE
 staticField java.util.Calendar MARCH
 staticField java.util.Calendar MAY
 staticField java.util.Calendar MILLISECOND
 staticField java.util.Calendar MINUTE
 staticField java.util.Calendar MONDAY
 staticField java.util.Calendar MONTH
+staticField java.util.Calendar NARROW_FORMAT
+staticField java.util.Calendar NARROW_STANDALONE
 staticField java.util.Calendar NOVEMBER
 staticField java.util.Calendar OCTOBER
 staticField java.util.Calendar PM
 staticField java.util.Calendar SATURDAY
 staticField java.util.Calendar SECOND
 staticField java.util.Calendar SEPTEMBER
+staticField java.util.Calendar SHORT
+staticField java.util.Calendar SHORT_FORMAT
+staticField java.util.Calendar SHORT_STANDALONE
 staticField java.util.Calendar SUNDAY
 staticField java.util.Calendar THURSDAY
 staticField java.util.Calendar TUESDAY
+staticField java.util.Calendar UNDECIMBER
 staticField java.util.Calendar WEDNESDAY
 staticField java.util.Calendar WEEK_OF_MONTH
 staticField java.util.Calendar WEEK_OF_YEAR
 staticField java.util.Calendar YEAR
 staticField java.util.Calendar ZONE_OFFSET
+method java.util.Calendar add int int
+method java.util.Calendar after java.lang.Object
+method java.util.Calendar before java.lang.Object
+method java.util.Calendar clear
+method java.util.Calendar clear int
+method java.util.Calendar compareTo java.util.Calendar
 method java.util.Calendar get int
+method java.util.Calendar getActualMaximum int
+method java.util.Calendar getActualMinimum int
+staticMethod java.util.Calendar getAvailableCalendarTypes
+staticMethod java.util.Calendar getAvailableLocales
+method java.util.Calendar getCalendarType
+method java.util.Calendar getDisplayName int int java.util.Locale
+method java.util.Calendar getDisplayNames int int java.util.Locale
+method java.util.Calendar getFirstDayOfWeek
+method java.util.Calendar getGreatestMinimum int
 staticMethod java.util.Calendar getInstance
+staticMethod java.util.Calendar getInstance java.util.Locale
+staticMethod java.util.Calendar getInstance java.util.TimeZone
+staticMethod java.util.Calendar getInstance java.util.TimeZone java.util.Locale
+method java.util.Calendar getLeastMaximum int
+method java.util.Calendar getMaximum int
+method java.util.Calendar getMinimalDaysInFirstWeek
+method java.util.Calendar getMinimum int
+method java.util.Calendar getTime
+method java.util.Calendar getTimeInMillis
+method java.util.Calendar getTimeZone
+method java.util.Calendar getWeekYear
+method java.util.Calendar getWeeksInWeekYear
+method java.util.Calendar isLenient
+method java.util.Calendar isSet int
+method java.util.Calendar isWeekDateSupported
+method java.util.Calendar roll int boolean
+method java.util.Calendar roll int int
+method java.util.Calendar set int int
+method java.util.Calendar set int int int
+method java.util.Calendar set int int int int int
+method java.util.Calendar set int int int int int int
+method java.util.Calendar setFirstDayOfWeek int
+method java.util.Calendar setLenient boolean
+method java.util.Calendar setMinimalDaysInFirstWeek int
+method java.util.Calendar setTime java.util.Date
+method java.util.Calendar setTimeInMillis long
+method java.util.Calendar setTimeZone java.util.TimeZone
+method java.util.Calendar setWeekDate int int int
+method java.util.Calendar toInstant
 method java.util.Collection add java.lang.Object
 method java.util.Collection addAll java.util.Collection
 method java.util.Collection contains java.lang.Object
