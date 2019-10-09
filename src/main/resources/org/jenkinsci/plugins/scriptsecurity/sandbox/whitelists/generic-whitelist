@@ -144,6 +144,57 @@ new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
+staticField java.text.DateFormat AM_PM_FIELD
+staticField java.text.DateFormat DATE_FIELD
+staticField java.text.DateFormat DAY_OF_WEEK_FIELD
+staticField java.text.DateFormat DAY_OF_WEEK_IN_MONTH_FIELD
+staticField java.text.DateFormat DAY_OF_YEAR_FIELD
+staticField java.text.DateFormat DEFAULT
+staticField java.text.DateFormat ERA_FIELD
+staticField java.text.DateFormat FULL
+staticField java.text.DateFormat HOUR0_FIELD
+staticField java.text.DateFormat HOUR1_FIELD
+staticField java.text.DateFormat HOUR_OF_DAY0_FIELD
+staticField java.text.DateFormat HOUR_OF_DAY1_FIELD
+staticField java.text.DateFormat LONG
+staticField java.text.DateFormat MEDIUM
+staticField java.text.DateFormat MILLISECOND_FIELD
+staticField java.text.DateFormat MINUTE_FIELD
+staticField java.text.DateFormat MONTH_FIELD
+staticField java.text.DateFormat SECOND_FIELD
+staticField java.text.DateFormat SHORT
+staticField java.text.DateFormat TIMEZONE_FIELD
+staticField java.text.DateFormat WEEK_OF_MONTH_FIELD
+staticField java.text.DateFormat WEEK_OF_YEAR_FIELD
+staticField java.text.DateFormat YEAR_FIELD
+method java.text.DateFormat format java.lang.Object
+method java.text.DateFormat format java.lang.Object java.lang.StringBuffer java.text.FieldPosition
+method java.text.DateFormat format java.util.Date
+method java.text.DateFormat format java.util.Date java.lang.StringBuffer java.text.FieldPosition
+method java.text.DateFormat formatToCharacterIterator java.lang.Object
+staticMethod java.text.DateFormat getAvailableLocales
+method java.text.DateFormat getCalendar
+staticMethod java.text.DateFormat getDateInstance
+staticMethod java.text.DateFormat getDateInstance int
+staticMethod java.text.DateFormat getDateInstance int java.util.Locale
+staticMethod java.text.DateFormat getDateTimeInstance
+staticMethod java.text.DateFormat getDateTimeInstance int int
+staticMethod java.text.DateFormat getDateTimeInstance int int java.util.Locale
+staticMethod java.text.DateFormat getInstance
+method java.text.DateFormat getNumberFormat
+staticMethod java.text.DateFormat getTimeInstance
+staticMethod java.text.DateFormat getTimeInstance int
+staticMethod java.text.DateFormat getTimeInstance int java.util.Locale
+method java.text.DateFormat getTimeZone
+method java.text.DateFormat isLenient
+method java.text.DateFormat parse java.lang.String
+method java.text.DateFormat parse java.lang.String java.text.ParsePosition
+method java.text.DateFormat parseObject java.lang.String
+method java.text.DateFormat parseObject java.lang.String java.text.ParsePosition
+method java.text.DateFormat setCalendar java.util.Calendar
+method java.text.DateFormat setLenient boolean
+method java.text.DateFormat setNumberFormat java.text.NumberFormat
+method java.text.DateFormat setTimeZone java.util.TimeZone
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
 method java.time.LocalDate getDayOfMonth
