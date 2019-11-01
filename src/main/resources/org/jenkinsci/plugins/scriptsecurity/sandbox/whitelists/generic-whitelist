@@ -41,6 +41,7 @@ method groovy.lang.Range step int groovy.lang.Closure
 method groovy.lang.Script getBinding
 
 # Useful to show stacktrace to the user.
+method java.io.Flushable flush
 new java.io.PrintWriter java.io.Writer
 # Needed for Groovy Templates to emit output:
 method java.io.PrintWriter print java.lang.Object
@@ -80,7 +81,6 @@ new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 new java.lang.Exception java.lang.String
-method java.lang.Flushable flush
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
