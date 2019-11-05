@@ -24,19 +24,22 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import jenkins.model.GlobalConfiguration;
+import jenkins.model.GlobalConfigurationCategory;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Util;
 import hudson.XmlFile;
 import hudson.model.RootAction;
-import hudson.model.Saveable;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
@@ -51,6 +54,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -68,16 +72,18 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 /**
  * Manages approved scripts.
  */
-@Extension public class ScriptApproval implements RootAction, Saveable {
+@Symbol("scriptApproval")
+@Extension
+public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     private static final Logger LOG = Logger.getLogger(ScriptApproval.class.getName());
 
@@ -93,6 +99,16 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         XSTREAM2.alias("pendingScript", PendingScript.class);
         XSTREAM2.alias("pendingSignature", PendingSignature.class);
         XSTREAM2.alias("pendingClasspathEntry", PendingClasspathEntry.class);
+    }
+
+    @Override
+    protected XmlFile getConfigFile() {
+        return new XmlFile(XSTREAM2, new File(Jenkins.getInstance().getRootDir(),getUrlName() + ".xml"));
+    }
+
+    @Override
+    public GlobalConfigurationCategory getCategory() {
+        return GlobalConfigurationCategory.get(GlobalConfigurationCategory.Security.class);
     }
 
     /** Gets the singleton instance. */
@@ -324,12 +340,9 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         pendingClasspathEntries.add(pcp);
     }
 
+    @DataBoundConstructor
     public ScriptApproval() {
-        try {
-            load();
-        } catch (IOException x) {
-            LOG.log(Level.WARNING, null, x);
-        }
+        load();
         /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
@@ -349,11 +362,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
             }
         }
         if (changed) {
-            try {
-                save();
-            } catch (IOException x) {
-                LOG.log(Level.WARNING, "Unable to save changes after cleaning accepted class directories", x);
-            }
+            save();
         }
     }
 
@@ -441,11 +450,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
                 }
                 pendingScripts.add(new PendingScript(script, language, context));
             }
-            try {
-                save();
-            } catch (IOException x) {
-                LOG.log(Level.WARNING, null, x);
-            }
+            save();
         }
         return script;
     }
@@ -520,11 +525,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
                 }
             }
             if (shouldSave) {
-                try {
-                    save();
-                } catch (IOException x) {
-                    LOG.log(Level.WARNING, null, x);
-                }
+                save();
             }
         }
     }
@@ -576,11 +577,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
                 ApprovalContext context = ApprovalContext.create();
                 if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
                     LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
-                    try {
-                        save();
-                    } catch (IOException x) {
-                        LOG.log(Level.WARNING, null, x);
-                    }
+                    save();
                 }
             }
             throw new UnapprovedClasspathException(url, hash);
@@ -640,11 +637,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
         String signature = x.getSignature();
         if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
-            try {
-                save();
-            } catch (IOException x2) {
-                LOG.log(Level.WARNING, null, x2);
-            }
+            save();
         }
         return x;
     }
@@ -666,6 +659,25 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
     @Restricted(NoExternalUse.class)
     public static void popRegistrationCallback() {
         callbacks.get().pop();
+    }
+
+    @DataBoundSetter
+    public synchronized void setApprovedSignatures(String[] signatures) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        approvedSignatures.clear();
+        List<String> goodSignatures = new ArrayList<>(signatures.length);
+        for (String signature : signatures) {
+            try {
+                StaticWhitelist.parse(signature);
+                goodSignatures.add(signature);
+            } catch (IOException e) {
+                LOG.warning("Ignoring malformed signature: " + signature
+                        + " (Occurred exception: " + e.toString() + ")");
+            }
+        }
+        approvedSignatures.addAll(goodSignatures);
+        save();
+        reconfigure();
     }
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
@@ -712,37 +724,8 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
         return null;
     }
 
-    @Override public String getDisplayName() {
-        return null;
-    }
-
     @Override public String getUrlName() {
         return "scriptApproval";
-    }
-
-    @CheckForNull
-    private XmlFile getConfigFile() {
-        final Jenkins jenkins = Jenkins.getInstanceOrNull();
-        if (jenkins == null) {
-            return null;
-        }
-        return new XmlFile(XSTREAM2, new File(jenkins.getRootDir(), getUrlName() + ".xml"));
-    }
-
-    private synchronized void load() throws IOException {
-        final XmlFile xml = getConfigFile();
-        if (xml != null && xml.exists()) {
-            xml.unmarshal(this);
-        }
-    }
-
-    @Override public synchronized void save() throws IOException {
-        final XmlFile configFile = getConfigFile();
-        if (configFile == null) {
-            throw new IOException("Cannot get config file. Probably, Jenkins is not ready");
-        }
-        configFile.write(this);
-        // TBD: outside synch block: SaveableListener.fireOnChange(this, getConfigFile());
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly

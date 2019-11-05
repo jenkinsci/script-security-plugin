@@ -156,7 +156,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @return the equivalent {@link Signature}
      * @throws IOException if the signature string could not be parsed.
      */
-    static Signature parse(String line) throws IOException {
+    public static Signature parse(String line) throws IOException {
         String[] toks = line.split(" ");
         if (toks[0].equals("method")) {
             if (toks.length < 3) {
