@@ -102,7 +102,7 @@ public class StaticWhitelistTest {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
             } catch (ClassNotFoundException x) {
                 if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
-                    throw x;
+                    throw new Exception("Unable to verify existence of " + sig, x);
                 }
             }
         }
