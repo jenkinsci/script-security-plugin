@@ -35,37 +35,12 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
-
-import java.beans.Introspector;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
-import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
-import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.*;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -73,14 +48,29 @@ import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import java.beans.Introspector;
+import java.io.Serializable;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  * Convenience structure encapsulating a Groovy script that may either be approved whole or sandboxed.
  * May be kept as the value of a field and passed in a {@link DataBoundConstructor} parameter;
  * you <strong>must</strong> call {@link #configuring} or a related method from your own constructor.
  * Use {@code <f:property field="…"/>} to configure it from Jelly.
  */
-public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> {
- 
+public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript>  implements Serializable {
+
+    private static final long serialVersionUID = 5436024465722704667L;
     private final @Nonnull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
@@ -464,6 +454,16 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
         }
 
+    }
+
+    @SuppressWarnings("unchecked")
+    public Descriptor<SecureGroovyScript> getDescriptor() {
+        final Jenkins instance = Jenkins.getInstance();
+        Descriptor<SecureGroovyScript> descriptor = null;
+        if (instance != null) {
+            descriptor = instance.getDescriptor(getClass());
+        }
+        return descriptor;
     }
 
 }
