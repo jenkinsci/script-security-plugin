@@ -37,10 +37,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Set;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.StaticMethodSignature;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -100,10 +101,24 @@ public class StaticWhitelistTest {
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
             } catch (ClassNotFoundException x) {
-                System.err.println("Cannot check validity of `" + sig + "` due to " + x);
+                if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
+                    throw x;
+                }
             }
         }
     }
+
+    /**
+     * A set of signatures that are well-formed, but for which {@link Signature#exists} throws an exception because
+     * they involve types that are not available on the classpath when these tests run.
+     */
+    private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
+            // From blacklist
+            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild", new String[0]),
+            // From generic-whitelist
+            new StaticMethodSignature("com.cloudbees.groovy.cps.CpsDefaultGroovyMethods", "each",
+                    new String[] { "java.util.Iterator", "groovy.lang.Closure" })
+    ));
 
     @Test public void sanity() throws Exception {
         sanity(StaticWhitelist.class.getResource("blacklist"));
