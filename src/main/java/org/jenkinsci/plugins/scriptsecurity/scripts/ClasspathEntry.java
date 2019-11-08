@@ -38,6 +38,8 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.util.FormValidation;
+
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,8 +50,9 @@ import javax.annotation.Nonnull;
 /**
  * A classpath entry used for a script.
  */
-public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> {
+public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> implements Serializable {
 
+    private static final long serialVersionUID = 6493225466003376991L;
     private final @Nonnull URL url;
     
     @DataBoundConstructor
