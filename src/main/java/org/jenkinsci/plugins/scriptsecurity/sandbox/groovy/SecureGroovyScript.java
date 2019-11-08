@@ -145,7 +145,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return;
         }
         if (LOGGER.isLoggable(Level.FINER)) {
-          LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+            LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
         }
         if (loader instanceof GroovyClassLoader) {
             GroovyClassLoader gcl = (GroovyClassLoader) loader;
@@ -225,7 +225,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             if (encounteredLoader != loader) {
                 it.remove();
                 if (LOGGER.isLoggable(Level.FINEST)) {
-                  LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                    LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
                 }
             }
         }
@@ -288,7 +288,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 if (iterator.next().getKey().get() == clazz) {
                     iterator.remove();
                     if (LOGGER.isLoggable(Level.FINER)) {
-                      LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                        LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
                     }
                     break;
                 }
@@ -323,12 +323,12 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
             List<URL> urlList = new ArrayList<URL>(cp.size());
-            
+
             for (ClasspathEntry entry : cp) {
                 ScriptApproval.get().using(entry);
                 urlList.add(entry.getURL());
             }
-            
+
             loader = urlcl = new ClasspathURLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
         boolean canDoCleanup = false;
