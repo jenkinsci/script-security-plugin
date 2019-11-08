@@ -33,15 +33,15 @@
     *   `Appendable.append(CharSequence)`
     *   `Appendable.append(CharSequence, int, int)`
     *   `AutoCloseable.close()`
-    *   `<span style="color: rgb(36,41,46);">Appendable append(char)</span>`
-    *   `<span style="color: rgb(36,41,46);">Appendable append(CharSequence)</span>`
-    *   `<span style="color: rgb(36,41,46);">Appendable append(CharSequence, int, int)</span>`
-    *   `<span style="color: rgb(36,41,46);">Flushable.flush()</span>`
-    *   `<span style="color: rgb(36,41,46);">new LinkedHashSet()</span>`
-    *   `<span style="color: rgb(36,41,46);">List.add(int, Object)</span>`
-    *   `<span style="color: rgb(36,41,46);">Matcher.find()</span>`
-    *   `<span style="color: rgb(36,41,46);">DefaultGroovyMethods.getAt(Object[], Range)</span>`
-    *   `<span style="color: rgb(36,41,46);">DefaultGroovyMethods.reverse(List)</span>`
+    *   `Appendable append(char)`
+    *   `Appendable append(CharSequence)`
+    *   `Appendable append(CharSequence, int, int)`
+    *   `Flushable.flush()`
+    *   `new LinkedHashSet()`
+    *   `List.add(int, Object)`
+    *   `Matcher.find()`
+    *   `DefaultGroovyMethods.getAt(Object[], Range)`
+    *   `DefaultGroovyMethods.reverse(List)`
 
 ## Version 1.60 (31 May 2019)
 
@@ -67,10 +67,10 @@
 ## Version 1.57 (11 Apr 2019)
 
 *   Add the following methods to the generic whitelist:
-    *   `<span style="color: rgb(36,41,46);">Map.getOrDefault(Object, Object)</span>`
-    *   `<span style="color: rgb(36,41,46);">Map.putIfAbsent(Object, Object)</span>`
-    *   `<span style="color: rgb(36,41,46);">Map.replace(Object, Object)</span>`
-    *   `<span style="color: rgb(36,41,46);">Map.replace(Object, Object, Object)</span>`
+    *   `Map.getOrDefault(Object, Object)`
+    *   `Map.putIfAbsent(Object, Object)`
+    *   `Map.replace(Object, Object)`
+    *   `Map.replace(Object, Object, Object)`
 
 ## Version 1.56 (25 Mar 2019)
 
@@ -78,7 +78,7 @@
 
 ## Version 1.55 (18 Mar 2019)
 
-*   [JENKINS-55303](https://issues.jenkins-ci.org/browse/JENKINS-55303) - Internal: <span style="color: rgb(23,43,77);">Update tests and test-scope dependencies so that the plugin can build with all tests passing on Java 11.</span>
+*   [JENKINS-55303](https://issues.jenkins-ci.org/browse/JENKINS-55303) - Internal: Update tests and test-scope dependencies so that the plugin can build with all tests passing on Java 11.
 
 ## Version 1.54 (6 Mar 2019)
 
@@ -93,7 +93,7 @@
 *   Add the following methods to the generic whitelist:
     *   `DateTimeFormatter.ofPattern(String)`
     *   `Iterable.take(int)`
-    *   `<span style="color: rgb(36,41,46);">List.subList(int, int)</span>`
+    *   `List.subList(int, int)`
 
 ## Version 1.51 (28 Jan 2019)
 
@@ -263,9 +263,9 @@ Now requires Jenkins 2.7.x or later, i.e., versions of Jenkins running Groovy 2.
 
 ## Version 1.28 (Jun 05, 2017)
 
-*   [JENKINS-34741](https://issues.jenkins-ci.org/browse/JENKINS-34741) <span style="color: rgb(41,41,41);">Unclassified error when using Groovy struct constructors.</span>
+*   [JENKINS-34741](https://issues.jenkins-ci.org/browse/JENKINS-34741) Unclassified error when using Groovy struct constructors.
 
-*   <span style="color: rgb(41,41,41);">Default whitelist additions.</span>
+*   Default whitelist additions.
 
 ## Version 1.27 (Feb 27, 2017)
 
