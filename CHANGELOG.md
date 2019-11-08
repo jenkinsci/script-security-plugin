@@ -33,9 +33,6 @@
     *   `Appendable.append(CharSequence)`
     *   `Appendable.append(CharSequence, int, int)`
     *   `AutoCloseable.close()`
-    *   `Appendable append(char)`
-    *   `Appendable append(CharSequence)`
-    *   `Appendable append(CharSequence, int, int)`
     *   `Flushable.flush()`
     *   `new LinkedHashSet()`
     *   `List.add(int, Object)`
