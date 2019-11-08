@@ -32,14 +32,13 @@ method groovy.lang.Closure ncurry int java.lang.Object[]
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
 method groovy.lang.GString plus java.lang.String
-method groovy.lang.NumberRange by int
-method groovy.lang.NumberRange getStepSize
 method groovy.lang.Range getFrom
 method groovy.lang.Range getTo
 method groovy.lang.Range step int
 method groovy.lang.Range step int groovy.lang.Closure
 method groovy.lang.Script getBinding
 
+method java.io.Flushable flush
 # Useful to show stacktrace to the user.
 new java.io.PrintWriter java.io.Writer
 # Needed for Groovy Templates to emit output:
@@ -80,7 +79,6 @@ new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 new java.lang.Exception java.lang.String
-method java.lang.Flushable flush
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
@@ -660,8 +658,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Co
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List java.util.Collection
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List removeAt int
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.List removeLast
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Map java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Set java.lang.Iterable
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.Set java.lang.Object
