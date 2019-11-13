@@ -1,5 +1,23 @@
 # Changelog
 
+## Version 1.67 (2019-11-13)
+
+* Fix: Remove default whitelist entries that did not correspond to real signatures. ([PR 268](https://github.com/jenkinsci/script-security-plugin/pull/268))
+* Improvement: Add the following signatures to the generic whitelist:
+    * `Object[].getAt(IntRange)`
+    * All remaining methods in the `java.util.regex` package
+    * Getters/setters on `Date`
+    * Various extension methods defined in `DateGroovyMethods`
+* Internal: Migrate Wiki content to GitHub. ([PR 264](https://github.com/jenkinsci/script-security-plugin/pull/264))
+
+## Version 1.66 (2019-10-01)
+
+* [JENKINS-59587](https://issues.jenkins-ci.org/browse/JENKINS-59587) - Fix issue that caused a cache used by the class loader for sandboxed Groovy scripts to be cleared out by the garbage collector when it should not have been. This could lead to performance issues for complex sandboxed scripts.
+
+## Version 1.65 (2019-10-01)
+
+* [Fix sandbox bypass vulnerability](https://jenkins.io/security/advisory/2019-10-01/#SECURITY-1579)
+
 ## Version 1.64 (13 Sep 2019)
 
 *   [JENKINS-57563](https://issues.jenkins-ci.org/browse/JENKINS-57563) - Add support for configuring script approvals using [Jenkins Configuration as Code Plugin](https://plugins.jenkins.io/configuration-as-code).
