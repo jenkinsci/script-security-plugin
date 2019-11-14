@@ -20,6 +20,7 @@ method hudson.scm.ChangeLogSet$AffectedFile getPath
 method hudson.scm.ChangeLogSet$Entry getAffectedFiles
 method hudson.scm.ChangeLogSet$Entry getAffectedPaths
 method hudson.scm.ChangeLogSet$Entry getAuthor
+method hudson.scm.ChangeLogSet$Entry getComment
 method hudson.scm.ChangeLogSet$Entry getCommitId
 method hudson.scm.ChangeLogSet$Entry getMsg
 method hudson.scm.ChangeLogSet$Entry getMsgAnnotated
