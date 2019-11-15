@@ -252,4 +252,13 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
+    @Override public String toString() {
+        lock.readLock().lock();
+        try {
+            return super.toString() + delegates;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
 }

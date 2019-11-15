@@ -25,12 +25,14 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox;
 
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
@@ -41,6 +43,8 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
  * Determines which methods and similar members which scripts may call.
  */
 public abstract class Whitelist implements ExtensionPoint {
+
+    private static final Logger LOGGER = Logger.getLogger(Whitelist.class.getName());
 
     /**
      * Checks whether a given virtual method may be invoked.
@@ -73,11 +77,18 @@ public abstract class Whitelist implements ExtensionPoint {
     public static synchronized @Nonnull Whitelist all() {
         Jenkins j = Jenkins.getInstanceOrNull();
         if (j == null) {
+            LOGGER.warning("No Jenkins.instance");
             return new ProxyWhitelist();
         }
         Whitelist all = allByJenkins.get(j);
         if (all == null) {
-            all = new ProxyWhitelist(j.getExtensionList(Whitelist.class));
+            ExtensionList<Whitelist> allWhitelists = j.getExtensionList(Whitelist.class);
+            if (allWhitelists.isEmpty()) {
+                LOGGER.warning("Empty list of Whitelist");
+            } else {
+                /*TODO LOGGER.fine*/System.err.println("Loading whitelists: " + allWhitelists);
+            }
+            all = new ProxyWhitelist(allWhitelists);
             allByJenkins.put(j, all);
         }
         return all;
