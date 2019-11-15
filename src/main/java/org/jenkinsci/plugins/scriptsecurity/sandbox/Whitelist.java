@@ -32,6 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -77,16 +78,17 @@ public abstract class Whitelist implements ExtensionPoint {
     public static synchronized @Nonnull Whitelist all() {
         Jenkins j = Jenkins.getInstanceOrNull();
         if (j == null) {
-            LOGGER.warning("No Jenkins.instance");
+            LOGGER.log(Level.WARNING, "No Jenkins.instance", new Throwable("here"));
             return new ProxyWhitelist();
         }
         Whitelist all = allByJenkins.get(j);
         if (all == null) {
             ExtensionList<Whitelist> allWhitelists = j.getExtensionList(Whitelist.class);
             if (allWhitelists.isEmpty()) {
-                LOGGER.warning("Empty list of Whitelist");
+                LOGGER.log(Level.WARNING, "No Whitelist instances registered", new Throwable("here"));
+                return new ProxyWhitelist();
             } else {
-                /*TODO LOGGER.fine*/System.err.println("Loading whitelists: " + allWhitelists);
+                LOGGER.fine(() -> "Loading whitelists: " + allWhitelists);
             }
             all = new ProxyWhitelist(allWhitelists);
             allByJenkins.put(j, all);
