@@ -1274,4 +1274,11 @@ public class SandboxInterceptorTest {
                 "}\n" +
                 "new A()\n");
     }
+
+    @Issue("SECURITY-1658")
+    @Test public void blockInitialExpressionsInClosures() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "({ j = Jenkins.getInstance() -> true })()\n");
+    }
 }
