@@ -56,7 +56,6 @@ import org.codehaus.groovy.runtime.typehandling.NumberMathModificationInfo;
 import org.codehaus.groovy.tools.DgmConverter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AnnotatedWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
@@ -186,9 +185,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
         } else if (whitelist.permitsStaticMethod(m, args)) {
             return super.onStaticCall(invoker, receiver, method, args);
         } else {
-            if (m.getDeclaringClass().getName().equals("org.jenkinsci.plugins.workflow.cps.Safepoint")) {
-                LOGGER.warning(() -> "Failed to permit " + m + " defined in " + receiver.getClassLoader() + " with args " + Arrays.toString(args) + " from " + whitelist + "; compare AnnotatedWhitelist: " + new AnnotatedWhitelist().permitsStaticMethod(m, args));
-            }
             throw StaticWhitelist.rejectStaticMethod(m);
         }
     }
