@@ -1,1 +1,1 @@
-buildPlugin(configurations: buildPlugin.recommendedConfigurations(), forceAci: true)
+buildPlugin(configurations: buildPlugin.recommendedConfigurations())
