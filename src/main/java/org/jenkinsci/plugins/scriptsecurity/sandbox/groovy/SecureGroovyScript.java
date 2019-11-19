@@ -35,21 +35,7 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
-import jenkins.model.Jenkins;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.SourceUnit;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.scripts.*;
-import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.beans.Introspector;
 import java.io.Serializable;
 import java.lang.ref.Reference;
@@ -58,10 +44,35 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import jenkins.model.Jenkins;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
+import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 /**
  * Convenience structure encapsulating a Groovy script that may either be approved whole or sandboxed.
  * May be kept as the value of a field and passed in a {@link DataBoundConstructor} parameter;
@@ -145,7 +156,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return;
         }
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
+          LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
         }
         if (loader instanceof GroovyClassLoader) {
             GroovyClassLoader gcl = (GroovyClassLoader) loader;
@@ -225,7 +236,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             if (encounteredLoader != loader) {
                 it.remove();
                 if (LOGGER.isLoggable(Level.FINEST)) {
-                    LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                  LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
                 }
             }
         }
@@ -288,7 +299,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 if (iterator.next().getKey().get() == clazz) {
                     iterator.remove();
                     if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+                      LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
                     }
                     break;
                 }
@@ -323,12 +334,12 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
             List<URL> urlList = new ArrayList<URL>(cp.size());
-
+            
             for (ClasspathEntry entry : cp) {
                 ScriptApproval.get().using(entry);
                 urlList.add(entry.getURL());
             }
-
+            
             loader = urlcl = new ClasspathURLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
         boolean canDoCleanup = false;
@@ -454,16 +465,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
         }
 
-    }
-
-    @SuppressWarnings("unchecked")
-    public Descriptor<SecureGroovyScript> getDescriptor() {
-        final Jenkins instance = Jenkins.getInstance();
-        Descriptor<SecureGroovyScript> descriptor = null;
-        if (instance != null) {
-            descriptor = instance.getDescriptor(getClass());
-        }
-        return descriptor;
     }
 
 }
