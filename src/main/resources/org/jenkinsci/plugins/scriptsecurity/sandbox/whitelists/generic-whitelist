@@ -1,4 +1,4 @@
-# groovy-cps - not needed from workflow-cps 2.33+
+# groovy-cps - not needed erom workflow-cps 2.33+
 staticMethod com.cloudbees.groovy.cps.CpsDefaultGroovyMethods each java.util.Iterator groovy.lang.Closure
 
 # Groovy:
@@ -137,6 +137,8 @@ staticMethod java.lang.String valueOf java.lang.Object
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
+method java.lang.Throwable printStackTrace java.io.PrintStream
+method java.lang.Throwable printStackTrace java.io.PrintWriter
 method java.math.BigDecimal multiply java.math.BigDecimal
 new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
@@ -303,7 +305,61 @@ method java.util.Collection remove java.lang.Object
 method java.util.Collection removeAll java.util.Collection
 method java.util.Collection retainAll java.util.Collection
 method java.util.Collection size
+staticMethod java.util.Collections addAll java.util.Collection java.lang.Object[]
+staticMethod java.util.Collections asLifoQueue java.util.Deque
+staticMethod java.util.Collections binarySearch java.util.List java.lang.Object
+staticMethod java.util.Collections binarySearch java.util.List java.lang.Object java.util.Comparator
+staticMethod java.util.Collections checkedCollection java.util.Collection java.lang.Class
+staticMethod java.util.Collections checkedList java.util.List java.lang.Class
+staticMethod java.util.Collections checkedMap java.util.Map java.lang.Class java.lang.Class
+staticMethod java.util.Collections checkedSortedMap java.util.SortedMap java.lang.Class java.lang.Class
+staticMethod java.util.Collections checkedSortedSet java.util.SortedSet java.lang.Class
+staticMethod java.util.Collections copy java.util.List java.util.List
+staticMethod java.util.Collections disjoint java.util.Collection java.util.Collection
+staticMethod java.util.Collections emptyEnumeration
+staticMethod java.util.Collections emptyIterator
+staticMethod java.util.Collections emptyList
+staticMethod java.util.Collections emptyListIterator
+staticMethod java.util.Collections emptyMap
+staticMethod java.util.Collections emptySet
+staticMethod java.util.Collections enumeration java.util.Collection
+staticMethod java.util.Collections fill java.util.List java.lang.Object
+staticMethod java.util.Collections frequency java.util.Collection java.lang.Object
+staticMethod java.util.Collections indexOfSubList java.util.List java.util.List
+staticMethod java.util.Collections lastIndexOfSubList java.util.List java.util.List
+staticMethod java.util.Collections list java.util.Enumeration
+staticMethod java.util.Collections max java.util.Collection
+staticMethod java.util.Collections max java.util.Collection java.util.Comparator
+staticMethod java.util.Collections min java.util.Collection
+staticMethod java.util.Collections min java.util.Collection java.util.Comparator
+staticMethod java.util.Collections nCopies int java.lang.Object
+staticMethod java.util.Collections newSetFromMap java.util.Map
+staticMethod java.util.Collections replaceAll java.util.List java.lang.Object java.lang.Object
+staticMethod java.util.Collections reverse java.util.List
+staticMethod java.util.Collections reverseOrder
+staticMethod java.util.Collections reverseOrder java.util.Comparator
+staticMethod java.util.Collections rotate java.util.List int
+staticMethod java.util.Collections shuffle java.util.List
+staticMethod java.util.Collections shuffle java.util.List java.util.Random
+staticMethod java.util.Collections singleton java.lang.Object
+staticMethod java.util.Collections singletonList java.lang.Object
+staticMethod java.util.Collections singletonMap java.lang.Object java.lang.Object
+staticMethod java.util.Collections sort java.util.List
 staticMethod java.util.Collections sort java.util.List java.util.Comparator
+staticMethod java.util.Collections swap java.util.List int int
+staticMethod java.util.Collections synchronizedCollection java.util.Collection
+staticMethod java.util.Collections synchronizedList java.util.List
+staticMethod java.util.Collections synchronizedMap java.util.Map
+staticMethod java.util.Collections synchronizedSet java.util.Set
+staticMethod java.util.Collections synchronizedSortedMap java.util.SortedMap
+staticMethod java.util.Collections synchronizedSortedSet java.util.SortedSet
+staticMethod java.util.Collections unmodifiableCollection java.util.Collection
+staticMethod java.util.Collections unmodifiableList java.util.List
+staticMethod java.util.Collections unmodifiableMap java.util.Map
+staticMethod java.util.Collections unmodifiableSet java.util.Set
+staticMethod java.util.Collections unmodifiableSortedMap java.util.SortedMap
+staticMethod java.util.Collections unmodifiableSortedSet java.util.SortedSet
+method java.util.Comparator compare java.lang.Object java.lang.Object
 new java.util.Date
 method java.util.Date after java.util.Date
 method java.util.Date before java.util.Date
