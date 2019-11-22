@@ -1,4 +1,4 @@
-# groovy-cps - not needed erom workflow-cps 2.33+
+# groovy-cps - not needed from workflow-cps 2.33+
 staticMethod com.cloudbees.groovy.cps.CpsDefaultGroovyMethods each java.util.Iterator groovy.lang.Closure
 
 # Groovy:
