@@ -187,6 +187,9 @@ THE SOFTWARE.
                     });
                 });
             </script>
+            <h3 id="script-approvals">
+                Script approvals
+            </h3>
             <j:choose>
                 <j:when test="${it.pendingScripts.isEmpty()}">
                     <p>
@@ -223,6 +226,7 @@ THE SOFTWARE.
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
             </p>
             <hr/>
+            <h3 id="signature-approvals">Signature Approvals</h3>
             <j:choose>
                 <j:when test="${it.pendingSignatures.isEmpty()}">
                     <p>
@@ -288,6 +292,7 @@ THE SOFTWARE.
                 </p>
             </j:if>
             <hr/>
+            <h3 id="classpath-approvals">Classpath Approvals</h3>
             <p id="pendingClasspathEntries-none">
                 No pending classpath entry approvals.
             </p>
