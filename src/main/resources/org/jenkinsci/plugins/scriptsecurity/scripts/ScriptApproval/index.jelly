@@ -264,13 +264,35 @@ THE SOFTWARE.
                 </j:otherwise>
             </j:choose>
             <h4 id="approved-signatures">Signatures already approved:</h4>
-            <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
-                <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-            </textarea>
+            <j:choose>
+                <j:when test="${it.approvedSignatures.isEmpty()}">
+                    <p>
+                        None
+                    </p>
+                </j:when>
+                <j:otherwise>
+                    <p>
+                        <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
+                            <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+                        </textarea>
+                    </p>
+                </j:otherwise>
+            </j:choose>
             <h4 id="approved-acl-signatures">Signatures already approved assuming permission check:</h4>
-            <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
-                <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-            </textarea>
+            <j:choose>
+                <j:when test="${it.aclApprovedSignatures.isEmpty()}">
+                    <p>
+                        None
+                    </p>
+                </j:when>
+                <j:otherwise>
+                    <p>
+                        <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
+                            <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+                        </textarea>
+                    </p>
+                </j:otherwise>
+            </j:choose>
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 <h4 id="dangerous-approved-signatures">Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</h4>
