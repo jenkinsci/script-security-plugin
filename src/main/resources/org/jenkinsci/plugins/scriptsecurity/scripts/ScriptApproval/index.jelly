@@ -120,12 +120,12 @@ THE SOFTWARE.
                 function renderApprovedClasspathEntries(approvedClasspathEntries) {
                     if (approvedClasspathEntries.length == 0) {
                         $('approvedClasspathEntries-none').show();
-                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
-                        $('approvedClasspathEntries').hide();
+                        $('approvedClasspathEntries-list').childElements().each(function(e){e.remove()});
+                        $('approvedClasspathEntries-list').hide();
                         $('approvedClasspathEntries-clear').hide();
                     } else {
                         $('approvedClasspathEntries-none').hide();
-                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                        $('approvedClasspathEntries-list').childElements().each(function(e){e.remove()});
                         /*
                            Create a list like:
                             <p id="acp-${acp.hash}">
@@ -146,9 +146,9 @@ THE SOFTWARE.
                             block.insert(deleteButton);
                             block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
                             
-                            $('approvedClasspathEntries').insert(block);
+                            $('approvedClasspathEntries-list').insert(block);
                         });
-                        $('approvedClasspathEntries').show();
+                        $('approvedClasspathEntries-list').show();
                         $('approvedClasspathEntries-clear').show();
                     }
                 }
@@ -278,7 +278,7 @@ THE SOFTWARE.
             <p id="approvedClasspathEntries-none">
                 No approved classpath entries.
             </p>
-            <div id="approvedClasspathEntries">
+            <div id="approvedClasspathEntries-list">
             </div>
             <p id="approvedClasspathEntries-clear">
                 You can also remove all previous classpath entry approvals:
