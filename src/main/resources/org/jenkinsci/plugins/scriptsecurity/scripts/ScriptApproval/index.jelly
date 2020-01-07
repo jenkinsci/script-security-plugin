@@ -122,6 +122,7 @@ THE SOFTWARE.
                         $('approvedClasspathEntries-none').show();
                         $('approvedClasspathEntries-list').childElements().each(function(e){e.remove()});
                         $('approvedClasspathEntries-list').hide();
+                        $('approved-classpath-entries-clear').hide();
                         $('approvedClasspathEntries-clear').hide();
                     } else {
                         $('approvedClasspathEntries-none').hide();
@@ -149,6 +150,7 @@ THE SOFTWARE.
                             $('approvedClasspathEntries-list').insert(block);
                         });
                         $('approvedClasspathEntries-list').show();
+                        $('approved-classpath-entries-clear').show();
                         $('approvedClasspathEntries-clear').show();
                     }
                 }
@@ -214,8 +216,10 @@ THE SOFTWARE.
                     </j:forEach>
                 </j:otherwise>
             </j:choose>
-            <p id="approvedScripts-clear">
+            <h4 id="approved-scripts-clear">
                 You can also remove all previous script approvals:
+            </h4>
+            <p id="approvedScripts-clear">
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
             </p>
             <hr/>
@@ -252,30 +256,36 @@ THE SOFTWARE.
                     </j:forEach>
                 </j:otherwise>
             </j:choose>
-            <p>Signatures already approved:</p>
+            <h4 id="approved-signatures">Signatures already approved:</h4>
             <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
-            <p>Signatures already approved assuming permission check:</p>
+            <h4 id="approved-acl-signatures">Signatures already approved assuming permission check:</h4>
             <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
-                <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
+                <h4 id="dangerous-approved-signatures">Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</h4>
                 <p>
                     <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
                         <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
                     </textarea>
                 </p>
             </j:if>
-            <p>
+            <h4 id="clear-approved-signatures">
                 You can also remove all previous signature approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
+            </h4>
+            <p>
+                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}"
+                >Clear Approvals</button>
             </p>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
-                Or you can just remove the dangerous ones:
-                <button onclick="clearDangerousApprovedSignatures()">Clear only dangerous Approvals</button>
+                <h4 id="clear-dangerous-approved-signatures">Or you can just remove the dangerous ones:</h4>
+                <p>
+                    <button onclick="clearDangerousApprovedSignatures()"
+                    >Clear only dangerous Approvals</button>
+                </p>
             </j:if>
             <hr/>
             <p id="pendingClasspathEntries-none">
@@ -284,15 +294,18 @@ THE SOFTWARE.
             <div id="pendingClasspathEntries">
                 Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without your notice.)
             </div>
-            <p>Classpath entries already approved:</p>
+            <h4 id="approved-classpath-entries">Classpath entries already approved:</h4>
             <p id="approvedClasspathEntries-none">
                 No approved classpath entries.
             </p>
             <div id="approvedClasspathEntries-list">
             </div>
-            <p id="approvedClasspathEntries-clear">
+            <h4 id="approved-classpath-entries-clear">
                 You can also remove all previous classpath entry approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>
+            </h4>
+            <p id="approvedClasspathEntries-clear">
+                <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}"
+                >Clear Classpath Entries</button>
             </p>
         </l:main-panel>
     </l:layout>
