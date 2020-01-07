@@ -203,7 +203,13 @@ THE SOFTWARE.
                                 ${ps.language.displayName} script
                                 <st:include it="${ps.context}" page="index.jelly"/>:
                             </p>
-                            <f:textarea readonly="readonly" codemirror-mode="${ps.language.codeMirrorMode}" codemirror-config='"readOnly": true' rows="10" cols="80" value="${ps.script}"/>
+                            <p>
+                                <f:textarea readonly="readonly"
+                                            codemirror-mode="${ps.language.codeMirrorMode}"
+                                            codemirror-config='"readOnly": true'
+                                            rows="10" cols="80"
+                                            value="${ps.script}"/>
+                            </p>
                         </div>
                     </j:forEach>
                 </j:otherwise>
@@ -236,10 +242,12 @@ THE SOFTWARE.
                                 signature
                                 <st:include it="${s.context}" page="index.jelly"/>:
                                 <code>${s.signature}</code>
-                                <j:if test="${s.dangerous}">
-                                    <st:nbsp/><strong><font color="red">Approving this signature may introduce a security vulnerability! You are advised to deny it.</font></strong>
-                                </j:if>
                             </p>
+                            <j:if test="${s.dangerous}">
+                                <p>
+                                    <st:nbsp/><strong><font color="red">Approving this signature may introduce a security vulnerability! You are advised to deny it.</font></strong>
+                                </p>
+                            </j:if>
                         </div>
                     </j:forEach>
                 </j:otherwise>
@@ -255,9 +263,11 @@ THE SOFTWARE.
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
-                <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
-                    <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
-                </textarea>
+                <p>
+                    <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
+                        <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+                    </textarea>
+                </p>
             </j:if>
             <p>
                 You can also remove all previous signature approvals:
