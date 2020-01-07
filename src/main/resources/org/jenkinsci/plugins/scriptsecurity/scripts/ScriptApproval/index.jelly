@@ -187,6 +187,9 @@ THE SOFTWARE.
                     });
                 });
             </script>
+            <h2>
+                In-process Script Approval
+            </h2>
             <h3 id="script-approvals">
                 Script approvals
             </h3>
