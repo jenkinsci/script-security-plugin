@@ -87,8 +87,11 @@ THE SOFTWARE.
                         /*
                            Create a list like:
                             <p id="pcp-${pcp.hash}">
-                                <button class="approve" onclick="approveClasspathEntry('${pcp.hash}')">Approve</button> /
-                                <button class="deny"    onclick="denyClasspathEntry('${pcp.hash}')">Deny</button> 
+                                <button class="approve" onclick="approveClasspathEntry('${pcp.hash}')"
+                                >Approve</button>
+                                /
+                                <button class="deny"    onclick="denyClasspathEntry('${pcp.hash}')"
+                                >Deny</button>
                                 ${pcp.hash} (${pcp.path})
                             </p>
                          */
@@ -126,7 +129,8 @@ THE SOFTWARE.
                         /*
                            Create a list like:
                             <p id="acp-${acp.hash}">
-                                <button class="delete" onclick="denyApprovedClasspathEntry('${pcp.hash}')">Delete</button> 
+                                <button class="delete" onclick="denyApprovedClasspathEntry('${pcp.hash}')"
+                                >Delete</button>
                                 ${acp.hash} (${acp.path})
                             </p>
                          */
@@ -191,7 +195,12 @@ THE SOFTWARE.
                     <j:forEach var="ps" items="${it.pendingScripts}">
                         <div id="ps-${ps.hash}" class="pending-script">
                             <p class="ps-context">
-                                <button class="approve" onclick="approveScript('${ps.hash}')">Approve</button> / <button class="deny" onclick="denyScript('${ps.hash}')">Deny</button> ${ps.language.displayName} script
+                                <button class="approve" onclick="approveScript('${ps.hash}')"
+                                >Approve</button>
+                                /
+                                <button class="deny" onclick="denyScript('${ps.hash}')"
+                                >Deny</button>
+                                ${ps.language.displayName} script
                                 <st:include it="${ps.context}" page="index.jelly"/>:
                             </p>
                             <f:textarea readonly="readonly" codemirror-mode="${ps.language.codeMirrorMode}" codemirror-config='"readOnly": true' rows="10" cols="80" value="${ps.script}"/>
@@ -214,11 +223,17 @@ THE SOFTWARE.
                     <j:forEach var="s" items="${it.pendingSignatures}">
                         <div id="s-${s.hash}">
                             <p>
-                                <button onclick="approveSignature('${s.signature}', '${s.hash}')">Approve</button> /
+                                <button onclick="approveSignature('${s.signature}', '${s.hash}')"
+                                >Approve</button>
+                                /
                                 <j:if test="${!s.signature.startsWith('field')}">
-                                    <button onclick="aclApproveSignature('${s.signature}', '${s.hash}')">Approve assuming permission check</button> /
+                                    <button onclick="aclApproveSignature('${s.signature}', '${s.hash}')"
+                                    >Approve assuming permission check</button>
+                                    /
                                 </j:if>
-                                <button onclick="denySignature('${s.signature}', '${s.hash}')">Deny</button> signature
+                                <button onclick="denySignature('${s.signature}', '${s.hash}')"
+                                >Deny</button>
+                                signature
                                 <st:include it="${s.context}" page="index.jelly"/>:
                                 <code>${s.signature}</code>
                                 <j:if test="${s.dangerous}">
