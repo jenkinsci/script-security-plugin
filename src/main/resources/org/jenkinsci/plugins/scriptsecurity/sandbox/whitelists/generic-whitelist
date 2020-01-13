@@ -145,6 +145,13 @@ staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
 method java.text.Format format java.lang.Object
 new java.text.SimpleDateFormat java.lang.String
+staticField java.time.DayOfWeek MONDAY
+staticField java.time.DayOfWeek TUESDAY
+staticField java.time.DayOfWeek WEDNESDAY
+staticField java.time.DayOfWeek THURSDAY
+staticField java.time.DayOfWeek FRIDAY
+staticField java.time.DayOfWeek SATURDAY
+staticField java.time.DayOfWeek SUNDAY
 method java.time.LocalDate getDayOfMonth
 method java.time.LocalDate getDayOfWeek
 method java.time.LocalDate getDayOfYear
