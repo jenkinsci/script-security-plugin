@@ -1,5 +1,19 @@
 # Changelog
 
+## Version 1.69 (2020-01-27)
+
+* Improvement: Add various methods to the default whitelist: ([PR 280](https://github.com/jenkinsci/script-security-plugin/pull/280), [PR 281](https://github.com/jenkinsci/script-security-plugin/pull/281), [PR 283](https://github.com/jenkinsci/script-security-plugin/pull/283))
+    * All remaining static methods in the `java.util.Collections` class
+    * Groovy's `List.getAt(Collection)` extension method
+    * Groovy's `List.transpose()` extension method
+    * `Integer.parse(String, int)`
+    * All of the fields in the `java.time.DayOfWeek` enum
+* Internal: Add better logging for issues encountered in tests, update test-scope dependencies. ([PR 279](https://github.com/jenkinsci/script-security-plugin/pull/279), [PR 284](https://github.com/jenkinsci/script-security-plugin/pull/284))
+
+## Version 1.68 (2019-11-21)
+
+* [Fix sandbox bypass vulnerability](https://jenkins.io/security/advisory/2019-11-21/#SECURITY-1658)
+
 ## Version 1.67 (2019-11-13)
 
 * Fix: Remove default whitelist entries that did not correspond to real signatures. ([PR 268](https://github.com/jenkinsci/script-security-plugin/pull/268))
