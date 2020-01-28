@@ -102,6 +102,12 @@ staticMethod java.lang.Math abs int
 staticMethod java.lang.Math abs long
 staticMethod java.lang.Math abs float
 staticMethod java.lang.Math abs double
+# Not actual because this not fixed
+# https://github.com/jenkinsci/script-security-plugin/blob/32aa07cf1019a6724c9251e9d0789e67cbaaca6a/src/main/java/org/jenkinsci/plugins/scriptsecurity/sandbox/groovy/SandboxInterceptor.java#L181
+# staticMethod java.lang.Math ceil int
+# staticMethod java.lang.Math ceil long
+# staticMethod java.lang.Math ceil float
+staticMethod java.lang.Math ceil double
 method java.lang.Number byteValue
 method java.lang.Number doubleValue
 method java.lang.Number floatValue
