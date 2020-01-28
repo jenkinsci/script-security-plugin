@@ -280,6 +280,7 @@ staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
 staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
+new java.util.ArrayList
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
@@ -420,6 +421,8 @@ method java.util.List add int java.lang.Object
 method java.util.List get int
 method java.util.List remove int
 method java.util.List subList int int
+method java.util.List set int java.lang.Object
+method java.util.List sort java.util.Comparator
 staticField java.util.Locale CANADA
 staticField java.util.Locale CANADA_FRENCH
 staticField java.util.Locale CHINESE
@@ -678,6 +681,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Map java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.regex.Matcher int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods grep java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.lang.Iterable java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.lang.Object[] groovy.lang.Closure
@@ -722,12 +726,14 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.uti
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods leftShift java.util.Set java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.lang.Object[] groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Iterator groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods max java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.lang.Object[] groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Collection java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Iterator groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods min java.util.Map groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.Character java.lang.Character
@@ -804,6 +810,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.Lis
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Map java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeElement java.util.Collection java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods retainAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.Iterator
@@ -900,6 +907,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toSorted java.util
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toSorted java.util.Map java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toSorted java.util.SortedMap
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toSorted java.util.SortedSet
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toUnique java.util.List groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods tokenize java.lang.String java.lang.String
