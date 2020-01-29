@@ -69,17 +69,45 @@ new java.lang.Boolean java.lang.String
 staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
+
+staticMethod java.lang.Long bitCount long
+staticMethod java.lang.Long compare long long
+staticMethod java.lang.Long decode java.lang.String
+staticMethod java.lang.Long getLong java.lang.String
+staticMethod java.lang.Long getLong java.lang.String long
+staticMethod java.lang.Long highestOneBit long
+staticMethod java.lang.Long lowestOneBit long
+staticMethod java.lang.Long numberOfLeadingZeros long
+staticMethod java.lang.Long numberOfTrailingZeros long
+staticMethod java.lang.Long parseLong java.lang.String
+staticMethod java.lang.Long parseLong java.lang.String int
+staticMethod java.lang.Long reverse long
+staticMethod java.lang.Long reverseBytes long
+staticMethod java.lang.Long rotateLeft long int
+staticMethod java.lang.Long rotateRight long int
+staticMethod java.lang.Long signum long
+staticMethod java.lang.Long toBinaryString long
+staticMethod java.lang.Long toHexString long
+staticMethod java.lang.Long toOctalString long
+staticMethod java.lang.Long toString long
+staticMethod java.lang.Long valueOf java.lang.String
+staticMethod java.lang.Long valueOf java.lang.String int
+staticMethod java.lang.Long valueOf long
+
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
 method java.lang.Class getName
 method java.lang.Class getSimpleName
 method java.lang.Class isInstance java.lang.Object
 method java.lang.Comparable compareTo java.lang.Object
+method java.lang.Long valueOf java.lang.String int
 new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
 new java.lang.Exception java.lang.String
 staticField java.lang.Integer MAX_VALUE
+new java.lang.Long long
+new java.lang.Long java.lang.String
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
 staticMethod java.lang.Integer parseInt java.lang.String
 staticMethod java.lang.Integer parseInt java.lang.String int
