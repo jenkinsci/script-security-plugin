@@ -490,6 +490,7 @@ method java.util.regex.MatchResult start
 method java.util.regex.MatchResult start int
 method java.util.regex.Matcher appendReplacement java.lang.StringBuffer java.lang.String
 method java.util.regex.Matcher appendTail java.lang.StringBuffer
+method java.util.regex.Matcher find
 method java.util.regex.Matcher hasAnchoringBounds
 method java.util.regex.Matcher hasTransparentBounds
 method java.util.regex.Matcher hitEnd
@@ -682,6 +683,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.List java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Map java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.regex.Matcher int
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.regex.Matcher java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods grep java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.lang.Iterable groovy.lang.Closure
@@ -829,6 +831,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size int[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.Object[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.lang.StringBuffer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size java.util.regex.Matcher
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size long[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods size short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.lang.Iterable
