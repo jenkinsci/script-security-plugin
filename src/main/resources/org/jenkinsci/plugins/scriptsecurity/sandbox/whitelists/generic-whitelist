@@ -334,6 +334,8 @@ method java.util.Collection remove java.lang.Object
 method java.util.Collection removeAll java.util.Collection
 method java.util.Collection retainAll java.util.Collection
 method java.util.Collection size
+method java.util.Collection toArray
+method java.util.Collection toArray java.lang.Object[]
 staticMethod java.util.Collections addAll java.util.Collection java.lang.Object[]
 staticMethod java.util.Collections asLifoQueue java.util.Deque
 staticMethod java.util.Collections binarySearch java.util.List java.lang.Object
