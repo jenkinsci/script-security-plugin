@@ -62,6 +62,8 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
         new RejectASTTransformsVisitor(source).visitClass(classNode);
     }
 
+    // Note: Methods in this visitor that override methods from the superclass should call the implementation from the
+    // superclass to ensure that any nested AST nodes are traversed.
     private static class RejectASTTransformsVisitor extends ClassCodeVisitorSupport {
         private SourceUnit source;
 
@@ -84,6 +86,7 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
                     checkImportForBlockedAnnotation(importStaticNode);
                 }
             }
+            super.visitImports(node);
         }
 
         private void checkImportForBlockedAnnotation(ImportNode node) {
@@ -110,6 +113,7 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
                     }
                 }
             }
+            super.visitAnnotations(node);
         }
     }
 

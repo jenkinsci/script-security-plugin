@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
 import groovy.lang.GString;
+import groovy.lang.Grab;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
@@ -37,6 +38,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
+import groovy.transform.ASTTest;
 import hudson.Functions;
 import hudson.util.IOUtils;
 import java.lang.reflect.Constructor;
@@ -76,14 +78,11 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
-import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
 
 public class SandboxInterceptorTest {
 
     @Rule public ErrorCollector errors = new ErrorCollector();
-
-    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -844,24 +843,16 @@ public class SandboxInterceptorTest {
     @Issue("SECURITY-1266")
     @Test
     public void blockedASTTransformsASTTest() throws Exception {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-
-        thrown.expect(MultipleCompilationErrorsException.class);
-        thrown.expectMessage("Annotation ASTTest cannot be used in the sandbox");
-
-        shell.parse("import groovy.transform.*\n" +
-                "@ASTTest(value={ assert true })\n" +
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.transform.ASTTest(value={ throw new Exception('ASTTest should not have been executed!') })\n" +
                 "@Field int x\n");
     }
 
     @Issue("SECURITY-1266")
     @Test
     public void blockedASTTransformsGrab() throws Exception {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        thrown.expect(MultipleCompilationErrorsException.class);
-        thrown.expectMessage("Annotation Grab cannot be used in the sandbox");
-
-        shell.parse("@Grab(group='foo', module='bar', version='1.0')\n" +
+        assertAnnotationBlocked(Grab.class,
+                "@groovy.lang.Grab(group='foo', module='bar', version='1.0')\n" +
                 "def foo\n");
     }
 
@@ -1280,5 +1271,54 @@ public class SandboxInterceptorTest {
         assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
                 "import jenkins.model.Jenkins\n" +
                 "({ j = Jenkins.getInstance() -> true })()\n");
+    }
+
+    @Issue("SECURITY-1713")
+    @Test
+    public void blockIllegalAnnotationsOnImports() throws Exception {
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.transform.ASTTest(value={\n" +
+                "  throw new Exception('ASTTest should not have been executed!')\n" +
+                "})\n" +
+                "import java.lang.Object\n");
+    }
+
+    @Issue("SECURITY-1713")
+    @Test
+    public void blockIllegalAnnotationsInAnnotations() throws Exception {
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.lang.Category(value = {\n" +
+                "  @groovy.transform.ASTTest(value = {\n" +
+                "    throw new Exception('ASTTest should not have been executed!')\n" +
+                "  })\n" +
+                "  Object\n" +
+                "})\n" +
+                "class Foo { }\n");
+    }
+
+    /**
+     * Checks that the annotation is blocked from being used in the provided script whether it is imported or used via
+     * fully-qualified class name.
+     * @param annotation The annotation that will be checked.
+     * @param script The script to check. It should use the annotation via a fully-qualified class name.
+     */
+    private void assertAnnotationBlocked(Class annotation, String script) {
+        assertAnnotationBlockedInternal(annotation, script);
+        assertAnnotationBlockedInternal(annotation,
+                "import " + annotation.getCanonicalName() + "\n" +
+                script.replaceAll(annotation.getName(), annotation.getSimpleName()));
+    }
+
+    private void assertAnnotationBlockedInternal(Class annotation, String script) {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        try {
+            shell.parse(script);
+            fail("Compilation should have failed");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(MultipleCompilationErrorsException.class));
+            assertThat(e.getMessage(), anyOf(
+                    containsString("Annotation " + annotation.getName() + " cannot be used in the sandbox"),
+                    containsString("Annotation " + annotation.getSimpleName() + " cannot be used in the sandbox")));
+        }
     }
 }
