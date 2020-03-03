@@ -63,7 +63,10 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             "staticMethod java.lang.System exit int",
     };
 
-    private static final String[] PERMANENTLY_BLACKLISTED_CONSTRUCTORS = new String[0];
+    private static final String[] PERMANENTLY_BLACKLISTED_CONSTRUCTORS = {
+            "new org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper java.lang.Object[]",
+            "new org.kohsuke.groovy.sandbox.impl.Checker$ThisConstructorWrapper java.lang.Object[]"
+    };
 
     final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
     final List<NewSignature> newSignatures = new ArrayList<NewSignature>();

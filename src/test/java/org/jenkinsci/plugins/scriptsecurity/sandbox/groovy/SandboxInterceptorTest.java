@@ -79,6 +79,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.jvnet.hudson.test.Issue;
+import org.kohsuke.groovy.sandbox.impl.Checker.SuperConstructorWrapper;
+import org.kohsuke.groovy.sandbox.impl.Checker.ThisConstructorWrapper;
 
 public class SandboxInterceptorTest {
 
@@ -1294,6 +1296,105 @@ public class SandboxInterceptorTest {
                 "  Object\n" +
                 "})\n" +
                 "class Foo { }\n");
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockDirectCallsToSyntheticConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass { }\n" +
+                    "new Subclass(null)");
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass()"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockMisinterceptedCallsToSyntheticConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass {\n" +
+                    "  Subclass() { def x = 1 }\n" +
+                    "  Subclass(Subclass s) { def x = 1 }\n" +
+                    "}\n" +
+                    "new Subclass(null)"); // Intercepted as a call to the second constructor before SECURITY-1754, but actually calls synthetic constructor.
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass(), public Subclass(Subclass)"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockCallsToSyntheticConstructorsViaOtherConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass {\n" +
+                    "  Subclass() { }\n" +
+                    "  Subclass(int x, int y) { this(null) }\n" + // Calls synthetic constructor
+                    "}\n" +
+                    "new Subclass(1, 2)");
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass(), public Subclass(int,int)"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockConstructorWrappersFromBeingUsedDirectly() throws Exception {
+        for (Class<?> syntheticParamType : new Class<?>[] { SuperConstructorWrapper.class, ThisConstructorWrapper.class }) {
+            // Not ok, instantiating any of the wrappers would allow attackers to bypass the fix.
+            assertRejected(new GenericWhitelist(), "new " + syntheticParamType.getName() + " java.lang.Object[]",
+                    "new " + syntheticParamType.getCanonicalName() + "(null)");
+            // The wrapper's constructors are permanently blacklisted
+            assertRejected(new BlanketWhitelist(), "new " + syntheticParamType.getName() + " java.lang.Object[]",
+                     "new " + syntheticParamType.getCanonicalName() + "(null)");
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void allowCheckedCallsToSyntheticConstructors() throws Exception {
+        // Ok, super call is intercepted via Checker.checkedSuperConstructor.
+        assertEvaluate(new GenericWhitelist(), "Subclass",
+                "class Superclass { }\n" +
+                "class Subclass extends Superclass { }\n" +
+                "new Subclass().class.simpleName");
+        // Ok, this call is intercepted via Checker.checkedThisConstructor.
+        assertEvaluate(new GenericWhitelist(), "Subclass",
+                "class Subclass {\n" +
+                "  Subclass() { this(1) }\n" +
+                "  Subclass(int x) { }\n" +
+                "}\n" +
+                "new Subclass().class.simpleName");
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void groovyInterceptable() throws Throwable {
+        assertRejected(new GenericWhitelist(), "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+                "class Test implements GroovyInterceptable {\n" +
+                "  def hello() { 'world' }\n" +
+                "  def invokeMethod(String name, Object args) { 'goodbye' }\n" +
+                "}\n" +
+                "new Test().hello()\n");
+        // Property access is not affected by GroovyInterceptable.
+        assertEvaluate(new GenericWhitelist(), "world",
+                "class Test implements GroovyInterceptable {\n" +
+                "  def hello = 'world'\n" +
+                "  def invokeMethod(String name, Object args) { 'goodbye' }\n" +
+                "}\n" +
+                "new Test().hello\n");
     }
 
     /**

@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.google.common.primitives.Primitives;
 import groovy.lang.GString;
+import groovy.lang.GroovyInterceptable;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -146,7 +147,11 @@ class GroovyCallSiteSelector {
      * @param args a set of actual arguments
      */
     public static @CheckForNull Method method(@Nonnull Object receiver, @Nonnull String method, @Nonnull Object[] args) {
-        for (Class<?> c : types(receiver)) {
+        Set<Class<?>> types = types(receiver);
+        if (types.contains(GroovyInterceptable.class) && !"invokeMethod".equals(method)) {
+            return method(receiver, "invokeMethod", new Object[]{ method, args });
+        }
+        for (Class<?> c : types) {
             Method candidate = findMatchingMethod(c, method, args);
             if (candidate != null) {
                 return candidate;
@@ -262,7 +267,7 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    private static Iterable<Class<?>> types(@Nonnull Object o) {
+    private static Set<Class<?>> types(@Nonnull Object o) {
         Set<Class<?>> types = new LinkedHashSet<Class<?>>();
         visitTypes(types, o.getClass());
         return types;
