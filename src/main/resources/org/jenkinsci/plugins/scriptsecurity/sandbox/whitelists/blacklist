@@ -110,3 +110,7 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter castToType java.l
 
 # TODO do we need a @Blacklisted annotation?
 method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
+
+# SECURITY-1754
+new org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper java.lang.Object[]
+new org.kohsuke.groovy.sandbox.impl.Checker$ThisConstructorWrapper java.lang.Object[]
