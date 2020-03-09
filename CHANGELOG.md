@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.70
+
+Release date: 2020-03-09
+
+* [Fix sandbox bypass vulnerability](https://jenkins.io/security/advisory/2020-03-09/#SECURITY-1754)
+
 ## Version 1.69
 
 Release date: 2020-01-27
