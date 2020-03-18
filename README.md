@@ -4,8 +4,7 @@
 [![Changelog](https://img.shields.io/github/v/tag/jenkinsci/script-security-plugin?label=changelog)](https://github.com/jenkinsci/script-security-plugin/blob/master/CHANGELOG.md)
 [![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/script-security?color=blue)](https://plugins.jenkins.io/script-security)
 ## User’s guide
-(adapted from information on [template security in CloudBees Jenkins 
-Enterprise](https://docs.cloudbees.com/docs/admin-resources/latest/plugins/template#template-sect-script-approval))
+(adapted from information on [Template plugin in CloudBees Plugins guide](https://docs.cloudbees.com/docs/admin-resources/latest/plugins/template#template-sect-script-approval))
 
 Various Jenkins plugins require that users define custom scripts, most commonly in the 
 Groovy language, to customize Jenkins’s behavior. If everyone who writes these scripts is 
