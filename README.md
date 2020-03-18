@@ -5,7 +5,7 @@
 [![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/script-security?color=blue)](https://plugins.jenkins.io/script-security)
 ## User’s guide
 (adapted from information on [template security in CloudBees Jenkins 
-Enterprise](https://go.cloudbees.com/docs/cloudbees-documentation/cje-user-guide/index.html#template-sect-security))
+Enterprise](https://docs.cloudbees.com/docs/admin-resources/latest/plugins/template#template-sect-script-approval))
 
 Various Jenkins plugins require that users define custom scripts, most commonly in the 
 Groovy language, to customize Jenkins’s behavior. If everyone who writes these scripts is 
