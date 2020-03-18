@@ -90,6 +90,7 @@ public class ProxyWhitelist extends Whitelist {
             newSignatures.clear();
             staticMethodSignatures.clear();
             fieldSignatures.clear();
+            staticFieldSignatures.clear();
 
             this.delegates.add(new EnumeratingWhitelist() {
                 @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
