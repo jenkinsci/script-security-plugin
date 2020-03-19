@@ -47,6 +47,14 @@ public class ProxyWhitelistTest {
         assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
     }
 
+    @Test public void resetStaticField() throws Exception {
+        ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")));
+        ProxyWhitelist pw2 = new ProxyWhitelist(pw1);
+        assertTrue(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
+        pw1.reset(Collections.<Whitelist>emptySet());
+        assertFalse(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
+    }
+
     /** Ensures we cache at the top-level ProxyWhitelist */
     @Test
     public void caching() throws Exception {
