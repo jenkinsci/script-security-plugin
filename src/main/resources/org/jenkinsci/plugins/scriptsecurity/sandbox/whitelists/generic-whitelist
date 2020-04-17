@@ -465,6 +465,10 @@ method java.util.regex.MatchResult start
 method java.util.regex.MatchResult start int
 method java.util.regex.Matcher appendReplacement java.lang.StringBuffer java.lang.String
 method java.util.regex.Matcher appendTail java.lang.StringBuffer
+method java.util.regex.Matcher end java.lang.String
+method java.util.regex.Matcher find
+method java.util.regex.Matcher find int
+method java.util.regex.Matcher group java.lang.String
 method java.util.regex.Matcher hasAnchoringBounds
 method java.util.regex.Matcher hasTransparentBounds
 method java.util.regex.Matcher hitEnd
@@ -480,6 +484,7 @@ method java.util.regex.Matcher replaceFirst java.lang.String
 method java.util.regex.Matcher requireEnd
 method java.util.regex.Matcher reset
 method java.util.regex.Matcher reset java.lang.CharSequence
+method java.util.regex.Matcher start java.lang.String
 method java.util.regex.Matcher toMatchResult
 method java.util.regex.Matcher useAnchoringBounds boolean
 method java.util.regex.Matcher usePattern java.util.regex.Pattern
