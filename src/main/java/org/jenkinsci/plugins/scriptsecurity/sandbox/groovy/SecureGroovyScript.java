@@ -33,6 +33,7 @@ import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
@@ -56,12 +57,10 @@ import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
@@ -152,35 +151,48 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     }
 
     private static void cleanUpLoader(ClassLoader loader, Set<ClassLoader> encounteredLoaders, Set<Class<?>> encounteredClasses) throws Exception {
-        /*if (loader instanceof CpsGroovyShell.TimingLoader) {
-            cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
-            return;
-        }*/
-        // Check me, am I cleaning up the right loader???
-        if (!(loader instanceof GroovyClassLoader)) {
-            LOGGER.log(Level.FINER, "ignoring {0}", loader);
-            return;
-        }
         if (!encounteredLoaders.add(loader)) {
             return;
         }
-        cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
         if (LOGGER.isLoggable(Level.FINER)) {
           LOGGER.log(Level.FINER, "found {0}", String.valueOf(loader));
         }
-        cleanUpGlobalClassValue(loader);
-        GroovyClassLoader gcl = (GroovyClassLoader) loader;
-        for (Class<?> clazz : gcl.getLoadedClasses()) {
-            if (encounteredClasses.add(clazz)) {
-                LOGGER.log(Level.FINER, "found {0}", clazz.getName());
-                Introspector.flushFromCaches(clazz);
-                cleanUpGlobalClassSet(clazz);
-                cleanUpObjectStreamClassCaches(clazz);
-                cleanUpLoader(clazz.getClassLoader(), encounteredLoaders, encounteredClasses);
+        if (loader instanceof GroovyClassLoader) {
+            GroovyClassLoader gcl = (GroovyClassLoader) loader;
+            for (Class<?> clazz : gcl.getLoadedClasses()) {
+                cleanUpClass(clazz, encounteredLoaders, encounteredClasses);
             }
+            gcl.clearCache();
+        } else if (loader instanceof SandboxResolvingClassLoader) {
+            // OK, just check its parent
+        } else if (loader instanceof ClasspathURLClassLoader) {
+            Collection<Class<?>> loadedClasses = ((ClasspathURLClassLoader) loader).loadedClasses;
+            synchronized (loadedClasses) {
+                loadedClasses = new ArrayList<>(loadedClasses);
+            }
+            for (Class<?> clazz : loadedClasses) {
+                cleanUpClass(clazz, encounteredLoaders, encounteredClasses);
+            }
+        } else {
+            LOGGER.log(Level.FINER, "ignoring {0}", loader);
+            return;
         }
-        gcl.clearCache();
+        cleanUpGlobalClassValue(loader);
+        cleanUpLoader(loader.getParent(), encounteredLoaders, encounteredClasses);
     }
+
+    private static void cleanUpClass(Class<?> clazz, Set<ClassLoader> encounteredLoaders, Set<Class<?>> encounteredClasses) throws Exception {
+        if (encounteredClasses.add(clazz)) {
+            LOGGER.log(Level.FINER, "found {0}", clazz.getName());
+            Introspector.flushFromCaches(clazz);
+            cleanUpGlobalClassSet(clazz);
+            cleanUpClassHelperCache(clazz);
+            cleanUpObjectStreamClassCaches(clazz);
+            cleanUpLoader(clazz.getClassLoader(), encounteredLoaders, encounteredClasses);
+        }
+    }
+
+    // TODO copied with modifications from CpsFlowExecution; need to find a way to share commonalities
 
     private static void cleanUpGlobalClassValue(@Nonnull ClassLoader loader) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo");
@@ -265,6 +277,16 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
+    private static void cleanUpClassHelperCache(@Nonnull Class<?> clazz) throws Exception {
+        Field classCacheF = Class.forName("org.codehaus.groovy.ast.ClassHelper$ClassHelperCache").getDeclaredField("classCache");
+        classCacheF.setAccessible(true);
+        Object classCache = classCacheF.get(null);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.log(Level.FINER, "cleaning up {0} from ClassHelperCache? {1}", new Object[] {clazz.getName(), classCache.getClass().getMethod("get", Object.class).invoke(classCache, clazz) != null});
+        }
+        classCache.getClass().getMethod("remove", Object.class).invoke(classCache, clazz);
+    }
+
     private static void cleanUpObjectStreamClassCaches(@Nonnull Class<?> clazz) throws Exception {
         Class<?> cachesC = Class.forName("java.io.ObjectStreamClass$Caches");
         for (String cacheFName : new String[] {"localDescs", "reflectors"}) {
@@ -284,10 +306,17 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
+    /** @deprecated use {@link #evaluate(ClassLoader, Binding, TaskListener)} */
+    @Deprecated
+    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+        return evaluate(loader, binding, null);
+    }
+
     /**
      * Runs the Groovy script, using the sandbox if so configured.
      * @param loader a class loader for constructing the shell, such as {@link PluginManager#uberClassLoader} (will be augmented by {@link #getClasspath} if nonempty)
      * @param binding Groovy variable bindings
+     * @param listener a way to print messages
      * @return the result of evaluating script using {@link GroovyShell#evaluate(String)}
      * @throws Exception in case of a general problem
      * @throws RejectedAccessException in case of a sandbox issue
@@ -295,7 +324,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
     @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
-    public Object evaluate(ClassLoader loader, Binding binding) throws Exception {
+    public Object evaluate(ClassLoader loader, Binding binding, @CheckForNull TaskListener listener) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
         }
@@ -310,7 +339,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 urlList.add(entry.getURL());
             }
             
-            loader = urlcl = new URLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
+            loader = urlcl = new ClasspathURLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
         }
         boolean canDoCleanup = false;
 
@@ -336,11 +365,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     loaderF.set(sh, memoryProtectedLoader);
                 }
 
-                try {
-                    return GroovySandbox.run(sh, script, Whitelist.all());
-                } catch (RejectedAccessException x) {
-                    throw ScriptApproval.get().accessRejected(x, ApprovalContext.create());
-                }
+                return new GroovySandbox().withTaskListener(listener).runScript(sh, script);
             } else {
                 sh = new GroovyShell(loader, binding);
                 if (canDoCleanup) {
@@ -365,6 +390,26 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
+    /**
+     * Both serves as a marker that we should clean classes from here, and tracks which classes were loaded.
+     */
+    private static final class ClasspathURLClassLoader extends URLClassLoader {
+
+        private final Collection<Class<?>> loadedClasses = new ArrayList<>();
+
+        ClasspathURLClassLoader(URL[] urls, ClassLoader parent) {
+            super(urls, parent);
+        }
+
+        @Override protected Class<?> findClass(String name) throws ClassNotFoundException {
+            Class<?> c = super.findClass(name);
+            synchronized (loadedClasses) {
+                loadedClasses.add(c);
+            }
+            return c;
+        }
+
+    }
 
     /**
      * Disables the weird and unreliable {@link groovy.lang.GroovyClassLoader.InnerLoader}.
@@ -373,7 +418,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * Otherwise the defining loader will be an {@code InnerLoader}, and not necessarily the same instance from load to load.
      * @see GroovyClassLoader#getTimeStamp
      */
-    private static final class CleanGroovyClassLoader extends GroovyClassLoader {
+    static final class CleanGroovyClassLoader extends GroovyClassLoader {
 
         CleanGroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
             super(loader, config);

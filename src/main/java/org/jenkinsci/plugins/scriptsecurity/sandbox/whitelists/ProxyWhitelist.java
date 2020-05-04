@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -89,6 +90,7 @@ public class ProxyWhitelist extends Whitelist {
             newSignatures.clear();
             staticMethodSignatures.clear();
             fieldSignatures.clear();
+            staticFieldSignatures.clear();
 
             this.delegates.add(new EnumeratingWhitelist() {
                 @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
@@ -132,6 +134,7 @@ public class ProxyWhitelist extends Whitelist {
                     fieldSignatures.addAll(pw.fieldSignatures);
                     staticFieldSignatures.addAll(pw.staticFieldSignatures);
                 } else {
+                    Objects.requireNonNull(delegate);
                     this.delegates.add(delegate);
                 }
             }
@@ -248,6 +251,15 @@ public class ProxyWhitelist extends Whitelist {
             lock.readLock().unlock();
         }
         return false;
+    }
+
+    @Override public String toString() {
+        lock.readLock().lock();
+        try {
+            return super.toString() + delegates;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
 }

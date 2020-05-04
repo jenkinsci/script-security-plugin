@@ -26,10 +26,14 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Rule;
 import org.junit.Test;
@@ -117,23 +121,35 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.approveSignature(WHITELISTED_SIGNATURE);
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearApprovedSignatures();
         assertEquals(0, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-    
+
         sa.approveSignature(WHITELISTED_SIGNATURE);
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearDangerousApprovedSignatures();
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
+    }
+
+    @Issue("JENKINS-57563")
+    @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance'
+    @Test
+    public void upgradeSmokes() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException: "
+                        + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
     }
 
     private Script script(String groovy) {
