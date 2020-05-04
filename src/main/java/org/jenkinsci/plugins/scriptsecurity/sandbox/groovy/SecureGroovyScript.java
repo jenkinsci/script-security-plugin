@@ -37,6 +37,7 @@ import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
+import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -79,8 +80,9 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * you <strong>must</strong> call {@link #configuring} or a related method from your own constructor.
  * Use {@code <f:property field="…"/>} to configure it from Jelly.
  */
-public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> {
+public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> implements Serializable {
  
+    private static final long serialVersionUID = -4347442065624787928L;
     private final @Nonnull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
