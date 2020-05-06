@@ -154,6 +154,15 @@ staticField java.time.DayOfWeek SUNDAY
 staticField java.time.DayOfWeek THURSDAY
 staticField java.time.DayOfWeek TUESDAY
 staticField java.time.DayOfWeek WEDNESDAY
+method java.time.Instant getEpochSecond
+method java.time.Instant getNano
+method java.time.Instant minusMillis long
+method java.time.Instant minusNanos long
+method java.time.Instant minusSeconds long
+staticMethod java.time.Instant parse java.lang.CharSequence
+method java.time.Instant plusMillis long
+method java.time.Instant plusNanos long
+method java.time.Instant plusSeconds long
 method java.time.LocalDate getDayOfMonth
 method java.time.LocalDate getDayOfWeek
 method java.time.LocalDate getDayOfYear
