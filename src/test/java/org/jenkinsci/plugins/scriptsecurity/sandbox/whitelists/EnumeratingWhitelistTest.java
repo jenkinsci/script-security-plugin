@@ -33,6 +33,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import static org.junit.Assert.*;
 
 public class EnumeratingWhitelistTest {
@@ -189,6 +190,15 @@ public class EnumeratingWhitelistTest {
         assertTrue(myList.permitsFieldGet(f, new C()));  // No cache, so we fall back to direct search and hit the wildcard, then cache permitted
         assertTrue(myList.permitsFieldGet(f, new C()));  // Should hit cache for that specific method
         assertEquals(Boolean.TRUE, myList.permittedCache.get(EnumeratingWhitelist.canonicalFieldSig(f)));  // Verifies it can cache that
+    }
+
+    @Issue("JENKINS-42214")
+    @Test public void fieldExists() throws Exception {
+        assertTrue(new EnumeratingWhitelist.FieldSignature("hudson.model.Result", "color").exists());
+        assertTrue(new EnumeratingWhitelist.StaticFieldSignature("hudson.model.Result", "ABORTED").exists());
+
+        assertFalse(new EnumeratingWhitelist.StaticFieldSignature("hudson.model.Result", "color").exists());
+        assertFalse(new EnumeratingWhitelist.FieldSignature("hudson.model.Result", "ABORTED").exists());
     }
 
 }

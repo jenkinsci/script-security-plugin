@@ -25,9 +25,9 @@ method hudson.scm.ChangeLogSet$Entry getMsg
 method hudson.scm.ChangeLogSet$Entry getMsgAnnotated
 method hudson.scm.ChangeLogSet$Entry getMsgEscaped
 method hudson.scm.ChangeLogSet$Entry getTimestamp
-field hudson.scm.EditType ADD
-field hudson.scm.EditType DELETE
-field hudson.scm.EditType EDIT
+staticField hudson.scm.EditType ADD
+staticField hudson.scm.EditType DELETE
+staticField hudson.scm.EditType EDIT
 method hudson.scm.EditType getName
 method hudson.tools.ToolInstallation getHome
 method hudson.tools.ToolInstallation getName
