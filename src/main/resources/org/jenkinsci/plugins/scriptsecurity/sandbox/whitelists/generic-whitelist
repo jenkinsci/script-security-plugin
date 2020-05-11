@@ -190,6 +190,8 @@ method java.text.DateFormat setLenient boolean
 method java.text.DateFormat setNumberFormat java.text.NumberFormat
 method java.text.DateFormat setTimeZone java.util.TimeZone
 method java.text.Format format java.lang.Object
+method java.text.Format formatToCharacterIterator java.lang.Object
+method java.text.Format parseObject java.lang.String
 new java.text.SimpleDateFormat java.lang.String
 staticField java.time.DayOfWeek FRIDAY
 staticField java.time.DayOfWeek MONDAY
