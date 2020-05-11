@@ -1,5 +1,25 @@
 # Changelog
 
+## Version 1.72
+
+Release date: 2020-05-11
+
+* This plugin now requires Jenkins 2.176.4 or newer.
+* Improvement: Add various methods to the default whitelist: ([JENKINS-61952](https://issues.jenkins-ci.org/browse/JENKINS-61952), [PR 242](https://github.com/jenkinsci/script-security-plugin/pull/242), [PR 295](https://github.com/jenkinsci/script-security-plugin/pull/295), [PR 296](https://github.com/jenkinsci/script-security-plugin/pull/296))
+    * Remaining `java.util.regex.Matcher` methods
+    * Methods related to `java.time.Instant`
+    * Methods and fields defined on `java.text.DateFormat`
+    * Most methods defined on `java.text.Format`
+    * Methods and fields defined on `java.util.Calendar`
+    * `Boolean.booleanValue`
+    * `Collection.containsAll(Collection)`
+    * `List.indexOf(Object)`
+    * Various extension methods defined in `DefaultGroovyMethods`
+* Improvement: Make `SecureGroovyScript` and `ClasspathEntry` serializable so that they can be used by Active Choices Plugin. ([JENKINS-39742](https://issues.jenkins-ci.org/browse/JENKINS-39742))
+* Fix: Clear static field signatures correctly when signature approvals are reset. ([PR 290](https://github.com/jenkinsci/script-security-plugin/pull/290))
+* Internal: Update parent POM and minimum required Jenkins version to fix build errors when testing against new versions of Jenkins. ([PR 293](https://github.com/jenkinsci/script-security-plugin/pull/293))
+* Internal: Update caffeine dependency to 2.8.2. ([PR 294](https://github.com/jenkinsci/script-security-plugin/pull/294))
+
 ## Version 1.71
 
 Release date: 2020-03-09
