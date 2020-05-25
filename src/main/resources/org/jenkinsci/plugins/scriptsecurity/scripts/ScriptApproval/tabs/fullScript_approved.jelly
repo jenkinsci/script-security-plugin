@@ -1,0 +1,204 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:i="jelly:fmt" xmlns:l="/lib/layout" xmlns:st="jelly:stapler">
+    <div class="custom-pane-frame-padding">
+        <j:set var="hashAndMetadataList" value="${it.getApprovedFullScriptMetadata()}" />
+        <h2>
+            ${%approvedScripts}
+        </h2>
+        
+        <div id="already-approved">
+            <j:if test="${!it.isMetadataGatheringEnabled()}">
+                <div class="alert alert-info">
+                    ${%metadataGatheringDisabled}
+                </div>
+            </j:if>
+            <j:choose>
+                <j:when test="${hashAndMetadataList.isEmpty()}">
+                    <p class="no-approved-scripts">
+                        <i>${%noApprovedScripts}</i>
+                    </p>
+                </j:when>
+                <j:otherwise>
+                    <table class="pane bigtable">
+                        <tr>
+                            <th width="1%"><!-- checkbox --></th>
+                            <th tooltip="${%approvedHash_tooltip}" class="info-cursor">${%approvedHash}</th>
+                            <th>${%approvedExpandCode}</th>
+                            <th>${%approvedLanguage}</th>
+                            <th title="${%approvedScriptLength_tooltip}" class="info-cursor">${%approvedScriptLength}</th>
+                            <th>${%approvedContextUser}</th>
+                            <th>${%approvedContextItem}</th>
+                            <th tooltip="${%usageCount_tooltip}" class="info-cursor">${%usageCount}</th>
+                            <th>${%lastTimeUsed}</th>
+                            <th title="${%wasPreapproved_header_tooltip}" class="info-cursor">
+                                <st:nbsp />
+                            </th>
+                            <th title="${%lastApprovalTime_tooltip}" class="info-cursor">${%lastApprovalTime}</th>
+                            <th>${%lastKnownApproverLogin}</th>
+                        </tr>
+                        <j:forEach var="hashAndMetadata" items="${hashAndMetadataList}">
+                            <j:set var="hash" value="${hashAndMetadata.hash}" />
+                            <j:set var="metadata" value="${hashAndMetadata.metadata}" />
+                            <j:set var="language" value="${metadata.language}" />
+                            <j:set var="hasScriptCode" value="${!metadata.isEmpty() and metadata.scriptLength gt 0}" />
+                            <j:set var="lastContext" value="${metadata.lastContext}" />
+                            <tr class="js-selectable-row">
+                                <td>
+                                    <input type="checkbox" value="" name="approved-hash"
+                                           id="check-approved-${hash}"
+                                           data-hash="${hash}"
+                                           class="js-checkbox-hash js-bypass-click" />
+                                </td>
+                                <td class="hash">
+                                    <label for="check-approved-${hash}" title="${hash}" class="js-bypass-click">${hash.substring(0, 8)}</label>
+                                </td>
+                                <j:choose>
+                                    <j:when test="${metadata.isEmpty()}">
+                                        <td colspan="10">
+                                            <i title="${%emptyMetadata_tooltip}">${%emptyMetadata}</i>
+                                        </td>
+                                    </j:when>
+                                    <j:otherwise>
+                                        <td>
+                                            <j:choose>
+                                                <j:when test="${hasScriptCode}">
+                                                    <div class="toggle-parent" 
+                                                         data-expand-target-id="js-${hash}-row-approved" 
+                                                         data-expand-url="${rootURL}/scriptApproval/scriptContent?hash=${hash}"
+                                                         data-expand-async-codemirror="true">
+                                                        <span class="js-toggle-show-icon js-bypass-click action-link" title="${%approvedExpand_tooltip}">${%approvedExpand}</span>
+                                                        <span class="js-toggle-hide-icon js-bypass-click hidden-element action-link" title="${%approvedMinimize_tooltip}">${%approvedMinimize}</span>
+                                                    </div>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%noScriptCodeSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%noScriptCodeSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>${language.displayName}</td>
+                                        <td>${metadata.scriptLength}</td>
+                                        <td>
+                                            <j:set var="user" value="${lastContext.user}" />
+                                            <j:choose>
+                                                <j:when test="${user != null}">
+                                                    <a href="${rootURL}/user/${user}" class="model-link">${user}</a>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%noRequesterSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>
+                                            <j:set var="contextItem" value="${lastContext.item}" />
+                                            <j:choose>
+                                                <j:when test="${contextItem != null}">
+                                                    <a href="${rootURL}/${contextItem.url}" class="model-link">${contextItem.fullDisplayName}</a>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%noContextItemSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>
+                                            <j:set var="usageCount" value="${metadata.usageCount}" />
+                                            <j:choose>
+                                                <j:when test="${usageCount gt 0}">
+                                                    <span title="${%usageCount_tooltip}" class="info-cursor">${usageCount}</span>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%noUsageCountSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%noUsageCountSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>
+                                            <j:set var="lastTimeUsed" value="${metadata.lastTimeUsedDate}" />
+                                            <j:choose>
+                                                <j:when test="${lastTimeUsed != null}">
+                                                    <i:formatDate value="${lastTimeUsed}" type="both" dateStyle="medium" timeStyle="medium"/>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%notUsedSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%notUsedSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>
+                                            <j:if test="${metadata.wasPreapproved}">
+                                                <span class="info-cursor">
+                                                    <l:icon class="icon-accept icon-sm" alt="${%wasPreapproved_alt}" tooltip="${%wasPreapproved_tooltip}" />
+                                                </span>
+                                            </j:if>
+                                        </td>
+                                        <td>
+                                            <j:set var="lastApprovalTime" value="${metadata.lastApprovalTimeDate}" />
+                                            <j:choose>
+                                                <j:when test="${lastApprovalTime != null}">
+                                                    <i:formatDate value="${lastApprovalTime}" type="both" dateStyle="medium" timeStyle="medium" />
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%notApprovedSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%notApprovedSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                        <td>
+                                            <j:set var="lastKnownApproverLogin" value="${metadata.lastKnownApproverLogin}" />
+                                            <j:choose>
+                                                <j:when test="${lastKnownApproverLogin != null}">
+                                                    <a href="${rootURL}/user/${lastKnownApproverLogin}" class="model-link">${lastKnownApproverLogin}</a>
+                                                </j:when>
+                                                <j:otherwise>
+                                                    <span title="${%noKnownApproverSinceMetadata_tooltip}" class="info-cursor">
+                                                        ${%noKnownApproverSinceMetadata}
+                                                    </span>
+                                                </j:otherwise>
+                                            </j:choose>
+                                        </td>
+                                    </j:otherwise>
+                                </j:choose>
+                            </tr>
+                            <j:if test="${hasScriptCode}">
+                                <tr>
+                                    <td colspan="12" id="js-${hash}-row-approved" class="hidden-element">
+                                        <div class="js-expand-async-loading">
+                                            <i>${%scriptContentLoadingMessage}</i>
+                                        </div>
+                                        <div class="js-expand-async-error hidden-element warning add-margin">
+                                            ${%scriptContentLoadError}
+                                        </div>
+                                        <div class="js-expand-async-error-403 hidden-element warning add-margin">
+                                            ${%scriptContentLoadError403}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </j:if>
+                        </j:forEach>
+                    </table>
+
+                    <p class="js-error-no-selected hidden-element error">
+                        ${%approvedNoSelectedItemError}
+                    </p>
+
+                    <div class="action-panel">
+                        <span class="yui-button">
+                            <button class="js-button-approved-revoke-all" title="${%revokeApproval_tooltip}"
+                                    data-container-id="already-approved"
+                                    data-action-confirm-message="${%revokeApproval_confirm}"
+                                    data-action-url="${rootURL}/scriptApproval/revokeApprovalForScripts">${%revokeApproval}</button>
+                        </span>
+                    </div>
+                </j:otherwise>
+            </j:choose>
+        </div>
+    </div>
+</j:jelly>

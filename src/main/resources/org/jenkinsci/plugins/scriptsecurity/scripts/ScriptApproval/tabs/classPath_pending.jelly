@@ -1,0 +1,74 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <div class="pane-frame">
+        <p id="pendingClasspathEntries-none">
+            No pending classpath entry approvals.
+        </p>
+        <div id="pendingClasspathEntries">
+            Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without your notice.)
+        </div>
+    </div>
+    
+    <script>
+        var mgr = <st:bind value="${it}"/>;
+        function renderPendingClasspathEntries(pendingClasspathEntries) {
+            if (pendingClasspathEntries.length == 0) {
+                $('pendingClasspathEntries-none').show();
+                $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
+                $('pendingClasspathEntries').hide();
+            } else {
+                $('pendingClasspathEntries-none').hide();
+                $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
+                /*
+                   Create a list like:
+                    <p id="pcp-${pcp.hash}">
+                        <button class="approve" onclick="approveClasspathEntry('${pcp.hash}')">Approve</button> /
+                        <button class="deny"    onclick="denyClasspathEntry('${pcp.hash}')">Deny</button> 
+                        ${pcp.hash} (${pcp.path})
+                    </p>
+                 */
+                pendingClasspathEntries.each(function(e) {
+                    var block = new Element('p', { 'id': 'pcp-' + e.hash });
+                    var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash});
+                    approveButton.insert('Approve');
+                    approveButton.observe('click', function() {
+                        approveClasspathEntry(this.readAttribute('hash'));
+                    });
+                    var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash});
+                    denyButton.insert('Deny');
+                    denyButton.observe('click', function() {
+                        denyClasspathEntry(this.readAttribute('hash'));
+                    });
+                    block.insert(approveButton);
+                    block.insert(denyButton);
+                    block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
+                    
+                    $('pendingClasspathEntries').insert(block);
+                });
+                $('pendingClasspathEntries').show();
+            }
+        }
+        
+        function renderClasspaths(r) {
+            renderPendingClasspathEntries(r.responseObject()[0]);
+            //renderApprovedClasspathEntries(r.responseObject()[1]);
+        }
+        
+        function approveClasspathEntry(hash) {
+            mgr.approveClasspathEntry(hash, function(r) {
+                renderClasspaths(r);
+            });
+        }
+        function denyClasspathEntry(hash) {
+            mgr.denyClasspathEntry(hash, function(r) {
+                renderClasspaths(r);
+            });
+        }
+        
+        Event.observe(window, "load", function(){
+            mgr.getClasspathRenderInfo(function(r) {
+                renderClasspaths(r);
+            });
+        });
+    </script>
+</j:jelly>

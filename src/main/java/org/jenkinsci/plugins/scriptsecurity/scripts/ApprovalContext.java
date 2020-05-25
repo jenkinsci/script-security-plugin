@@ -31,6 +31,8 @@ import javax.annotation.CheckForNull;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import java.util.Objects;
+
 /**
  * Represents background information about who requested that a script or signature be approved and for what purpose.
  * When created from a thread that generally carries authentication, such as within a {@link DataBoundConstructor}, be sure to use {@link #withCurrentUser}.
@@ -125,4 +127,22 @@ public final class ApprovalContext {
         return new ApprovalContext(user, n, n);
     }
 
+    @Override 
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ApprovalContext that = (ApprovalContext) o;
+        return Objects.equals(user, that.user) &&
+                Objects.equals(item, that.item) &&
+                Objects.equals(key, that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user, item, key);
+    }
 }
