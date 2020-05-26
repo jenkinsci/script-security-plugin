@@ -106,7 +106,9 @@ THE SOFTWARE.
                             });
                             block.insert(approveButton);
                             block.insert(denyButton);
-                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
+                            var code = new Element('code', { 'title': e.hash });
+                            code.textContent = e.path;
+                            block.insert(code);
                             
                             $('pendingClasspathEntries').insert(block);
                         });
@@ -140,7 +142,9 @@ THE SOFTWARE.
                                 }
                             });
                             block.insert(deleteButton);
-                            block.insert("&lt;code title='" + e.hash + "'>" + e.path + "&lt;/code>");
+                            var code = new Element('code', { 'title': e.hash });
+                            code.textContent = e.path;
+                            block.insert(code);
                             
                             $('approvedClasspathEntries').insert(block);
                         });
