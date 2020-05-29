@@ -48,7 +48,7 @@ public class MetadataStorage {
     private static final Logger LOGGER = Logger.getLogger(MetadataStorage.class.getName());
     /**
      * Currently only lowercase hex characters are necessary but we will need additional characters
-     * When we will support SHA-256 or other, in order to support migration.
+     * to support SHA-256 or other, in order to support migration.
      *
      * This prevents path traversal attempts
      */
