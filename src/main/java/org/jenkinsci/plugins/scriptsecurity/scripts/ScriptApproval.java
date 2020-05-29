@@ -999,7 +999,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         synchronized (this) {
             FullScriptMetadata metadata = this.metadataStorage.getExisting(hash);
             if (metadata == null) {
-                // this can occur naturally only if you have concurrent view on the scriptApproval page
+                // this can occur naturally only if you have concurrent views of the scriptApproval page
                 LOG.log(Level.FINER, "Requesting a non-existing metadata {0}", hash);
                 throw HttpResponses.notFound();
             }
