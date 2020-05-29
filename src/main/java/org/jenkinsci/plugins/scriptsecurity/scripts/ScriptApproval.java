@@ -1293,7 +1293,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /**
-     * To have effectively final variable
+     * To have an effectively final variable
      */
     private @CheckForNull String getCurrentUserLogin() {
         String userLogin = null;
