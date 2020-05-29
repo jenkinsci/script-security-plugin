@@ -13,7 +13,7 @@
         
         <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
         <j:if test="${!empty(dangerousApprovedSignatures)}">
-            <div class="space-before">Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</div>
+            <div class="space-before">Signatures already approved which <strong><font color="red">may have introduced security vulnerabilities</font></strong> (recommend clearing):</div>
             <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
