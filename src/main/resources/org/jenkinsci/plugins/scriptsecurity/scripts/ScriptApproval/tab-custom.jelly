@@ -41,7 +41,7 @@ THE SOFTWARE.
       The title of the tab
     </st:attribute>
     <st:attribute name="numOfNotification" type="java.lang.Integer">
-      The number of notification to be displayed as a badge inside the tab name
+      The number, of notifications, to be displayed as a badge inside the tab name
     </st:attribute>
     <st:attribute name="isNotificationPrimaryColor" type="java.lang.Boolean">
       Determine whether the color of the badge should be the primary color or a less highlighted one

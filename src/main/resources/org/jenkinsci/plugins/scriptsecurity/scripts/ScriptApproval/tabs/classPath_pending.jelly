@@ -5,7 +5,7 @@
             No pending classpath entry approvals.
         </p>
         <div id="pendingClasspathEntries">
-            Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without your notice.)
+            Classpath entries pending approval. (Beware of remote URLs, workspace files, or anything else that might change without you noticing.)
         </div>
     </div>
     
