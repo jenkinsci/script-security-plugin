@@ -60,7 +60,7 @@ public class MetadataStorage {
 
     /**
      * Metadata about full scripts. 
-     * They can exist before approval and remains after revocation.  
+     * They can exist before approval and remain after revocation.  
      */
     private HashMap<String, FullScriptMetadata> hashToMetadata;
 
