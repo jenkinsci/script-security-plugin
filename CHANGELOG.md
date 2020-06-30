@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 1.74
+
+Release date: 2020-06-30
+
+* Improvement: On the Manage Jenkins page in Jenkins 2.226 and newer, display the link to the In-process Script Approval page under "Security" instead of "Uncategorized". ([PR 302](https://github.com/jenkinsci/script-security-plugin/pull/302))
+* Improvement: Add the following to the list of approved Jenkins-related signatures:
+    * `BallColor.getHtmlBaseColor`
+    * `Result.color`
+    * `Result.fromString(String)`
+
+## Version 1.73
+
+Release date: 2020-06-03
+
+* Fix security vulnerability. ([SECURITY-1866](https://www.jenkins.io/security/advisory/2020-06-03/#SECURITY-1866))
+
 ## Version 1.72
 
 Release date: 2020-05-11
