@@ -1118,6 +1118,7 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.S
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toBoolean java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.String
