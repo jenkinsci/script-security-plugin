@@ -1117,9 +1117,10 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.l
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile java.lang.CharSequence groovy.lang.Closure
-staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toBoolean java.lang.Boolean
-staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.Double
-staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toBoolean java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSequence java.lang.CharSequence java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
