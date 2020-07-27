@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GroovyClassLoader;
 import hudson.model.Api;
 import jenkins.model.GlobalConfiguration;
@@ -967,6 +968,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Exported
     @RequirePOST
     @Restricted(NoExternalUse.class)
+    @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
     public HttpResponse doApproveGroovy(StaplerRequest request) throws IOException {
         if(!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
             return HttpResponses.forbidden();
