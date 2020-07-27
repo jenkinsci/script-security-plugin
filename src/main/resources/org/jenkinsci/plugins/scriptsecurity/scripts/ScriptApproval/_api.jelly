@@ -1,0 +1,21 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+
+  <h2>Approving a new Groovy script for usage</h2>
+  <p>
+    To programmatically approve a script, post to <a href="../approveGroovy">this URL</a>.
+    The Groovy script you want to approve is expected as a query parameter named script.
+    This parameter is mandatory.
+
+    Note: if the script was already approved, this is a NOOP and the caller will receive a 200 http response nonetheless.
+
+    Response will be:
+    <ul>
+      <li> 200 if the script was successfully added to the approved scripts</li>
+      <li> 403 if the user does not have the RUN_SCRIPT permission</li>
+    </ul>
+
+    Usage example: curl -LX POST -u $USERNAME:$TOKEN $JENKINS_URL/scriptApproval/approveGroovy --data-binary  @script.groovy
+  </p>
+
+</j:jelly>

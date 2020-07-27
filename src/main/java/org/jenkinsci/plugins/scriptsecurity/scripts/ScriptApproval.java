@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import groovy.lang.GroovyClassLoader;
+import hudson.model.Api;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import net.sf.json.JSONArray;
@@ -44,12 +46,15 @@ import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.XStream2;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -66,17 +71,24 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.HttpResponses;
+import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * Manages approved scripts.
@@ -943,4 +955,35 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return getClasspathRenderInfo();
     }
 
+    public Api getApi() {
+        Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
+        return new Api(this);
+    }
+
+    /**
+     * This API endpoints allows a user with RUN_SCRIPT privileges to pass a script for addition to the
+     * approvedScriptHashes collection.
+     */
+    @Exported
+    @RequirePOST
+    @Restricted(NoExternalUse.class)
+    public HttpResponse doApproveGroovy(StaplerRequest request) throws IOException {
+        if(!Jenkins.get().hasPermission(Jenkins.RUN_SCRIPTS)) {
+            return HttpResponses.forbidden();
+        }
+
+        try(BufferedReader reader =
+                  new BufferedReader(new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8))) {
+            String script = reader
+                  .lines()
+                  .collect(Collectors.joining("\n"));
+            FormValidation scriptValidation = GroovySandbox.checkScriptForCompilationErrors(script,
+                  new GroovyClassLoader(Jenkins.get().getPluginManager().uberClassLoader));
+            if (scriptValidation.kind != FormValidation.Kind.OK) {
+                return scriptValidation;
+            }
+            approveScript(hash(script, GroovyLanguage.get().getName()));
+            return HttpResponses.ok();
+        }
+    }
 }
