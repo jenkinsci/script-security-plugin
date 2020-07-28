@@ -15,6 +15,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -31,6 +32,8 @@ import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+// workaround for PowerMock with java 11, see https://github.com/powermock/powermock/issues/864
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Jenkins.class, GroovyLanguage.class})
 public class ScriptApprovalRestEndpointTest {
@@ -43,7 +46,6 @@ public class ScriptApprovalRestEndpointTest {
     StaplerResponse resp;
     @Mock
     StaplerRequest request;
-
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
