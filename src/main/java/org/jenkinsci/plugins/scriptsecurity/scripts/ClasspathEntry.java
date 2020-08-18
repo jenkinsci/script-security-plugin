@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
+import java.io.Serializable;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -48,8 +49,9 @@ import javax.annotation.Nonnull;
 /**
  * A classpath entry used for a script.
  */
-public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> {
+public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> implements Serializable {
 
+    private static final long serialVersionUID = -2873408550951192200L;
     private final @Nonnull URL url;
     
     @DataBoundConstructor

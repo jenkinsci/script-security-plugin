@@ -1,5 +1,41 @@
 # Changelog
 
+## Version 1.74
+
+Release date: 2020-06-30
+
+* Improvement: On the Manage Jenkins page in Jenkins 2.226 and newer, display the link to the In-process Script Approval page under "Security" instead of "Uncategorized". ([PR 302](https://github.com/jenkinsci/script-security-plugin/pull/302))
+* Improvement: Add the following to the list of approved Jenkins-related signatures:
+    * `BallColor.getHtmlBaseColor`
+    * `Result.color`
+    * `Result.fromString(String)`
+
+## Version 1.73
+
+Release date: 2020-06-03
+
+* Fix security vulnerability. ([SECURITY-1866](https://www.jenkins.io/security/advisory/2020-06-03/#SECURITY-1866))
+
+## Version 1.72
+
+Release date: 2020-05-11
+
+* This plugin now requires Jenkins 2.176.4 or newer.
+* Improvement: Add various methods to the default list of approved signatures: ([JENKINS-61952](https://issues.jenkins-ci.org/browse/JENKINS-61952), [PR 242](https://github.com/jenkinsci/script-security-plugin/pull/242), [PR 295](https://github.com/jenkinsci/script-security-plugin/pull/295), [PR 296](https://github.com/jenkinsci/script-security-plugin/pull/296))
+    * Remaining `java.util.regex.Matcher` methods
+    * Methods related to `java.time.Instant`
+    * Methods and fields defined on `java.text.DateFormat`
+    * Most methods defined on `java.text.Format`
+    * Methods and fields defined on `java.util.Calendar`
+    * `Boolean.booleanValue`
+    * `Collection.containsAll(Collection)`
+    * `List.indexOf(Object)`
+    * Various extension methods defined in `DefaultGroovyMethods`
+* Improvement: Make `SecureGroovyScript` and `ClasspathEntry` serializable so that they can be used by Active Choices Plugin. ([JENKINS-39742](https://issues.jenkins-ci.org/browse/JENKINS-39742))
+* Fix: Clear static field signatures correctly when signature approvals are reset. ([PR 290](https://github.com/jenkinsci/script-security-plugin/pull/290))
+* Internal: Update parent POM and minimum required Jenkins version to fix build errors when testing against new versions of Jenkins. ([PR 293](https://github.com/jenkinsci/script-security-plugin/pull/293))
+* Internal: Update caffeine dependency to 2.8.2. ([PR 294](https://github.com/jenkinsci/script-security-plugin/pull/294))
+
 ## Version 1.71
 
 Release date: 2020-03-09
@@ -16,7 +52,7 @@ Release date: 2020-03-18
 
 Release date: 2020-01-27
 
-* Improvement: Add various methods to the default whitelist: ([PR 280](https://github.com/jenkinsci/script-security-plugin/pull/280), [PR 281](https://github.com/jenkinsci/script-security-plugin/pull/281), [PR 283](https://github.com/jenkinsci/script-security-plugin/pull/283))
+* Improvement: Add various methods to the default list of approved signatures: ([PR 280](https://github.com/jenkinsci/script-security-plugin/pull/280), [PR 281](https://github.com/jenkinsci/script-security-plugin/pull/281), [PR 283](https://github.com/jenkinsci/script-security-plugin/pull/283))
     * All remaining static methods in the `java.util.Collections` class
     * Groovy's `List.getAt(Collection)` extension method
     * Groovy's `List.transpose()` extension method
@@ -34,8 +70,8 @@ Release date: 2019-11-21
 
 Release date: 2019-11-13
 
-* Fix: Remove default whitelist entries that did not correspond to real signatures. ([PR 268](https://github.com/jenkinsci/script-security-plugin/pull/268))
-* Improvement: Add the following signatures to the generic whitelist:
+* Fix: Remove approved signatures that did not correspond to real signatures. ([PR 268](https://github.com/jenkinsci/script-security-plugin/pull/268))
+* Improvement: Add the following to the default list of approved signatures:
     * `Object[].getAt(IntRange)`
     * All remaining methods in the `java.util.regex` package
     * Getters/setters on `Date`
@@ -78,7 +114,7 @@ Release date: 2019-07-05
 
 *   [JENKINS-56682](https://issues.jenkins-ci.org/browse/JENKINS-56682) - Fix the use of script-level initializers in sandboxed Groovy scripts, which was a regression from version 1.54.
 *   [JENKINS-47430](https://issues.jenkins-ci.org/browse/JENKINS-47430) - Replace Guava cache used in for sandbox class loading with Caffeine to fix some performance issues and deadlocks.
-*   Add the following methods to the generic whitelist:
+*   Add the following methods to the default list of approved signatures:
     *   `Number.times(Closure)`
     *   `new PrintWriter(Writer)`
     *   `Reader.read()`
@@ -113,7 +149,7 @@ Release date: 2019-05-31
 Release date: 2019-04-18
 
 *   SandboxResolvingClassLoader.parentClassCache could leak loaders ([PR 252](https://github.com/jenkinsci/script-security-plugin/pull/252)) 
-*   [JENKINS-57299](https://issues.jenkins-ci.org/browse/JENKINS-57299) - Add the following method to the generic whitelist:
+*   [JENKINS-57299](https://issues.jenkins-ci.org/browse/JENKINS-57299) - Add the following methods to the default list of approved signatures:
     *   `DefaultGroovyMethods.drop(Iterable, int)`
     *   `DefaultGroovyMethods.drop(List, int)`
     *   `DefaultGroovyMethods.dropRight(Iterable, int)`
@@ -133,7 +169,7 @@ Release date: 2019-04-18
 
 Release date: 2019-04-11
 
-*   Add the following methods to the generic whitelist:
+*   Add the following methods to the default list of approved signatures:
     *   `Map.getOrDefault(Object, Object)`
     *   `Map.putIfAbsent(Object, Object)`
     *   `Map.replace(Object, Object)`
@@ -167,7 +203,7 @@ Release date: 2019-02-19
 
 Release date: 2019-02-13
 
-*   Add the following methods to the generic whitelist:
+*   Add the following methods to the default list of approved signatures:
     *   `DateTimeFormatter.ofPattern(String)`
     *   `Iterable.take(int)`
     *   `List.subList(int, int)`
@@ -189,7 +225,7 @@ Release date: 2019-01-08
 Release date: 2018-11-30
 
 *   Make sure expensive log lines are only created if the appropriate logging level is enabled ([PR #232](https://github.com/jenkinsci/script-security-plugin/pull/232))
-*   Add the following methods to the generic whitelist:  
+*   Add the following methods to the default list of approved signatures:
 
     *   `String#indexOf(int)`
     *   `String#indexOf(int, int)`
@@ -208,7 +244,7 @@ Release date: 2018-10-29
 
 Release date: 2018-10-17
 
-*   Add the following methods to the generic whitelist:
+*   Add the following methods to the default list of approved signatures:
     *   `DefaultGroovyMethods#leftShift(Writer, Object)`
     *   `Class#isInstance(Object)`
     *   `Throwable#getCause()`
@@ -230,10 +266,10 @@ Release date: 2018-09-05
 Release date: 2018-09-04
 
 *   [JENKINS-50843](https://issues.jenkins-ci.org/browse/JENKINS-50843) - Allow calling `Closure` elements of a `Map` as methods.
-*   [JENKINS-51332](https://issues.jenkins-ci.org/browse/JENKINS-51332) - Whitelist `Calendar` constants for days of the week and months (such as `MONDAY` and `APRIL`).
+*   [JENKINS-51332](https://issues.jenkins-ci.org/browse/JENKINS-51332) - Add `Calendar` constants for days of the week and months (such as `MONDAY` and `APRIL`) to the default list of approved signatures.
 *   [JENKINS-50906](https://issues.jenkins-ci.org/browse/JENKINS-50906) - Allow `this.foo()` for closure variables.
 *   Downgrade logging level for message about slow class loading increase threshold from 250ms to 1s.
-*   Add the following methods to the generic whitelist:  
+*   Add the following methods to the default list of approved signatures:
 
     *   `DefaultGroovyMethods#addAll(Collection, Object[])`
     *   `DefaultGroovyMethods#asImmutable(Map)`
@@ -246,18 +282,18 @@ Release date: 2018-09-04
 
 Release date: 2018-04-27
 
-*   Add `DefaultGroovyMethods.toLong(String)` to the generic whitelist.
+*   Add `DefaultGroovyMethods.toLong(String)` to the default list of approved signatures.
 *   [JENKINS-50470](https://issues.jenkins-ci.org/browse/JENKINS-50470) - fix handling of `ArrayList.someField` to behave as a spread operation.
-*   [JENKINS-46882](https://issues.jenkins-ci.org/browse/JENKINS-46882) - Add `new Exception(String)` to generic whitelist.
+*   [JENKINS-46882](https://issues.jenkins-ci.org/browse/JENKINS-46882) - Add `new Exception(String)` to the default list of approved signatures.
 
 ## Version 1.43
 
 Release date: 2018-03-28
 
-*   Add `DefaultGroovyMethods.collate` methods to the generic whitelist.
+*   Add `DefaultGroovyMethods.collate` methods to the default list of approved signatures.
 *   [JENKINS-50380](https://issues.jenkins-ci.org/browse/JENKINS-50380) - Stop going through `checkedCast` process for objects that can be assigned to the target class and just return them instead.
-*   Add `Collection#remove(int)` and `List#remove(int)` to the generic whitelist.
-*   Add `DefaultGroovyMethods` for `sort`, `toSorted`, `unique`, `max`, `min`, and `abs` to the generic whitelist. Note that using these (other than `abs`) in Pipeline code will not work until [JENKINS-44924](https://issues.jenkins-ci.org/browse/JENKINS-44924) is resolved.
+*   Add `Collection#remove(int)` and `List#remove(int)` to the default list of approved signatures.
+*   Add `DefaultGroovyMethods` for `sort`, `toSorted`, `unique`, `max`, `min`, and `abs` to the default list of approved signatures. Note that using these (other than `abs`) in Pipeline code will not work until [JENKINS-44924](https://issues.jenkins-ci.org/browse/JENKINS-44924) is resolved.
 *   Slightly improved error messages replacing `unclassified ...` for cases where we couldn't find a method, field, constructor, etc matching the signature.
 
 ## Version 1.42
@@ -265,25 +301,25 @@ Release date: 2018-03-28
 Release date: 2018-03-12
 
 *   [JENKINS-45982](https://issues.jenkins-ci.org/browse/JENKINS-45982) - Fix an issue with calling `super` for a CPS-transformed method.
-*   [JENKINS-49542](https://issues.jenkins-ci.org/browse/JENKINS-49542) - add `Map#isEmpty()` to generic whitelist.
-*   Add `DefaultGroovyMethods.multiply(String,Number)`, `DefaultGroovyMethods.with(Object,Closure)`, `Object#hashCode()`, `Objects.hash(Object[])`, `DefaultGroovyMethods.first(...)`, and `DefaultGroovyMethods.last(...)` to generic whitelist.
+*   [JENKINS-49542](https://issues.jenkins-ci.org/browse/JENKINS-49542) - add `Map#isEmpty()` to the default list of approved signatures.
+*   Add `DefaultGroovyMethods.multiply(String,Number)`, `DefaultGroovyMethods.with(Object,Closure)`, `Object#hashCode()`, `Objects.hash(Object[])`, `DefaultGroovyMethods.first(...)`, and `DefaultGroovyMethods.last(...)` to the default list of approved signatures.
 
 ## Version 1.41
 
 Release date: 2018-02-08
 
-*   **Major improvement**: greatly reduce time required to check against static Whitelists
+*   **Major improvement**: greatly reduce time required to check whether signatures are approved for some implementations of `Whitelist`
 *   **Major improvement**: allow permission checks to multithread - elliminate lock contention with concurrent calls
 *   Improve UX for clearing dangerous signatures [JENKINS-22660](https://issues.jenkins-ci.org/browse/JENKINS-22660)
-*   Add Integer.toString(int, int) to default whitelist
-*   Add DefaultGroovyMethods toListString and toMapString to whitelist
+*   Add Integer.toString(int, int) to the default list of approved signatures
+*   Add DefaultGroovyMethods toListString and toMapString to the default list of approved signatures
 
 ## Version 1.40
 
 Release date: 2018-01-10
 
 *   Block `System.getNanoTime()` to prevent Spectre/Meltdown exploits.
-*   Add `DefaultGroovyMethods#contains(Iterable,Object)` to default whitelist.
+*   Add `DefaultGroovyMethods#contains(Iterable,Object)` to the default list of approved signatures.
 
 ## Version 1.39
 
@@ -310,7 +346,7 @@ Release date: 2017-12-11
 Release date: 2017-11-29
 
 *   [JENKINS-47159](https://issues.jenkins-ci.org/browse/JENKINS-47159), [JENKINS-47893](https://issues.jenkins-ci.org/browse/JENKINS-47893) - Fix two issues with varargs handling.
-*   Add more collection methods to the whitelist.
+*   Add more collection methods to the default list of approved signatures.
 *   Hide `ScriptApproval` link if there are no pending or approved signatures.
 *   Introduced support for `SystemCommandLanguage`
 
@@ -323,8 +359,8 @@ Release date: 2017-11-02
     *   Notable plugin exceptions: email-ext, matrix-project, ontrack (may be covered by a later enhancement), job-dsl (needs a bespoke implementation) and splunk-devops plugins (can't cover - doesn't use enough script-security APIs)
     *   Pipeline offered its own leak protection mechanism (this is based on that)
 *   [JENKINS-35294](https://issues.jenkins-ci.org/browse/JENKINS-35294) - VarArgs support for enums
-*   Whitelist map.get method, List, minus, padLeft/padRight (thanks to community contributions from Github users [ryankillory](https://github.com/ryankillory), [Ignition](https://github.com/Ignition), and [andrey-fomin](https://github.com/andrey-fomin) !)
-*   [JENKINS-47666](https://issues.jenkins-ci.org/browse/JENKINS-47666) - Add math.max and math.min to whitelist
+*   Add map.get, List, minus, padLeft and padRight to the default list of approved signatures (thanks to community contributions from Github users [ryankillory](https://github.com/ryankillory), [Ignition](https://github.com/Ignition), and [andrey-fomin](https://github.com/andrey-fomin) !)
+*   [JENKINS-47666](https://issues.jenkins-ci.org/browse/JENKINS-47666) - Add math.max and math.min to the default list of approved signatures
 *   [JENKINS-44557](https://issues.jenkins-ci.org/browse/JENKINS-44557) - Properly cast GString (Groovy dynamic/templated string) in varargs
 
 ## Version 1.34
@@ -332,7 +368,7 @@ Release date: 2017-11-02
 Release date: 2017-09-05
 
 *   [JENKINS-46391](https://issues.jenkins-ci.org/browse/JENKINS-46391) - Properly handle `~/foo/` regexp declarations and some other `Pattern` methods.
-*   [JENKINS-46358](https://issues.jenkins-ci.org/browse/JENKINS-46358) - Whitelist a number of `StringGroovyMethods` including `replaceAll`, `findAll`, and more.
+*   [JENKINS-46358](https://issues.jenkins-ci.org/browse/JENKINS-46358) - Add `StringGroovyMethods` including `replaceAll`, and `findAll` to the default list of approved signatures.
 
 ## Version 1.33
 
@@ -361,7 +397,7 @@ Release date: 2017-07-25
 
 Now requires Jenkins 2.7.x or later, i.e., versions of Jenkins running Groovy 2.x.
 
-*   Some whitelist and blacklist additions.
+*   Add signatures to the lists of approved and dangerous signatures.
 *   [JENKINS-42563](https://issues.jenkins-ci.org/browse/JENKINS-42563) Handling `super` calls to methods.
 
 *   Be explicit about classpath directory rejection reason.
@@ -384,7 +420,7 @@ Release date: 2017-07-10
 
 Release date: 2017-06-15
 
-*   Whitelist additions, particularly for `DefaultGroovyMethods`.
+*   Add various signatures to the default list of approved signatures, particularly for `DefaultGroovyMethods`.
 
 ## Version 1.28
 
@@ -392,64 +428,64 @@ Release date: 2017-06-05
 
 *   [JENKINS-34741](https://issues.jenkins-ci.org/browse/JENKINS-34741) Unclassified error when using Groovy struct constructors.
 
-*   Default whitelist additions.
+*   Update the default list of approved signatures.
 
 ## Version 1.27
 
 Release date: 2017-02-27
 
-*   [JENKINS-41797](https://issues.jenkins-ci.org/browse/JENKINS-41797) Race condition could corrupt internal whitelist metadata.
+*   [JENKINS-41797](https://issues.jenkins-ci.org/browse/JENKINS-41797) Race condition could corrupt internal metadata used to check whether signatures are approved.
 *   [JENKINS-39159](https://issues.jenkins-ci.org/browse/JENKINS-39159) File handle leak when using custom script classpath could lead to unwanted locks on Windows or NFS.
-*   Default whitelist additions.
+*   Update the default list of approved signatures.
 
 ## Version 1.26
 
 Release date: 2017-02-13
 
-*   Default whitelist additions.
+*   Update the default list of approved signatures.
 
 ## Version 1.25
 
 Release date: 2017-01-03
 
-*   More whitelist and blacklist entries.
-*   Display a warning about previously approved signatures which are now in the blacklist.
+*   Update the lists of approved and dangerous signatures.
+*   Display a warning about previously approved signatures which are now in the list of dangerous signatures.
 
 ## Version 1.24
 
 Release date: 2016-10-20
 
 *   [JENKINS-38908](https://issues.jenkins-ci.org/browse/JENKINS-38908) Improper handling of some varargs methods.
-*   Various whitelist additions.
+*   Update the default list of approved signatures.
 
 ## Version 1.23
 
 Release date: 2016-09-21
 
 *   Better report [JENKINS-37599](https://issues.jenkins-ci.org/browse/JENKINS-37599), a bug in core tickled by the [Promoted Builds Plugin](https://wiki.jenkins.io/display/JENKINS/Promoted+Builds+Plugin).
-*   A few new whitelist and blacklist entries.
+*   Update the lists of approved and dangerous signatures.
 
 ## Version 1.22
 
 Release date: 2016-08-15
 
 *   Introduce a class loader caching layer for the Groovy sandbox to work around core performance limitations such as [JENKINS-23784](https://issues.jenkins-ci.org/browse/JENKINS-23784).
-*   [JENKINS-37344](https://issues.jenkins-ci.org/browse/JENKINS-37344) Default whitelist additions pertaining to collections.
+*   [JENKINS-37344](https://issues.jenkins-ci.org/browse/JENKINS-37344) Add collection-related signatures to the default list of approved signatures.
 
 ## Version 1.21
 
 Release date: 2016-07-11
 
-*   Default whitelist additions pertaining to build changelogs ([JENKINS-30412](https://issues.jenkins-ci.org/browse/JENKINS-30412)).
+*   Add build changelog-related signatures to the default list of approved Jenkins-related signatures ([JENKINS-30412](https://issues.jenkins-ci.org/browse/JENKINS-30412)).
 
 ## Version 1.20
 
 Release date: 2016-06-20
 
-*   Various default whitelist additions.
+*   Update the default list of approved signatures.
 *   [JENKINS-34739](https://issues.jenkins-ci.org/browse/JENKINS-34739) Support for varargs methods.
 *   [JENKINS-33023](https://issues.jenkins-ci.org/browse/JENKINS-33023) `enum` initializer fixes.
-*   Blacklisting `RunWrapper.getRawBuild`.
+*   Add `RunWrapper.getRawBuild` to the list of dangerous signatures.
 
 ## Version 1.19
 
@@ -458,7 +494,7 @@ Release date: 2016-04-26
 *   [JENKINS-24399](https://issues.jenkins-ci.org/browse/JENKINS-24399) Prohibit class directories from being approved classpath entries.
 *   [JENKINS-33023](https://issues.jenkins-ci.org/browse/JENKINS-33023) Support `enum` initializers.
 *   Permit metaclass methods to be run.
-*   Some miscellaneous whitelist and blacklist additions.
+*   Update the lists of approved and dangerous signatures.
 
 ## Version 1.18.1
 
@@ -472,7 +508,7 @@ Release date: 2016-04-04
 
 *   Groovy prefers a getter/setter to a field access, so act accordingly, particularly when suggesting signatures to approve.
 *   [JENKINS-27725](https://issues.jenkins-ci.org/browse/JENKINS-27725) Various fixes to handling of GDK methods.
-*   Some miscellaneous whitelist and blacklist additions.
+*   Update the lists of approved and dangerous signatures.
 *   [JENKINS-26481](https://issues.jenkins-ci.org/browse/JENKINS-26481) Supporting fix to GDK method handling necessary to support calls such as `Object.each(Closure)` from `groovy-cps` Pipeline.
 
 ## Version 1.17
@@ -485,7 +521,7 @@ Release date: 2016-01-25
 
 Release date: 2016-01-19
 
-*   Many more default whitelist entries, including standard Groovy operators and GDK methods.
+*   Update the default list of approved signatures, including standard Groovy operators and GDK methods.
 *   [JENKINS-30432](https://issues.jenkins-ci.org/browse/JENKINS-30432) Warn about dangerous signatures.
 *   [JENKINS-31234](https://issues.jenkins-ci.org/browse/JENKINS-31234) Groovy allows `Singleton.instance` as an alias for `Singleton.getInstance()`; handled.
 *   [JENKINS-31701](https://issues.jenkins-ci.org/browse/JENKINS-31701) Misclassification of a method taking `long` and being passed an `int`.
@@ -494,7 +530,7 @@ Release date: 2016-01-19
 
 Release date: 2015-08-20
 
-*   Added a number of new default whitelist entries.
+*   Update the default list of approved signatures.
 *   Properly classify pseudofields of a `Map`.
 *   [JENKINS-29541](https://issues.jenkins-ci.org/browse/JENKINS-29541) Methods on a `GString` may really be called on a `String`.
 *   Corrected classification of methods ambiguous between `GroovyDefaultMethods` and `invokeMethod`.
@@ -518,8 +554,8 @@ Release date: 2015-02-02
 
 Release date: 2014-12-04
 
-*   [JENKINS-25914](https://issues.jenkins-ci.org/browse/JENKINS-25914) Support for special whitelist of `env` in Workflow plugins.
-*   Whitelisting `Collection.contains`.
+*   [JENKINS-25914](https://issues.jenkins-ci.org/browse/JENKINS-25914) Allow `env` in Pipeline plugins with a special implementation of `Whitelist`.
+*   Add `Collection.contains` to the default list of approved signatures.
 
 ## Version 1.11
 
@@ -587,7 +623,7 @@ Release date: 2014-05-13
 Release date: 2014-05-06
 
 *   Making it possible to use Groovy functions with `def` syntax.
-*   Added `GroovySandbox.run` to stop whitelists from being consulted on methods defined in the script itself.
+*   Added `GroovySandbox.run` so that methods defined in the script itself are always allowed.
 
 ## Version 1.0
 

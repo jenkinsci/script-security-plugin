@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -112,6 +113,27 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @Test public void nothingHappening() throws Exception {
         assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
+    }
+
+    @Issue("SECURITY-1866")
+    @Test public void classpathEntriesEscaped() throws Exception {
+        // Add pending classpath entry.
+        String hash = null;
+        try {
+            ScriptApproval.get().using(new ClasspathEntry("https://www.example.com/#value=Hack<img id='xss' src=x onerror=alert(123)>Hack"));
+            fail("Classpath should not already be approved");
+        } catch (UnapprovedClasspathException e) {
+            hash = e.getHash();
+        }
+        // Check for XSS in pending approvals.
+        JenkinsRule.WebClient wc = r.createWebClient();
+        HtmlPage approvalPage = wc.goTo("scriptApproval");
+        assertThat(approvalPage.getElementById("xss"), nullValue());
+        // Approve classpath entry.
+        ScriptApproval.get().approveClasspathEntry(hash);
+        // Check for XSS in approved classpath entries.
+        HtmlPage approvedPage = wc.goTo("scriptApproval");
+        assertThat(approvedPage.getElementById("xss"), nullValue());
     }
 
     @Test public void clearMethodsLifeCycle() throws Exception {

@@ -75,8 +75,10 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
     private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
+        Cache<String, T> classCache = cache.get(parentLoader);
+        assert classCache != null; // Never null, see makeParentCache, but we need the assertion to convince SpotBugs.
         // itemName is ignored but caffeine requires a function<String, T>
-        return cache.get(parentLoader).get(name, (String itemName) -> {
+        return classCache.get(name, (String itemName) -> {
             Thread t = Thread.currentThread();
             String origName = t.getName();
             t.setName(origName + " loading " + name);
