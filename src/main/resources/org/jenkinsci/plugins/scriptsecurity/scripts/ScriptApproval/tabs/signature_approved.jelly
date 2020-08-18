@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
-    <div class="custom-pane-frame-padding">
+    <div class="pane-frame">
         <div>Signatures already approved:</div>
         <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
             <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>

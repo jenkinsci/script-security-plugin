@@ -23,14 +23,6 @@
     background-color: #6c757d;
 }
 
-.script-approval-page .custom-pane-frame-padding {
-    padding: 8px 12px;
-    
-    /* border part stolen from pane-frame */
-    border: solid 1px #f0f0f0;
-    border-radius: 4px;
-}
-
 .script-approval-page h2 ~ h2 {
     margin-top: 35px;
 }

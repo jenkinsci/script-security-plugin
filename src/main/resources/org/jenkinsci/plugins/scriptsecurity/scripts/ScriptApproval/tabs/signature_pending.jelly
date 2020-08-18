@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
-    <div class="custom-pane-frame-padding">
+    <div class="pane-frame">
         <j:choose>
             <j:when test="${it.pendingSignatures.isEmpty()}">
                 <p>
