@@ -1,0 +1,84 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<scriptApproval plugin="script-security@1.72-SNAPSHOT">
+  <approvedScriptHashes>
+<!--###############################
+pipeline {
+   agent { label 'agent' }
+
+   stages {
+      stage('Hello') {
+         steps {
+            sh 'echo Hello'
+         }
+      }
+   }
+}
+###############################-->
+    <string>ca57380cdd93d5cbff29daf6951e425d05908ea1</string>
+<!--###############################
+"pwd".execute()
+###############################-->
+    <string>146947747e2b865e621389bbb8a45fdb379e5f8d</string>
+<!--###############################
+jenkins.model.Jenkins.instance
+###############################-->
+    <string>d224435330553e6054e66fbe050cfafafeadc732</string>
+    <string>ade57cf30c3bd49dba1ed236844b7a8cb532988e</string>
+    <string>b4aedcd3a5c832ea3ebfc0a1c104e48eb2d74477</string>
+    <string>b841429a248cfccb551582bbfbcf2e72ba4faf0f</string>
+  </approvedScriptHashes>
+  <approvedSignatures>
+    <string>staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods println java.lang.Object java.lang.Object</string>
+    <!-- new File("parent", "child") -->
+    <string>new java.io.File java.lang.String java.lang.String</string>
+  </approvedSignatures>
+  <aclApprovedSignatures>
+    <!-- new File(".") -->
+    <string>new java.io.File java.lang.String</string>
+  </aclApprovedSignatures>
+  <approvedClasspathEntries>
+    <approvedClasspathEntry>
+      <hash>c8a65bd626dd7b34fc329434c9c1e728a4abe828</hash>
+      <url>https://repo.jenkins-ci.org/javanet2-cache/org/jvnet/hudson/main/maven-plugin/1.301/maven-plugin-1.301.hpi</url>
+    </approvedClasspathEntry>
+  </approvedClasspathEntries>
+  <pendingScripts>
+    <pendingScript>
+      <script>
+node {
+   echo &apos;Hello&apos;
+}
+</script>
+      <language>groovy</language>
+    </pendingScript>
+    <pendingScript>
+      <script>
+node {
+  sh &apos;&apos;&apos;
+     rm -rf newFolder
+     mkdir newFolder
+     cd newFolder
+  }
+}
+</script>
+      <language>groovy</language>
+    </pendingScript>
+  </pendingScripts>
+  <pendingSignatures>
+    <pendingSignature>
+      <context/>
+      <signature>method java.io.File length</signature>
+      <dangerous>false</dangerous>
+    </pendingSignature>
+  </pendingSignatures>
+  <pendingClasspathEntries>
+    <pendingClasspathEntry>
+      <context>
+        <user>config</user>
+        <item>free-for-classpath</item>
+      </context>
+      <hash>7f014e0dab147d3ae431efa1b8b1305112711b18</hash>
+      <url>https://repo.jenkins-ci.org/javanet2-cache/org/jvnet/hudson/main/maven-plugin/1.302/maven-plugin-1.302.hpi</url>
+    </pendingClasspathEntry>
+  </pendingClasspathEntries>
+</scriptApproval>

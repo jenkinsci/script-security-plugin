@@ -502,7 +502,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     @GuardedBy("this")
-    private transient MetadataStorage metadataStorage;
+    @VisibleForTesting transient MetadataStorage metadataStorage;
 
     @DataBoundConstructor
     public ScriptApproval() {
