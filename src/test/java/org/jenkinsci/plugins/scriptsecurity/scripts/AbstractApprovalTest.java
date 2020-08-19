@@ -56,7 +56,7 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
         return null;
     }
 
-    private Approvable<?>[] createFiveEntries() throws Exception {
+    Approvable<?>[] createFiveEntries() throws Exception {
         final Approvable<?>[] entries = new Approvable<?>[5];
         for (int i = 0; i < entries.length; i++) {
             entries[i] = create().assertPending();
@@ -79,36 +79,5 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
             entries[i].assertDeleted();
         }
         entries[4].assertPending();
-    }
-
-
-    @Test public void approveExternal() throws Exception {
-        configureSecurity();
-        final Approvable<?>[] entries = createFiveEntries();
-
-        final Manager manager = new Manager(r);
-
-        for (int i = 0; i < entries.length; i++) {
-            entries[i].pending(manager);
-        }
-
-        entries[0].pending(manager).approve().approved(manager);
-        entries[1].pending(manager).approve().approved(manager);
-        entries[2].pending(manager).deny().assertDeleted();
-        entries[3].pending(manager).approve().approved(manager);
-        if (entries[3].canDelete()) {
-            entries[3].approved(manager).delete().assertDeleted(manager);
-        }
-
-        // clear all classpaths
-        final String clearId = getClearAllApprovedId();
-        if (clearId != null) {
-            manager.click(clearId);
-            for (int i = 0; i < 4; i++) {
-                entries[i].assertDeleted(manager);
-            }
-        }
-        // The last one remains pending
-        entries[4].pending(manager);
     }
 }

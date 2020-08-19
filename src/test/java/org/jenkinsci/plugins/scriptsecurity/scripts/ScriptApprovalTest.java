@@ -32,9 +32,6 @@ import hudson.model.Result;
 import hudson.security.Permission;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
-import org.apache.tools.ant.taskdefs.optional.ejb.WeblogicDeploymentTool;
-import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
@@ -61,9 +58,6 @@ import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -121,7 +115,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         String managePageBodyText = managePage.getBody().getTextContent();
         assertThat(managePageBodyText, containsString("1 dangerous signatures previously approved which ought not have been."));
 
-        HtmlPage scriptApprovalPage = managePage.getAnchorByHref("scriptApproval").click();
+        String approvedSignatureUrl = managePage.getAnchorByHref("scriptApproval").getHrefAttribute() + "/?tab=signatureApproved";
+        HtmlPage scriptApprovalPage = wc.goTo(approvedSignatureUrl);
         HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
         HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
 

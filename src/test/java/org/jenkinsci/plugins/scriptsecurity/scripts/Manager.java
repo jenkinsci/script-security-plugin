@@ -44,7 +44,7 @@ final class Manager {
     private final JenkinsRule.WebClient wc;
     private final HtmlPage page;
 
-    Manager(JenkinsRule rule) throws Exception {
+    Manager(JenkinsRule rule, String tabName) throws Exception {
         this.wc = rule.createWebClient();
         // click "OK" for all confirms.
         wc.setConfirmHandler(new ConfirmHandler() {
@@ -52,7 +52,11 @@ final class Manager {
                 return true;
             }
         });
-        this.page = wc.goTo(ScriptApproval.get().getUrlName());
+        if (tabName == null) {
+            this.page = wc.goTo(ScriptApproval.get().getUrlName());
+        } else {
+            this.page = wc.goTo(ScriptApproval.get().getUrlName() + "?tab=" + tabName);
+        }
     }
 
     private void clickAndWait(HtmlElement e) throws IOException {
