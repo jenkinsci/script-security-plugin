@@ -25,12 +25,12 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.google.common.annotations.VisibleForTesting;
+import hudson.security.ACLContext;
 import hudson.util.HttpResponses;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
@@ -70,6 +70,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
@@ -77,8 +78,6 @@ import javax.servlet.ServletException;
 
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.LanguageHelper;
 import org.jenkinsci.plugins.scriptsecurity.scripts.metadata.FullScriptMetadata;
 import org.jenkinsci.plugins.scriptsecurity.scripts.metadata.HashAndFullScriptMetadata;
@@ -235,18 +234,12 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         tabInfos[FULL_SCRIPT_PENDING_INDEX].numOfNotification = pendingScripts.size();
         tabInfos[FULL_SCRIPT_PENDING_INDEX].primaryColor = true;
         
-        tabInfos[FULL_SCRIPT_APPROVED_INDEX].numOfNotification = approvedScriptHashes.size();
-        
         tabInfos[SIGNATURE_PENDING_INDEX].numOfNotification = pendingSignatures.size();
         tabInfos[SIGNATURE_PENDING_INDEX].primaryColor = true;
-        
-        tabInfos[SIGNATURE_APPROVED_INDEX].numOfNotification = approvedSignatures.size();
         
         tabInfos[CLASS_PATH_PENDING_INDEX].numOfNotification = pendingClasspathEntries.size();
         tabInfos[CLASS_PATH_PENDING_INDEX].primaryColor = true;
         
-        tabInfos[CLASS_PATH_APPROVED_INDEX].numOfNotification = approvedClasspathEntries.size();
-
         // will be injected as a variable inside Jelly view
         req.setAttribute("activeTab", activeTab);
         req.setAttribute("tabInfos", tabInfos);
@@ -971,13 +964,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
             save();
         }
-        SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-        try {
+
+        try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
             for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                 listener.onApproved(hash);
             }
-        } finally {
-            SecurityContextHolder.setContext(orig);
         }
     }
 
@@ -1048,15 +1039,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
             save();
         }
-        SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-        try {
+
+        try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
             for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                 for (String hash : content.hashes) {
                     listener.onApproved(hash);
                 }
             }
-        } finally {
-            SecurityContextHolder.setContext(orig);
         }
     }
 
@@ -1249,13 +1238,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             }
         }
         if (url != null) {
-            SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-            try {
+            try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
                 for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                     listener.onApprovedClasspathEntry(hash, url);
                 }
-            } finally {
-                SecurityContextHolder.setContext(orig);
             }
         }
         return getClasspathRenderInfo();
@@ -1296,13 +1282,12 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * To have an effectively final variable
      */
     private @CheckForNull String getCurrentUserLogin() {
-        String userLogin = null;
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null) {
-            userLogin = auth.getName();
-        }
-
-        return userLogin;
+        // used to remove completely the dependency on Acegi Security
+        return Stream.of(Jenkins.getAuthentication())
+                .filter(auth -> !auth.equals(Jenkins.ANONYMOUS))
+                .findFirst()
+                .map(auth -> auth.getName())
+                .orElse(null);
     }
     
     @Restricted(NoExternalUse.class) // for jelly only

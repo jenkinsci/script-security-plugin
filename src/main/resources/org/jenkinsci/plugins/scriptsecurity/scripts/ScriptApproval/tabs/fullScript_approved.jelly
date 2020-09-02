@@ -45,7 +45,9 @@
                             <j:choose>
                                 <j:when test="${metadata.isEmpty()}">
                                     <td colspan="9">
-                                        <i title="${%emptyMetadata_tooltip}">${%emptyMetadata}</i>
+                                        <i class="info-cursor">
+                                            ${%emptyMetadata}
+                                        </i>
                                     </td>
                                 </j:when>
                                 <j:otherwise>
@@ -61,9 +63,9 @@
                                                 </div>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%noScriptCodeSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%noScriptCodeSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%noScriptCodeSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -75,9 +77,9 @@
                                                 <a href="${rootURL}/user/${user}" class="model-link">${user}</a>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%noRequesterSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -88,9 +90,9 @@
                                                 <a href="${rootURL}/${contextItem.url}" class="model-link">${contextItem.fullDisplayName}</a>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%noContextItemSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -101,9 +103,9 @@
                                                 <span title="${%usageCount_tooltip}" class="info-cursor">${usageCount}</span>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%noUsageCountSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%noUsageCountSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%noUsageCountSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -114,9 +116,9 @@
                                                 <i:formatDate value="${lastTimeUsed}" type="both" dateStyle="medium" timeStyle="medium"/>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%notUsedSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%notUsedSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%notUsedSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -134,9 +136,9 @@
                                                 <i:formatDate value="${lastApprovalTime}" type="both" dateStyle="medium" timeStyle="medium" />
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%notApprovedSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%notApprovedSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%notApprovedSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>
@@ -147,9 +149,9 @@
                                                 <a href="${rootURL}/user/${lastKnownApproverLogin}" class="model-link">${lastKnownApproverLogin}</a>
                                             </j:when>
                                             <j:otherwise>
-                                                <span title="${%noKnownApproverSinceMetadata_tooltip}" class="info-cursor">
+                                                <i title="${%noKnownApproverSinceMetadata_tooltip}" class="info-cursor">
                                                     ${%noKnownApproverSinceMetadata}
-                                                </span>
+                                                </i>
                                             </j:otherwise>
                                         </j:choose>
                                     </td>

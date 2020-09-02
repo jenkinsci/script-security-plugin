@@ -41,9 +41,9 @@
                                         <a href="${rootURL}/user/${user}" class="model-link">${user}</a>
                                     </j:when>
                                     <j:otherwise>
-                                        <span title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
+                                        <i title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
                                             ${%noRequesterSinceMetadata}
-                                        </span>
+                                        </i>
                                     </j:otherwise>
                                 </j:choose>
                             </td>
@@ -54,9 +54,9 @@
                                         <a href="${rootURL}/${contextItem.url}" class="model-link">${contextItem.fullDisplayName}</a>
                                     </j:when>
                                     <j:otherwise>
-                                        <span title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
+                                        <i title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
                                             ${%noContextItemSinceMetadata}
-                                        </span>
+                                        </i>
                                     </j:otherwise>
                                 </j:choose>
                             </td>
