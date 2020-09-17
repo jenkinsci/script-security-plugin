@@ -1397,6 +1397,28 @@ public class SandboxInterceptorTest {
                 "new Test().hello\n");
     }
 
+    @Issue("SECURITY-2020")
+    @Test public void unsafeReturnValue() throws Throwable {
+        try {
+            Object result = evaluate(new GenericWhitelist(),
+                    "class Test {\n" +
+                    "  @Override public String toString() {\n" +
+                    "    jenkins.model.Jenkins.get().setSystemMessage('Hello, world!')\n" +
+                    "    'test'\n" +
+                    "  }\n" +
+                    "}\n" + 
+                    "new Test()");
+            // Test.equals and Test.getClass are inherited and not sandbox-transformed, so they can be called outside of the sandbox.
+            assertFalse(result.equals(new Object()));
+            assertThat(result.getClass().getSimpleName(), equalTo("Test"));
+            // Test.toString is defined in the sandbox, so it cannot be called outside of the sandbox.
+            result.toString();
+            fail("Test.toString should throw a SecurityException");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo("Rejecting unsandboxed method call: jenkins.model.Jenkins.get()"));
+        }
+    }
+
     /**
      * Checks that the annotation is blocked from being used in the provided script whether it is imported or used via
      * fully-qualified class name.
