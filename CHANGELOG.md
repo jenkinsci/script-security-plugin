@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 1.75
+
+Release date: 2020-09-23
+
+* [Fix sandbox bypass vulnerability](https://jenkins.io/security/advisory/2020-09-23/#SECURITY-2020)
+* Improvement: Add the following to the default list of approved signatures:
+    * `DefaultGroovyMethods.and(Boolean, Boolean)`
+    * `DefaultGroovyMethods.toBoolean(Boolean)`
+    * `DefaultGroovyMethods.toDouble(String)`
+    * `StringGroovyMethods.toBoolean(String)`
+    * `StringGroovyMethods.toDouble(CharSequence)`
+    * `StringGroovyMethods.toDouble(String)`
+    * `StringGroovyMethods.toInteger(CharSequence)`
+    * `StringGroovyMethods.toInteger(String)`
+
 ## Version 1.74
 
 Release date: 2020-06-30
