@@ -72,6 +72,7 @@ staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
+method java.lang.CharSequence subSequence int int
 method java.lang.Class getName
 method java.lang.Class getSimpleName
 method java.lang.Class isInstance java.lang.Object
@@ -111,6 +112,8 @@ method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
 staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
+method java.lang.String getBytes
+method java.lang.String getBytes java.lang.String
 method java.lang.String indexOf int
 method java.lang.String indexOf int int
 method java.lang.String indexOf java.lang.String
@@ -121,6 +124,8 @@ method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String int
 method java.lang.String matches java.lang.String
+method java.lang.String regionMatches boolean int java.lang.String int int
+method java.lang.String regionMatches int java.lang.String int int
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
@@ -128,14 +133,24 @@ method java.lang.String replaceFirst java.lang.String java.lang.String
 method java.lang.String split java.lang.String
 method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
+method java.lang.String startsWith java.lang.String int
 method java.lang.String substring int
 method java.lang.String substring int int
+method java.lang.String toCharArray
 method java.lang.String toLowerCase
 method java.lang.String toLowerCase java.util.Locale
 method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
+staticMethod java.lang.String valueOf boolean
+staticMethod java.lang.String valueOf char
+staticMethod java.lang.String valueOf char[]
+staticMethod java.lang.String valueOf char[] int int
+staticMethod java.lang.String valueOf double
+staticMethod java.lang.String valueOf float
+staticMethod java.lang.String valueOf int
 staticMethod java.lang.String valueOf java.lang.Object
+staticMethod java.lang.String valueOf long
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
@@ -319,6 +334,20 @@ staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
+staticMethod java.util.Base64 getDecoder
+staticMethod java.util.Base64 getEncoder
+staticMethod java.util.Base64 getMimeDecoder
+staticMethod java.util.Base64 getMimeEncoder
+staticMethod java.util.Base64 getMimeEncoder int byte[]
+staticMethod java.util.Base64 getUrlDecoder
+staticMethod java.util.Base64 getUrlEncoder
+method java.util.Base64.Decoder decode byte[]
+method java.util.Base64.Decoder decode byte[] byte[]
+method java.util.Base64.Decoder decode java.lang.String
+method java.util.Base64.Encoder encode byte[]
+method java.util.Base64.Encoder encode byte[] byte[]
+method java.util.Base64.Encoder encodeToString byte[]
+method java.util.Base64.Encoder withoutPadding
 staticField java.util.Calendar ALL_STYLES
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
