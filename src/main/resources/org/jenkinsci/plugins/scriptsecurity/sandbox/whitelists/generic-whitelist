@@ -87,6 +87,30 @@ staticMethod java.lang.Integer parseInt java.lang.String int
 staticMethod java.lang.Integer toString int int
 staticMethod java.lang.Integer valueOf java.lang.String
 method java.lang.Iterable iterator
+staticMethod java.lang.Math IEEEremainder double double
+staticMethod java.lang.Math abs double
+staticMethod java.lang.Math abs float
+staticMethod java.lang.Math abs int
+staticMethod java.lang.Math abs long
+staticMethod java.lang.Math acos double
+staticMethod java.lang.Math asin double
+staticMethod java.lang.Math atan double
+staticMethod java.lang.Math atan2 double double
+staticMethod java.lang.Math cbrt double
+staticMethod java.lang.Math ceil double
+staticMethod java.lang.Math copySign double double
+staticMethod java.lang.Math copySign float float
+staticMethod java.lang.Math cos double
+staticMethod java.lang.Math cosh double
+staticMethod java.lang.Math exp double
+staticMethod java.lang.Math expm1 double
+staticMethod java.lang.Math floor double
+staticMethod java.lang.Math getExponent double
+staticMethod java.lang.Math getExponent float
+staticMethod java.lang.Math hypot double double
+staticMethod java.lang.Math log double
+staticMethod java.lang.Math log10 double
+staticMethod java.lang.Math log1p double
 staticMethod java.lang.Math max double double
 staticMethod java.lang.Math max float float
 staticMethod java.lang.Math max int int
@@ -95,6 +119,28 @@ staticMethod java.lang.Math min double double
 staticMethod java.lang.Math min float float
 staticMethod java.lang.Math min int int
 staticMethod java.lang.Math min long long
+staticMethod java.lang.Math nextAfter double double
+staticMethod java.lang.Math nextAfter float double
+staticMethod java.lang.Math nextUp double
+staticMethod java.lang.Math nextUp float
+staticMethod java.lang.Math pow double double
+staticMethod java.lang.Math random
+staticMethod java.lang.Math rint double
+staticMethod java.lang.Math round double
+staticMethod java.lang.Math round float
+staticMethod java.lang.Math scalb double int
+staticMethod java.lang.Math scalb float int
+staticMethod java.lang.Math signum double
+staticMethod java.lang.Math signum float
+staticMethod java.lang.Math sin double
+staticMethod java.lang.Math sinh double
+staticMethod java.lang.Math sqrt double
+staticMethod java.lang.Math tan double
+staticMethod java.lang.Math tanh double
+staticMethod java.lang.Math toDegrees double
+staticMethod java.lang.Math toRadians double
+staticMethod java.lang.Math ulp double
+staticMethod java.lang.Math ulp float
 method java.lang.Number byteValue
 method java.lang.Number doubleValue
 method java.lang.Number floatValue
