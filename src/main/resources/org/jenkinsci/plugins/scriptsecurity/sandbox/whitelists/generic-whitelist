@@ -61,6 +61,49 @@ method java.io.Writer write int
 method java.io.Writer write java.lang.String
 method java.io.Writer write java.lang.String int int
 
+method java.lang.AbstractStringBuilder append boolean
+method java.lang.AbstractStringBuilder append char[]
+method java.lang.AbstractStringBuilder append char[] int int
+method java.lang.AbstractStringBuilder append double
+method java.lang.AbstractStringBuilder append float
+method java.lang.AbstractStringBuilder append int
+method java.lang.AbstractStringBuilder append java.lang.Object
+method java.lang.AbstractStringBuilder append java.lang.String
+method java.lang.AbstractStringBuilder append java.lang.StringBuffer
+method java.lang.AbstractStringBuilder append long
+method java.lang.AbstractStringBuilder appendCodePoint int
+method java.lang.AbstractStringBuilder capacity
+method java.lang.AbstractStringBuilder codePointAt int
+method java.lang.AbstractStringBuilder codePointBefore int
+method java.lang.AbstractStringBuilder codePointCount int int
+method java.lang.AbstractStringBuilder delete int int
+method java.lang.AbstractStringBuilder deleteCharAt int
+method java.lang.AbstractStringBuilder ensureCapacity int
+method java.lang.AbstractStringBuilder getChars int int char[] int
+method java.lang.AbstractStringBuilder indexOf java.lang.String
+method java.lang.AbstractStringBuilder indexOf java.lang.String int
+method java.lang.AbstractStringBuilder insert int boolean
+method java.lang.AbstractStringBuilder insert int char
+method java.lang.AbstractStringBuilder insert int char[]
+method java.lang.AbstractStringBuilder insert int char[] int int
+method java.lang.AbstractStringBuilder insert int double
+method java.lang.AbstractStringBuilder insert int float
+method java.lang.AbstractStringBuilder insert int int
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence int int
+method java.lang.AbstractStringBuilder insert int java.lang.Object
+method java.lang.AbstractStringBuilder insert int java.lang.String
+method java.lang.AbstractStringBuilder insert int long
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String int
+method java.lang.AbstractStringBuilder offsetByCodePoints int int
+method java.lang.AbstractStringBuilder replace int int java.lang.String
+method java.lang.AbstractStringBuilder reverse
+method java.lang.AbstractStringBuilder setCharAt int char
+method java.lang.AbstractStringBuilder setLength int
+method java.lang.AbstractStringBuilder substring int
+method java.lang.AbstractStringBuilder substring int int
+method java.lang.AbstractStringBuilder trimToSize
 method java.lang.Appendable append char
 method java.lang.Appendable append java.lang.CharSequence
 method java.lang.Appendable append java.lang.CharSequence int int
@@ -174,6 +217,14 @@ staticMethod java.lang.String valueOf float
 staticMethod java.lang.String valueOf int
 staticMethod java.lang.String valueOf java.lang.Object
 staticMethod java.lang.String valueOf long
+new java.lang.StringBuffer
+new java.lang.StringBuffer int
+new java.lang.StringBuffer java.lang.CharSequence
+new java.lang.StringBuffer java.lang.String
+new java.lang.StringBuilder
+new java.lang.StringBuilder int
+new java.lang.StringBuilder java.lang.CharSequence
+new java.lang.StringBuilder java.lang.String
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
