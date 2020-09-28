@@ -61,6 +61,49 @@ method java.io.Writer write int
 method java.io.Writer write java.lang.String
 method java.io.Writer write java.lang.String int int
 
+method java.lang.AbstractStringBuilder append boolean
+method java.lang.AbstractStringBuilder append char[]
+method java.lang.AbstractStringBuilder append char[] int int
+method java.lang.AbstractStringBuilder append double
+method java.lang.AbstractStringBuilder append float
+method java.lang.AbstractStringBuilder append int
+method java.lang.AbstractStringBuilder append java.lang.Object
+method java.lang.AbstractStringBuilder append java.lang.String
+method java.lang.AbstractStringBuilder append java.lang.StringBuffer
+method java.lang.AbstractStringBuilder append long
+method java.lang.AbstractStringBuilder appendCodePoint int
+method java.lang.AbstractStringBuilder capacity
+method java.lang.AbstractStringBuilder codePointAt int
+method java.lang.AbstractStringBuilder codePointBefore int
+method java.lang.AbstractStringBuilder codePointCount int int
+method java.lang.AbstractStringBuilder delete int int
+method java.lang.AbstractStringBuilder deleteCharAt int
+method java.lang.AbstractStringBuilder ensureCapacity int
+method java.lang.AbstractStringBuilder getChars int int char[] int
+method java.lang.AbstractStringBuilder indexOf java.lang.String
+method java.lang.AbstractStringBuilder indexOf java.lang.String int
+method java.lang.AbstractStringBuilder insert int boolean
+method java.lang.AbstractStringBuilder insert int char
+method java.lang.AbstractStringBuilder insert int char[]
+method java.lang.AbstractStringBuilder insert int char[] int int
+method java.lang.AbstractStringBuilder insert int double
+method java.lang.AbstractStringBuilder insert int float
+method java.lang.AbstractStringBuilder insert int int
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence int int
+method java.lang.AbstractStringBuilder insert int java.lang.Object
+method java.lang.AbstractStringBuilder insert int java.lang.String
+method java.lang.AbstractStringBuilder insert int long
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String int
+method java.lang.AbstractStringBuilder offsetByCodePoints int int
+method java.lang.AbstractStringBuilder replace int int java.lang.String
+method java.lang.AbstractStringBuilder reverse
+method java.lang.AbstractStringBuilder setCharAt int char
+method java.lang.AbstractStringBuilder setLength int
+method java.lang.AbstractStringBuilder substring int
+method java.lang.AbstractStringBuilder substring int int
+method java.lang.AbstractStringBuilder trimToSize
 method java.lang.Appendable append char
 method java.lang.Appendable append java.lang.CharSequence
 method java.lang.Appendable append java.lang.CharSequence int int
@@ -72,6 +115,7 @@ staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence length
+method java.lang.CharSequence subSequence int int
 method java.lang.Class getName
 method java.lang.Class getSimpleName
 method java.lang.Class isInstance java.lang.Object
@@ -106,21 +150,48 @@ method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
 method java.lang.Object hashCode
 method java.lang.Object toString
+new java.lang.String
+staticField java.lang.String CASE_INSENSITIVE_ORDER
+new java.lang.String byte[]
+new java.lang.String byte[] int int
+new java.lang.String byte[] int int java.lang.String
+new java.lang.String byte[] int int java.nio.charset.Charset
+new java.lang.String byte[] java.lang.String
+new java.lang.String byte[] java.nio.charset.Charset
+new java.lang.String char[]
+new java.lang.String char[] int int
+method java.lang.String codePointAt int
+method java.lang.String codePointBefore int
+method java.lang.String concat java.lang.String
 method java.lang.String contains java.lang.CharSequence
+method java.lang.String contentEquals java.lang.CharSequence
+method java.lang.String contentEquals java.lang.StringBuffer
 method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
 staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
+method java.lang.String getBytes
+method java.lang.String getBytes java.lang.String
+method java.lang.String getChars int int char[] int
 method java.lang.String indexOf int
 method java.lang.String indexOf int int
 method java.lang.String indexOf java.lang.String
 method java.lang.String indexOf java.lang.String int
+new java.lang.String int[] int int
 method java.lang.String isEmpty
+new java.lang.String java.lang.String
+new java.lang.String java.lang.StringBuffer
+new java.lang.String java.lang.StringBuilder
+staticMethod java.lang.String join java.lang.CharSequence java.lang.CharSequence[]
+staticMethod java.lang.String join java.lang.CharSequence java.lang.Iterable
 method java.lang.String lastIndexOf int
 method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String int
 method java.lang.String matches java.lang.String
+method java.lang.String offsetByCodePoints int int
+method java.lang.String regionMatches boolean int java.lang.String int int
+method java.lang.String regionMatches int java.lang.String int int
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
@@ -128,14 +199,32 @@ method java.lang.String replaceFirst java.lang.String java.lang.String
 method java.lang.String split java.lang.String
 method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
+method java.lang.String startsWith java.lang.String int
 method java.lang.String substring int
 method java.lang.String substring int int
+method java.lang.String toCharArray
 method java.lang.String toLowerCase
 method java.lang.String toLowerCase java.util.Locale
 method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
+staticMethod java.lang.String valueOf boolean
+staticMethod java.lang.String valueOf char
+staticMethod java.lang.String valueOf char[]
+staticMethod java.lang.String valueOf char[] int int
+staticMethod java.lang.String valueOf double
+staticMethod java.lang.String valueOf float
+staticMethod java.lang.String valueOf int
 staticMethod java.lang.String valueOf java.lang.Object
+staticMethod java.lang.String valueOf long
+new java.lang.StringBuffer
+new java.lang.StringBuffer int
+new java.lang.StringBuffer java.lang.CharSequence
+new java.lang.StringBuffer java.lang.String
+new java.lang.StringBuilder
+new java.lang.StringBuilder int
+new java.lang.StringBuilder java.lang.CharSequence
+new java.lang.StringBuilder java.lang.String
 staticMethod java.lang.System currentTimeMillis
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
@@ -146,6 +235,13 @@ new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
+staticMethod java.nio.charset.Charset forName java.lang.String
+staticField java.nio.charset.StandardCharsets ISO_8859_1
+staticField java.nio.charset.StandardCharsets US_ASCII
+staticField java.nio.charset.StandardCharsets UTF_16
+staticField java.nio.charset.StandardCharsets UTF_16BE
+staticField java.nio.charset.StandardCharsets UTF_16LE
+staticField java.nio.charset.StandardCharsets UTF_8
 staticField java.text.DateFormat AM_PM_FIELD
 staticField java.text.DateFormat DATE_FIELD
 staticField java.text.DateFormat DAY_OF_WEEK_FIELD
@@ -319,6 +415,20 @@ staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
+staticMethod java.util.Base64 getDecoder
+staticMethod java.util.Base64 getEncoder
+staticMethod java.util.Base64 getMimeDecoder
+staticMethod java.util.Base64 getMimeEncoder
+staticMethod java.util.Base64 getMimeEncoder int byte[]
+staticMethod java.util.Base64 getUrlDecoder
+staticMethod java.util.Base64 getUrlEncoder
+method java.util.Base64.Decoder decode byte[]
+method java.util.Base64.Decoder decode byte[] byte[]
+method java.util.Base64.Decoder decode java.lang.String
+method java.util.Base64.Encoder encode byte[]
+method java.util.Base64.Encoder encode byte[] byte[]
+method java.util.Base64.Encoder encodeToString byte[]
+method java.util.Base64.Encoder withoutPadding
 staticField java.util.Calendar ALL_STYLES
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
