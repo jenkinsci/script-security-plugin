@@ -107,23 +107,46 @@ method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
 method java.lang.Object hashCode
 method java.lang.Object toString
+new java.lang.String
+staticField java.lang.String CASE_INSENSITIVE_ORDER
+new java.lang.String byte[]
+new java.lang.String byte[] int int
+new java.lang.String byte[] int int java.lang.String
+new java.lang.String byte[] int int java.nio.charset.Charset
+new java.lang.String byte[] java.lang.String
+new java.lang.String byte[] java.nio.charset.Charset
+new java.lang.String char[]
+new java.lang.String char[] int int
+method java.lang.String codePointAt int
+method java.lang.String codePointBefore int
+method java.lang.String concat java.lang.String
 method java.lang.String contains java.lang.CharSequence
+method java.lang.String contentEquals java.lang.CharSequence
+method java.lang.String contentEquals java.lang.StringBuffer
 method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
 staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
 method java.lang.String getBytes
 method java.lang.String getBytes java.lang.String
+method java.lang.String getChars int int char[] int
 method java.lang.String indexOf int
 method java.lang.String indexOf int int
 method java.lang.String indexOf java.lang.String
 method java.lang.String indexOf java.lang.String int
+new java.lang.String int[] int int
 method java.lang.String isEmpty
+new java.lang.String java.lang.String
+new java.lang.String java.lang.StringBuffer
+new java.lang.String java.lang.StringBuilder
+staticMethod java.lang.String join java.lang.CharSequence java.lang.CharSequence[]
+staticMethod java.lang.String join java.lang.CharSequence java.lang.Iterable
 method java.lang.String lastIndexOf int
 method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String int
 method java.lang.String matches java.lang.String
+method java.lang.String offsetByCodePoints int int
 method java.lang.String regionMatches boolean int java.lang.String int int
 method java.lang.String regionMatches int java.lang.String int int
 method java.lang.String replace char char
