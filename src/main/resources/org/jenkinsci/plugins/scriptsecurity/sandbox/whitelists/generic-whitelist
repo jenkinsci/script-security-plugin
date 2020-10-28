@@ -12,6 +12,7 @@ staticMethod groovy.json.JsonOutput toJson java.util.Calendar
 staticMethod groovy.json.JsonOutput toJson java.util.Date
 staticMethod groovy.json.JsonOutput toJson java.util.Map
 staticMethod groovy.json.JsonOutput toJson java.util.UUID
+staticMethod groovy.xml.XmlUtil escapeXml java.lang.String
 new groovy.json.JsonSlurper
 method groovy.json.JsonSlurper parseText java.lang.String
 
@@ -478,6 +479,7 @@ staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
 new java.util.ArrayList java.util.Collection
+new java.util.concurrent.LinkedBlockingQueue
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
 staticMethod java.util.Base64 getDecoder
@@ -739,10 +741,14 @@ method java.util.Random nextInt int
 method java.util.Random nextLong
 staticMethod java.util.TimeZone getTimeZone java.lang.String
 new java.util.TreeSet
+new java.util.TreeMap
 staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
+method java.util.concurrent.BlockingQueue poll long java.util.concurrent.TimeUnit
 staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MINUTES
+staticField java.util.concurrent.TimeUnit SECONDS
+staticField java.util.concurrent.TimeUnit MILLISECONDS
 method java.util.regex.MatchResult end
 method java.util.regex.MatchResult end int
 method java.util.regex.MatchResult group
