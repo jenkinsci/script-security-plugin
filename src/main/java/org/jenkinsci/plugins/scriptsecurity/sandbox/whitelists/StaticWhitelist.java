@@ -187,7 +187,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             }
             return new StaticFieldSignature(toks[1], toks[2]);
         } else {
-            throw new IOException(line);
+            throw new IOException("Malformed signature entry: '" + line + "'");
         }
     }
 
