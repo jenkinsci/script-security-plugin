@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 1.76
+
+Release date: 2021-02-01
+
+* Improvement: Add the following to the default list of approved signatures ([PR #308](https://github.com/jenkinsci/script-security-plugin/pull/308), [PR #310](https://github.com/jenkinsci/script-security-plugin/pull/310)):
+    * All static methods and fields in `java.lang.Math`
+    * All methods related to `java.lang.StringBuilder` and `java.lang.StringBuffer`
+    * All methods related to `java.lang.CharSequence` and `java.lang.String` apart from `String.intern()`
+    * All static methods and fields in `java.nio.charset.Charset`
+    * All methods related to `java.util.Base64`, `java.util.Base64.Decoder`, and `java.util.Base64.Encoder`
+* Internal: Update dependencies and parent POM ([PR #311](https://github.com/jenkinsci/script-security-plugin/pull/311), [PR #313](https://github.com/jenkinsci/script-security-plugin/pull/313), [PR #314](https://github.com/jenkinsci/script-security-plugin/pull/314), [PR #316](https://github.com/jenkinsci/script-security-plugin/pull/316), [PR #317](https://github.com/jenkinsci/script-security-plugin/pull/317), [PR #321](https://github.com/jenkinsci/script-security-plugin/pull/321), [PR #323](https://github.com/jenkinsci/script-security-plugin/pull/323), [PR #324](https://github.com/jenkinsci/script-security-plugin/pull/324), [PR #326](https://github.com/jenkinsci/script-security-plugin/pull/326))
+
 ## Version 1.75
 
 Release date: 2020-09-23
