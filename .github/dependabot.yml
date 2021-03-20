@@ -9,4 +9,4 @@ updates:
     ignore:
       # Caffeine 3.x requires Java 11, so we cannot update until Jenkins requires Java 11
       - dependency-name: "com.github.ben-manes.caffeine:caffeine"
-        versions: ["3.x"]
+        versions: ["[3.0.0,)"]
