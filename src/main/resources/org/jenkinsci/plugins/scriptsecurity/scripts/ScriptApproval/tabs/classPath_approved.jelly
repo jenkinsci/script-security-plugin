@@ -1,0 +1,77 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <div class="pane-frame">
+        <p>Classpath entries already approved:</p>
+        <p id="approvedClasspathEntries-none">
+            No approved classpath entries.
+        </p>
+        <div id="approvedClasspathEntries">
+        </div>
+        <p id="approvedClasspathEntries-clear">
+            You can also remove all previous classpath entry approvals:
+            <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>
+        </p>
+    </div>
+    
+    <script>
+        var mgr = <st:bind value="${it}"/>;
+        
+        function renderApprovedClasspathEntries(approvedClasspathEntries) {
+            if (approvedClasspathEntries.length == 0) {
+                $('approvedClasspathEntries-none').show();
+                $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                $('approvedClasspathEntries').hide();
+                $('approvedClasspathEntries-clear').hide();
+            } else {
+                $('approvedClasspathEntries-none').hide();
+                $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                /*
+                   Create a list like:
+                    <p id="acp-${acp.hash}">
+                        <button class="delete" onclick="denyApprovedClasspathEntry('${pcp.hash}')">Delete</button> 
+                        ${acp.hash} (${acp.path})
+                    </p>
+                 */
+                approvedClasspathEntries.each(function(e) {
+                    var block = new Element('p', { 'id': 'acp-' + e.hash });
+                    var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash});
+                    deleteButton.insert('Delete');
+                    deleteButton.observe('click', function() {
+                        if (confirm('Really delete this approved classpath entry? Any existing scripts using it will need to be rerun and the entry reapproved.')) {
+                            denyApprovedClasspathEntry(this.readAttribute('hash'));
+                        }
+                    });
+                    block.insert(deleteButton);
+                    var code = new Element('code', { 'title': e.hash });
+                    code.textContent = e.path;
+                    block.insert(code);
+                    $('approvedClasspathEntries').insert(block);
+                });
+                $('approvedClasspathEntries').show();
+                $('approvedClasspathEntries-clear').show();
+            }
+        }
+        
+        function renderClasspaths(r) {
+            //renderPendingClasspathEntries(r.responseObject()[0]);
+            renderApprovedClasspathEntries(r.responseObject()[1]);
+        }
+        
+        function denyApprovedClasspathEntry(hash) {
+            mgr.denyApprovedClasspathEntry(hash, function(r) {
+                renderClasspaths(r);
+            });
+        }
+        function clearApprovedClasspathEntries() {
+            mgr.clearApprovedClasspathEntries(function(r) {
+                renderClasspaths(r);
+            });
+        }
+        
+        Event.observe(window, "load", function(){
+            mgr.getClasspathRenderInfo(function(r) {
+                renderClasspaths(r);
+            });
+        });
+    </script>
+</j:jelly>

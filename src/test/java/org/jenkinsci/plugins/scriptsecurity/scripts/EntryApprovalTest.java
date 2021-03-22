@@ -92,6 +92,43 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
         return new Entry(new ClasspathEntry(f.toURI().toURL().toExternalForm()));
     }
 
+    @Test public void approveExternal() throws Exception {
+        configureSecurity();
+        final Approvable<?>[] entries = createFiveEntries();
+
+        final Manager managerPending = new Manager(r, "classPathPending");
+
+        for (int i = 0; i < entries.length; i++) {
+            entries[i].pending(managerPending);
+        }
+
+        entries[0].pending(managerPending).approve();
+        entries[1].pending(managerPending).approve();
+        entries[2].pending(managerPending).deny().assertDeleted();
+        entries[3].pending(managerPending).approve();
+
+        final Manager managerApproved = new Manager(r, "classPathApproval");
+        entries[0].approved(managerApproved);
+        entries[1].approved(managerApproved);
+        entries[3].approved(managerApproved);
+
+        if (entries[3].canDelete()) {
+            entries[3].approved(managerApproved).delete().assertDeleted(managerApproved);
+        }
+
+        // clear all classpaths
+        final String clearId = getClearAllApprovedId();
+        if (clearId != null) {
+            managerApproved.click(clearId);
+            for (int i = 0; i < 4; i++) {
+                entries[i].assertDeleted(managerApproved);
+            }
+        }
+        final Manager managerPending2 = new Manager(r, "classPathPending");
+        // The last one remains pending
+        entries[4].pending(managerPending2);
+    }
+
     static final class Entry extends Approvable<Entry> {
         private final ClasspathEntry entry;
         private final String hash;

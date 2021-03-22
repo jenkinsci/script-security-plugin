@@ -1,0 +1,70 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <div class="pane-frame">
+        <div>Signatures already approved:</div>
+        <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
+            <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+        </textarea>
+        
+        <div class="space-before">Signatures already approved assuming permission check:</div>
+        <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
+            <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+        </textarea>
+        
+        <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
+        <j:if test="${!empty(dangerousApprovedSignatures)}">
+            <div class="space-before">Signatures already approved which <strong><font color="red">may have introduced security vulnerabilities</font></strong> (recommend clearing):</div>
+            <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
+                <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
+            </textarea>
+        </j:if>
+        <p>
+            You can also remove all previous signature approvals:
+            <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
+        </p>
+        <j:if test="${!empty(dangerousApprovedSignatures)}">
+            Or you can just remove the dangerous ones:
+            <button onclick="clearDangerousApprovedSignatures()">Clear only dangerous Approvals</button>
+        </j:if>
+    </div>
+    
+    <script>
+        var mgr = <st:bind value="${it}"/>;
+    
+        function hideSignature(hash) {
+            $('s-' + hash).style.display = 'none';
+        }
+        function updateApprovedSignatures(r) {
+            var both = r.responseObject();
+            $('approvedSignatures').value = both[0].join('\n');
+            $('aclApprovedSignatures').value = both[1].join('\n');
+            $('dangerousApprovedSignatures').value = both[2].join('\n');
+        }
+        function approveSignature(signature, hash) {
+            mgr.approveSignature(signature, function(r) {
+                updateApprovedSignatures(r);
+            });
+            hideSignature(hash);
+        }
+        function aclApproveSignature(signature, hash) {
+            mgr.aclApproveSignature(signature, function(r) {
+                updateApprovedSignatures(r);
+            });
+            hideSignature(hash);
+        }
+        function denySignature(signature, hash) {
+            mgr.denySignature(signature);
+            hideSignature(hash);
+        }
+        function clearApprovedSignatures() {
+            mgr.clearApprovedSignatures(function(r) {
+                updateApprovedSignatures(r);
+            });
+        }
+        function clearDangerousApprovedSignatures() {
+            mgr.clearDangerousApprovedSignatures(function(r) {
+                updateApprovedSignatures(r);
+            });
+        }
+    </script>
+</j:jelly>

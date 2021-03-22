@@ -1,0 +1,70 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <div class="pane-frame">
+        <j:choose>
+            <j:when test="${it.pendingSignatures.isEmpty()}">
+                <p>
+                    No pending signature approvals.
+                </p>
+            </j:when>
+            <j:otherwise>
+                <j:forEach var="s" items="${it.pendingSignatures}">
+                    <div id="s-${s.hash}">
+                        <p>
+                            <button onclick="approveSignature('${s.signature}', '${s.hash}')">Approve</button> /
+                            <j:if test="${!s.signature.startsWith('field')}">
+                                <button onclick="aclApproveSignature('${s.signature}', '${s.hash}')">Approve assuming permission check</button> /
+                            </j:if>
+                            <button onclick="denySignature('${s.signature}', '${s.hash}')">Deny</button> signature
+                            <st:include it="${s.context}" page="index.jelly"/>:
+                            <code>${s.signature}</code>
+                            <j:if test="${s.dangerous}">
+                                <st:nbsp/><strong><font color="red">Approving this signature may introduce a security vulnerability! You are advised to deny it.</font></strong>
+                            </j:if>
+                        </p>
+                    </div>
+                </j:forEach>
+            </j:otherwise>
+        </j:choose>
+    </div>
+    
+    <script>
+        var mgr = <st:bind value="${it}"/>;
+    
+        function hideSignature(hash) {
+            $('s-' + hash).style.display = 'none';
+        }
+        function updateApprovedSignatures(r) {
+            var both = r.responseObject();
+            $('approvedSignatures').value = both[0].join('\n');
+            $('aclApprovedSignatures').value = both[1].join('\n');
+            $('dangerousApprovedSignatures').value = both[2].join('\n');
+        }
+        function approveSignature(signature, hash) {
+            mgr.approveSignature(signature, function(r) {
+                updateApprovedSignatures(r);
+            });
+            hideSignature(hash);
+        }
+        function aclApproveSignature(signature, hash) {
+            mgr.aclApproveSignature(signature, function(r) {
+                updateApprovedSignatures(r);
+            });
+            hideSignature(hash);
+        }
+        function denySignature(signature, hash) {
+            mgr.denySignature(signature);
+            hideSignature(hash);
+        }
+        function clearApprovedSignatures() {
+            mgr.clearApprovedSignatures(function(r) {
+                updateApprovedSignatures(r);
+            });
+        }
+        function clearDangerousApprovedSignatures() {
+            mgr.clearDangerousApprovedSignatures(function(r) {
+                updateApprovedSignatures(r);
+            });
+        }
+    </script>
+</j:jelly>

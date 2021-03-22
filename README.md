@@ -156,7 +156,7 @@ StaticWhitelist.from and loading a text file listing whitelisted methods.
 
 ### Classpath for evaluating scripts
 When constructing a GroovyShell to evaluate a script, or calling 
-`ecureGroovyScript.evaluate`, you must pass a `ClassLoader` which represents the effective 
+`secureGroovyScript.evaluate`, you must pass a `ClassLoader` which represents the effective 
 classpath for the script. You could use the loader of Jenkins core, or your plugin, or 
 `Jenkins.getInstance().getPluginManager().uberClassLoader`.
 

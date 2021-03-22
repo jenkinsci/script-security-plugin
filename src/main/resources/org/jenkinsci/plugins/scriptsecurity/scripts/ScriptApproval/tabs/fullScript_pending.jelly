@@ -1,0 +1,106 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+    <div id="pending-approval">
+        <j:set var="pendingScripts" value="${it.getPendingScriptsSorted()}" />
+        
+        <j:choose>
+            <j:when test="${pendingScripts.isEmpty()}">
+                <p class="no-pending-script-approvals">
+                    <i>${%noPendingScripts}</i>
+                </p>
+            </j:when>
+            <j:otherwise>
+                <table class="pane bigtable">
+                    <tr>
+                        <th width="1%"><!-- checkbox --></th>
+                        <th>${%pendingExpandCode}</th>
+                        <th>${%pendingLanguage}</th>
+                        <th>${%contextUser}</th>
+                        <th>${%contextItem}</th>
+                        <th title="${%requestApprovalTime_tooltip}" class="info-cursor">${%requestApprovalTime}</th>
+                    </tr>
+                    <j:forEach var="ps" items="${pendingScripts}">
+                        <tr class="js-selectable-row">
+                            <td>
+                                <input type="checkbox" value="" name="pending-hash"
+                                       data-hash="${ps.hash}"
+                                       id="check-pending-${ps.hash}"
+                                       class="js-checkbox-hash js-bypass-click" />
+                            </td>
+                            <td>
+                                <div class="toggle-parent" data-expand-target-id="js-${ps.hash}-row" data-expand-codemirror="true">
+                                    <span class="js-toggle-show-icon js-bypass-click action-link" title="${%pendingExpand_tooltip}">${%pendingExpand}</span>
+                                    <span class="js-toggle-hide-icon js-bypass-click hidden-element action-link" title="${%pendingMinimize_tooltip}">${%pendingMinimize}</span>
+                                </div>
+                            </td>
+                            <td>${ps.language.displayName}</td>
+                            <td>
+                                <j:set var="user" value="${ps.context.user}" />
+                                <j:choose>
+                                    <j:when test="${user != null}">
+                                        <a href="${rootURL}/user/${user}" class="model-link">${user}</a>
+                                    </j:when>
+                                    <j:otherwise>
+                                        <i title="${%noRequesterSinceMetadata_tooltip}" class="info-cursor">
+                                            ${%noRequesterSinceMetadata}
+                                        </i>
+                                    </j:otherwise>
+                                </j:choose>
+                            </td>
+                            <td>
+                                <j:set var="contextItem" value="${ps.context.item}" />
+                                <j:choose>
+                                    <j:when test="${contextItem != null}">
+                                        <a href="${rootURL}/${contextItem.url}" class="model-link">${contextItem.fullDisplayName}</a>
+                                    </j:when>
+                                    <j:otherwise>
+                                        <i title="${%noContextItemSinceMetadata_tooltip}" class="info-cursor">
+                                            ${%noContextItemSinceMetadata}
+                                        </i>
+                                    </j:otherwise>
+                                </j:choose>
+                            </td>
+                            <td>
+                                <j:set var="approvalRequestTime" value="${ps.approvalRequestTimeDate}" />
+                                <j:choose>
+                                    <j:when test="${approvalRequestTime != null}">
+                                        <i:formatDate value="${approvalRequestTime}" type="both" dateStyle="medium" timeStyle="medium"/>
+                                    </j:when>
+                                    <j:otherwise>
+                                        <span title="${%noRequestApprovalTimeSinceMetadata_tooltip}" class="info-cursor">
+                                            ${%noRequestApprovalTimeSinceMetadata}
+                                        </span>
+                                    </j:otherwise>
+                                </j:choose>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" id="js-${ps.hash}-row" class="js-async-hidden-element">
+                                <f:textarea readonly="readonly" codemirror-mode="${ps.language.codeMirrorMode}" codemirror-config='"readOnly": true' rows="10" cols="80" value="${ps.script}"/>
+                            </td>
+                        </tr>
+                    </j:forEach>
+                </table>
+
+                <p class="js-error-no-selected hidden-element error">
+                    ${%pendingNoSelectedItemError}
+                </p>
+                
+                <div class="action-panel">
+                    <span class="yui-button">
+                        <button class="js-button-pending-approve-all" title="${%approvePending_tooltip}"
+                                data-container-id="pending-approval"
+                                data-action-confirm-message="${%approvePending_confirm}"
+                                data-action-url="${rootURL}/scriptApproval/approvePendingScripts">${%approvePending}</button>
+                    </span>
+                    <span class="yui-button">
+                        <button class="js-button-pending-deny-all" title="${%denyPending_confirm}"
+                                data-container-id="pending-approval"
+                                data-action-confirm-message="${%denyPending_confirm}"
+                                data-action-url="${rootURL}/scriptApproval/approvePendingScripts">${%denyPending}</button>
+                    </span>
+                </div>
+            </j:otherwise>
+        </j:choose>
+    </div>
+</j:jelly>

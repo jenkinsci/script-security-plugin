@@ -24,10 +24,14 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import com.google.common.annotations.VisibleForTesting;
+import hudson.security.ACLContext;
+import hudson.util.HttpResponses;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -54,9 +58,9 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,17 +70,30 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
+import javax.servlet.ServletException;
+
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
+import org.jenkinsci.plugins.scriptsecurity.scripts.languages.LanguageHelper;
+import org.jenkinsci.plugins.scriptsecurity.scripts.metadata.FullScriptMetadata;
+import org.jenkinsci.plugins.scriptsecurity.scripts.metadata.HashAndFullScriptMetadata;
+import org.jenkinsci.plugins.scriptsecurity.scripts.metadata.MetadataStorage;
+import org.jvnet.localizer.Localizable;
 import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
+import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.kohsuke.stapler.json.JsonBody;
 
 /**
  * Manages approved scripts.
@@ -101,6 +118,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         XSTREAM2.alias("pendingClasspathEntry", PendingClasspathEntry.class);
     }
 
+    public static final String METADATA_GATHERING_PROP_NAME = ScriptApproval.class.getName() + ".metadataGathering";
+    public static /* final */ boolean METADATA_GATHERING = Boolean.parseBoolean(System.getProperty(METADATA_GATHERING_PROP_NAME, "true"));
+
     @Override
     protected XmlFile getConfigFile() {
         return new XmlFile(XSTREAM2, new File(Jenkins.getInstance().getRootDir(),getUrlName() + ".xml"));
@@ -118,6 +138,113 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             throw new IllegalStateException("maybe need to rebuild plugin?");
         }
         return instance;
+    }
+
+    // Used by Jelly
+    @Restricted(NoExternalUse.class)
+    public static final class Tab {
+        /**
+         * HTML safe
+         */
+        public final String parameterName;
+        /**
+         * No path traversal possible
+         */
+        public final String viewName;
+
+        private final Localizable i18nCode;
+
+        private Tab(String parameterName, String viewName, Localizable i18nCode) {
+            this.parameterName = parameterName;
+            this.viewName = viewName;
+            this.i18nCode = i18nCode;
+        }
+
+        // used by Jelly
+        public String getI18nName() {
+            return this.i18nCode.toString();
+        }
+    }
+    
+    private static final Tab FULL_SCRIPT_PENDING = new Tab("fullScriptPending", "fullScript_pending.jelly", Messages._ScriptApproval_tab_fullScriptPending());
+    private static final Tab FULL_SCRIPT_APPROVED = new Tab("fullScriptApproved", "fullScript_approved.jelly", Messages._ScriptApproval_tab_fullScriptApproved());
+    private static final Tab SIGNATURE_PENDING = new Tab("signaturePending", "signature_pending.jelly", Messages._ScriptApproval_tab_signaturePending());
+    private static final Tab SIGNATURE_APPROVED = new Tab("signatureApproved", "signature_approved.jelly", Messages._ScriptApproval_tab_signatureApproved());
+    private static final Tab CLASS_PATH_PENDING = new Tab("classPathPending", "classPath_pending.jelly", Messages._ScriptApproval_tab_classPathPending());
+    private static final Tab CLASS_PATH_APPROVED = new Tab("classPathApproval", "classPath_approved.jelly", Messages._ScriptApproval_tab_classPathApproved());
+
+    private static final Tab[] ALL_TABS = new Tab[]{
+            FULL_SCRIPT_PENDING, FULL_SCRIPT_APPROVED, 
+            SIGNATURE_PENDING, SIGNATURE_APPROVED,
+            CLASS_PATH_PENDING, CLASS_PATH_APPROVED
+    };
+    
+    private static final int FULL_SCRIPT_PENDING_INDEX = 0; 
+    private static final int FULL_SCRIPT_APPROVED_INDEX = 1; 
+    private static final int SIGNATURE_PENDING_INDEX = 2; 
+    private static final int SIGNATURE_APPROVED_INDEX = 3; 
+    private static final int CLASS_PATH_PENDING_INDEX = 4;
+    private static final int CLASS_PATH_APPROVED_INDEX = 5;
+
+    // Used by Jelly
+    @Restricted(NoExternalUse.class)
+    public static final class TabInfo {
+        public Tab tab;
+        public int numOfNotification;
+        public boolean primaryColor;
+        public boolean active;
+
+        private TabInfo(Tab tab) {
+            this.tab = tab;
+        }
+    }
+
+    @Restricted(DoNotUse.class) // Web only
+    public void doIndex(StaplerRequest req, StaplerResponse rsp, @QueryParameter("tab") String tab) throws IOException, ServletException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        TabInfo[] tabInfos = new TabInfo[ALL_TABS.length];
+        Tab activeTab = null;
+        for (int i = 0; i < ALL_TABS.length; i++) {
+            Tab t = ALL_TABS[i];
+            TabInfo info = new TabInfo(t);
+            if (t.parameterName.equals(tab)) {
+                activeTab = t;
+                info.active = true;
+            }
+            tabInfos[i] = info;
+        }
+
+        if (activeTab == null) {
+            if (!StringUtils.isBlank(tab)) {
+                LOG.log(Level.FINER, "Invalid tab name received: {0}, redirecting to default one", tab);
+            }
+            for (int i = 0; i < ALL_TABS.length && activeTab == null; i++) {
+                if (tabInfos[i].numOfNotification > 0) {
+                    tabInfos[i].active = true;
+                    activeTab = tabInfos[i].tab;
+                }
+            }
+            if (activeTab == null) {
+                tabInfos[0].active = true;
+                activeTab = tabInfos[0].tab;
+            }
+        }
+
+        tabInfos[FULL_SCRIPT_PENDING_INDEX].numOfNotification = pendingScripts.size();
+        tabInfos[FULL_SCRIPT_PENDING_INDEX].primaryColor = true;
+        
+        tabInfos[SIGNATURE_PENDING_INDEX].numOfNotification = pendingSignatures.size();
+        tabInfos[SIGNATURE_PENDING_INDEX].primaryColor = true;
+        
+        tabInfos[CLASS_PATH_PENDING_INDEX].numOfNotification = pendingClasspathEntries.size();
+        tabInfos[CLASS_PATH_PENDING_INDEX].primaryColor = true;
+        
+        // will be injected as a variable inside Jelly view
+        req.setAttribute("activeTab", activeTab);
+        req.setAttribute("tabInfos", tabInfos);
+
+        req.getView(this, "index.jelly").forward(req, rsp);
     }
 
     /**
@@ -165,6 +292,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
     
     /** All scripts which are already approved, via {@link #hash}. */
+    @GuardedBy("this")
     private final TreeSet<String> approvedScriptHashes = new TreeSet<String>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
@@ -181,6 +309,21 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
+    public synchronized List<HashAndFullScriptMetadata> getApprovedFullScriptMetadata() {
+        List<HashAndFullScriptMetadata> result = metadataStorage.getMetadataUsingHashes(this.approvedScriptHashes);
+
+        // last used entries at the top
+        // then last approved entries
+        result.sort(
+                Comparator.comparingLong((HashAndFullScriptMetadata item) -> -item.metadata.getLastTimeUsed())
+                        .thenComparing((HashAndFullScriptMetadata item) -> -item.metadata.getLastApprovalTime())
+                        .thenComparing((HashAndFullScriptMetadata item) -> item.hash)
+        );
+
+        return result;
+    }
+
+    @Restricted(NoExternalUse.class) // for use from Jelly
     public static abstract class PendingThing {
 
         /** @deprecated only used from historical records */
@@ -188,12 +331,27 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         
         private @Nonnull ApprovalContext context;
 
+        private long approvalRequestTime;
+
         PendingThing(@Nonnull ApprovalContext context) {
             this.context = context;
+            this.approvalRequestTime = new Date().getTime();
         }
 
         public @Nonnull ApprovalContext getContext() {
             return context;
+        }
+
+        public long getApprovalRequestTime() {
+            return approvalRequestTime;
+        }
+
+        public @CheckForNull Date getApprovalRequestTimeDate() {
+            if (approvalRequestTime <= 0) {
+                // for legacy
+                return null;
+            }
+            return new Date(approvalRequestTime);
         }
 
         private Object readResolve() {
@@ -219,20 +377,16 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             return hash(script, language);
         }
         public Language getLanguage() {
-            for (Language l : ExtensionList.lookup(Language.class)) {
-                if (l.getName().equals(language)) {
-                    return l;
-                }
-            }
-            return new Language() {
-                @Override public String getName() {
-                    return language;
-                }
-                @Override public String getDisplayName() {
-                    return "<missing language: " + language + ">";
-                }
-            };
+            return LanguageHelper.getLanguageFromName(language);
         }
+
+        /**
+         * Prevent the transformation to Language if the name is sufficient
+         */
+        public String getLanguageName() {
+            return this.language;
+        }
+
         @Override public int hashCode() {
             return script.hashCode() ^ language.hashCode();
         }
@@ -340,9 +494,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         pendingClasspathEntries.add(pcp);
     }
 
+    @GuardedBy("this")
+    @VisibleForTesting transient MetadataStorage metadataStorage;
+
     @DataBoundConstructor
     public ScriptApproval() {
         load();
+        this.metadataStorage = new MetadataStorage("scriptApproval/scripts");
         /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
             aclApprovedSignatures = new TreeSet<String>();
@@ -367,14 +525,14 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /** Nothing has ever been approved or is pending. */
-    boolean isEmpty() {
+    synchronized boolean isEmpty() {
         return approvedScriptHashes.isEmpty() &&
-               approvedSignatures.isEmpty() &&
-               aclApprovedSignatures.isEmpty() &&
-               approvedClasspathEntries.isEmpty() &&
-               pendingScripts.isEmpty() &&
-               pendingSignatures.isEmpty() &&
-               pendingClasspathEntries.isEmpty();
+                approvedSignatures.isEmpty() &&
+                aclApprovedSignatures.isEmpty() &&
+                approvedClasspathEntries.isEmpty() &&
+                pendingScripts.isEmpty() &&
+                pendingSignatures.isEmpty() &&
+                pendingClasspathEntries.isEmpty();
     }
 
     private static String hash(String script, String language) {
@@ -438,6 +596,12 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (!approvedScriptHashes.contains(hash)) {
             if (!Jenkins.getInstance().isUseSecurity() || Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
                 approvedScriptHashes.add(hash);
+
+                if (METADATA_GATHERING) {
+                    this.metadataStorage.withMetadata(hash, script, metadata ->
+                            metadata.notifyApprovalDuringConfiguring(script, language, context)
+                    );
+                }
             } else {
                 String key = context.getKey();
                 if (key != null) {
@@ -465,7 +629,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public synchronized String using(@Nonnull String script, @Nonnull Language language) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
-            // and in many cases there is some sensible behavior for an emoty script which we want to permit.
+            // and in many cases there is some sensible behavior for an empty script which we want to permit.
             return script;
         }
         String hash = hash(script, language.getName());
@@ -473,6 +637,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
             throw new UnapprovedUsageException(hash);
         }
+
+        if (METADATA_GATHERING) {
+            this.metadataStorage.withMetadata(hash, script, metadata ->
+                    metadata.notifyUsage(script, language)
+            );
+        }
+
         return script;
     }
 
@@ -603,13 +774,25 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     /**
      * Unconditionally approve a script.
      * Does no access checks and does not automatically save changes to disk.
-     * Useful mainly for testing.
+     * Useful mainly for testing. 
+     * 2020-04-17, this method is used only in tests, except for CommandLauncher constructor
+     *
      * @param script the text of a possibly novel script
      * @param language the language in which it is written
      * @return {@code script}, for convenience
      */
     public synchronized String preapprove(@Nonnull String script, @Nonnull Language language) {
-        approvedScriptHashes.add(hash(script, language.getName()));
+        String hash = hash(script, language.getName());
+        approvedScriptHashes.add(hash);
+
+        if (METADATA_GATHERING) {
+            String userLogin = this.getCurrentUserLogin();
+
+            this.metadataStorage.withMetadata(hash, script, metadata ->
+                    metadata.notifyPreapproveSingle(script, language, userLogin)
+            );
+        }
+
         return script;
     }
 
@@ -617,10 +800,20 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * Unconditionally approves all pending scripts.
      * Does no access checks and does not automatically save changes to disk.
      * Useful mainly for testing in combination with {@code @LocalData}.
+     * <p>
+     * 2020-04-17, this method is used only in tests.
      */
     public synchronized void preapproveAll() {
+        String userLogin = this.getCurrentUserLogin();
+
         for (PendingScript ps : pendingScripts) {
-            approvedScriptHashes.add(ps.getHash());
+            String hash = ps.getHash();
+            approvedScriptHashes.add(hash);
+            if (METADATA_GATHERING) {
+                this.metadataStorage.withMetadata(hash, ps.script, metadata ->
+                        metadata.notifyPreapproveAll(ps, userLogin)
+                );
+            }
         }
         pendingScripts.clear();
     }
@@ -728,47 +921,192 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return "scriptApproval";
     }
 
+    @Override 
+    public @Nonnull String getDisplayName() {
+        return "Script Approval";
+    }
+
+    @Deprecated
     @Restricted(NoExternalUse.class) // for use from Jelly
     public Set<PendingScript> getPendingScripts() {
         return pendingScripts;
     }
 
-    @Restricted(NoExternalUse.class) // for use from AJAX
-    @JavaScriptMethod public void approveScript(String hash) throws IOException {
+    @Restricted(NoExternalUse.class) // for use from Jelly
+    public synchronized List<PendingScript> getPendingScriptsSorted() {
+        List<PendingScript> result = new ArrayList<>(pendingScripts.size());
+        result.addAll(this.pendingScripts);
+        result.sort(
+                Comparator.comparingLong((PendingScript pendingScript) -> -pendingScript.getApprovalRequestTime())
+                        .thenComparing(PendingScript::getHash)
+        );
+        return result;
+    }
+
+    // @JavaScriptMethod, no longer accessible by JavaScript but still kept for compatibility 
+    @VisibleForTesting
+    @Restricted(NoExternalUse.class)
+    public void approveScript(String hash) {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        String userLogin = this.getCurrentUserLogin();
+
         synchronized (this) {
             approvedScriptHashes.add(hash);
-            removePendingScript(hash);
+            PendingScript pendingScript = removePendingScript(hash);
+
+            if (METADATA_GATHERING) {
+                String script = pendingScript == null ? null : pendingScript.script;
+                this.metadataStorage.withMetadata(hash, script, metadata ->
+                        metadata.notifyApproval(pendingScript, userLogin)
+                );
+            }
+
             save();
         }
-        SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-        try {
+
+        try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
             for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                 listener.onApproved(hash);
             }
-        } finally {
-            SecurityContextHolder.setContext(orig);
         }
     }
 
-    @Restricted(NoExternalUse.class) // for use from AJAX
-    @JavaScriptMethod public synchronized void denyScript(String hash) throws IOException {
+    // @JavaScriptMethod, no longer accessible by JavaScript but still kept for compatibility 
+    @VisibleForTesting
+    @Restricted(NoExternalUse.class)
+    synchronized void denyScript(String hash) {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.remove(hash);
         removePendingScript(hash);
         save();
     }
 
-    private synchronized void removePendingScript(String hash) {
-        Iterator<PendingScript> it = pendingScripts.iterator();
-        while (it.hasNext()) {
-            if (it.next().getHash().equals(hash)) {
-                it.remove();
-                break;
+    @RequirePOST
+    @Restricted(NoExternalUse.class)
+    public void doScriptContent(StaplerRequest req, StaplerResponse rsp, @QueryParameter(required = true) String hash) throws Exception {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        synchronized (this) {
+            FullScriptMetadata metadata = this.metadataStorage.getExisting(hash);
+            if (metadata == null) {
+                // this can occur naturally only if you have concurrent views of the scriptApproval page
+                LOG.log(Level.FINER, "Requesting a non-existing metadata {0}", hash);
+                throw HttpResponses.notFound();
+            }
+            Language language = metadata.getLanguage();
+            if (language != null && metadata.getScriptLength() > 0) {
+                String script = this.metadataStorage.readScript(hash);
+                if (script != null) {
+                    req.setAttribute("script", script);
+                    req.setAttribute("languageCodeMirrorMode", language.getCodeMirrorMode());
+                    req.getView(this, "tabs/_scriptContent.jelly").forward(req, rsp);
+                    return;
+                } else {
+                    // expected for legacy approved scripts (until first usage)
+                    LOG.log(Level.FINER, "Requesting a non-existing script {0}", hash);
+                }
+            }
+            throw HttpResponses.notFound();
+        }
+    }
+
+    @Restricted(NoExternalUse.class)
+    public static final class AllSelectedHashesModel {
+        public String[] hashes;
+    }
+
+    @RequirePOST
+    @Restricted(NoExternalUse.class)
+    public void doApprovePendingScripts(@JsonBody AllSelectedHashesModel content) {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        LOG.log(Level.FINE, "Approval granted for selected {0}", content.hashes);
+
+        synchronized (this) {
+            String userLogin = this.getCurrentUserLogin();
+
+            for (String hash : content.hashes) {
+                approvedScriptHashes.add(hash);
+                PendingScript pendingScript = removePendingScript(hash);
+
+                if (METADATA_GATHERING) {
+                    String script = pendingScript == null ? null : pendingScript.script;
+                    this.metadataStorage.withMetadata(hash, script, metadata ->
+                            metadata.notifyApproval(pendingScript, userLogin)
+                    );
+                }
+            }
+
+            save();
+        }
+
+        try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
+            for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
+                for (String hash : content.hashes) {
+                    listener.onApproved(hash);
+                }
             }
         }
     }
 
+    /**
+     * Called on pending scripts
+     */
+    @RequirePOST
+    @Restricted(NoExternalUse.class)
+    public void doDenyPendingScripts(@JsonBody AllSelectedHashesModel content) {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        LOG.log(Level.FINE, "Deny pending scripts for selected {0}", content.hashes);
+        // at this point, no such script should be approved
+        synchronized (this) {
+            for (String hash : content.hashes) {
+                approvedScriptHashes.remove(hash);
+                removePendingScript(hash);
+            }
+
+            save();
+        }
+    }
+
+    @RequirePOST
+    @Restricted(NoExternalUse.class)
+    public synchronized void doRevokeApprovalForScripts(@JsonBody AllSelectedHashesModel content) {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        LOG.log(Level.FINE, "Approval revocation for selected {0}", content.hashes);
+
+        for (String hash : content.hashes) {
+            approvedScriptHashes.remove(hash);
+            // at this point, no such script should be pending
+            removePendingScript(hash);
+
+            if (METADATA_GATHERING) {
+                this.metadataStorage.removeHash(hash);
+            }
+        }
+
+        save();
+    }
+
+    /**
+     * @return the script corresponding to the hash otherwise {@code null}
+     */
+    private synchronized @CheckForNull PendingScript removePendingScript(String hash) {
+        Iterator<PendingScript> it = pendingScripts.iterator();
+        while (it.hasNext()) {
+            PendingScript curr = it.next();
+            if (curr.getHash().equals(hash)) {
+                it.remove();
+                return curr;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @deprecated use {@link #doRevokeApprovalForScripts(AllSelectedHashesModel)} instead for better granularity
+     */
+    @Deprecated
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void clearApprovedScripts() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
@@ -900,13 +1238,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             }
         }
         if (url != null) {
-            SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-            try {
+            try (ACLContext unused = ACL.as(ACL.SYSTEM)) {
                 for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                     listener.onApprovedClasspathEntry(hash, url);
                 }
-            } finally {
-                SecurityContextHolder.setContext(orig);
             }
         }
         return getClasspathRenderInfo();
@@ -943,4 +1278,20 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return getClasspathRenderInfo();
     }
 
+    /**
+     * To have an effectively final variable
+     */
+    private @CheckForNull String getCurrentUserLogin() {
+        // used to remove completely the dependency on Acegi Security
+        return Stream.of(Jenkins.getAuthentication())
+                .filter(auth -> !auth.equals(Jenkins.ANONYMOUS))
+                .findFirst()
+                .map(auth -> auth.getName())
+                .orElse(null);
+    }
+    
+    @Restricted(NoExternalUse.class) // for jelly only
+    public boolean isMetadataGatheringEnabled() {
+        return METADATA_GATHERING;
+    }
 }

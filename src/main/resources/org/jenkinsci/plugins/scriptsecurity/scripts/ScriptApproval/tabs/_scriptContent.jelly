@@ -1,0 +1,10 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:l="/lib/layout">
+    <!-- Code fragment loaded dynamically when the user requests to display an approved script content -->
+    <l:ajax>
+        <f:textarea readonly="readonly"
+                    codemirror-mode="${languageCodeMirrorMode}" 
+                    codemirror-config='"readOnly": true' rows="10" cols="80" 
+                    value="${script}"/>
+    </l:ajax>
+</j:jelly>
