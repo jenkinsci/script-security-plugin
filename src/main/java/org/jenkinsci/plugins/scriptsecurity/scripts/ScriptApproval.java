@@ -816,7 +816,6 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         save();
     }
 
-    // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] clearApprovedSignatures() throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
@@ -842,6 +841,32 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         while (it.hasNext()) {
             if (StaticWhitelist.isBlacklisted(it.next())) {
                 it.remove();
+            }
+        }
+
+        save();
+        return reconfigure();
+    }
+
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized String[][] clearSelectedSignatures(String[] signatures) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+        for(String sig : signatures) {
+            Iterator<String> it = approvedSignatures.iterator();
+            while (it.hasNext()) {
+                if (sig.equals(it.next())) {
+                    it.remove();
+                    break;
+                }
+            }
+
+            it = aclApprovedSignatures.iterator();
+            while (it.hasNext()) {
+                if (sig.equals(it.next())) {
+                    it.remove();
+                    break;
+                }
             }
         }
 

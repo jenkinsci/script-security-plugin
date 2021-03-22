@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlTable;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
@@ -104,8 +105,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertThat(managePageBodyText, Matchers.containsString("1 dangerous signatures previously approved which ought not have been."));
 
         HtmlPage scriptApprovalPage = managePage.getAnchorByHref("scriptApproval").click();
-        HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
-        HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
+        HtmlTable approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
+        HtmlTable dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
 
         assertThat(approvedTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
         assertThat(dangerousTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
@@ -160,6 +161,27 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.clearDangerousApprovedSignatures();
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
+    }
+
+    @Test public void clearSelectedMethodLifeCycle() throws Exception {
+        ScriptApproval sa = ScriptApproval.get();
+
+        String signature1 = "method java.io.Writer write java.lang.String";
+        String signature2 = "method java.lang.AutoCloseable close";
+
+        sa.approveSignature(WHITELISTED_SIGNATURE);
+        sa.approveSignature(DANGEROUS_SIGNATURE);
+        sa.approveSignature(signature1);
+        sa.approveSignature(signature2);
+        assertEquals(4, sa.getApprovedSignatures().length);
+
+        String[] toBeRemoved = {WHITELISTED_SIGNATURE};
+        sa.clearSelectedSignatures(toBeRemoved);
+        assertEquals(3, sa.getApprovedSignatures().length);
+
+        toBeRemoved = new String[]{signature1, signature2};
+        sa.clearSelectedSignatures(toBeRemoved);
+        assertEquals(1, sa.getApprovedSignatures().length);
     }
 
     @Issue("JENKINS-57563")
