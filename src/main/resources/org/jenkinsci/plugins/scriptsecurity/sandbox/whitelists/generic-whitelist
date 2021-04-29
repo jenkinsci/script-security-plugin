@@ -487,13 +487,13 @@ staticMethod java.util.Base64 getMimeEncoder
 staticMethod java.util.Base64 getMimeEncoder int byte[]
 staticMethod java.util.Base64 getUrlDecoder
 staticMethod java.util.Base64 getUrlEncoder
-method java.util.Base64.Decoder decode byte[]
-method java.util.Base64.Decoder decode byte[] byte[]
-method java.util.Base64.Decoder decode java.lang.String
-method java.util.Base64.Encoder encode byte[]
-method java.util.Base64.Encoder encode byte[] byte[]
-method java.util.Base64.Encoder encodeToString byte[]
-method java.util.Base64.Encoder withoutPadding
+method java.util.Base64$Decoder decode byte[]
+method java.util.Base64$Decoder decode byte[] byte[]
+method java.util.Base64$Decoder decode java.lang.String
+method java.util.Base64$Encoder encode byte[]
+method java.util.Base64$Encoder encode byte[] byte[]
+method java.util.Base64$Encoder encodeToString byte[]
+method java.util.Base64$Encoder withoutPadding
 staticField java.util.Calendar ALL_STYLES
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
