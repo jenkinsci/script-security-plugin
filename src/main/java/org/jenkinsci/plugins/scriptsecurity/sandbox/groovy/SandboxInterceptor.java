@@ -24,7 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.collect.ImmutableSet;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
@@ -36,6 +35,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -84,7 +85,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     };
 
     /** @see NumberMathModificationInfo */
-    private static final Set<String> NUMBER_MATH_NAMES = ImmutableSet.of("plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+    private static final Set<String> NUMBER_MATH_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned")));
 
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
