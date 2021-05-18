@@ -77,7 +77,7 @@ public class SecureGroovyScriptTest {
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
     /**
-     * Basic approval test where the user doesn't have RUN_SCRIPTS privs but has unchecked
+     * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
      */
     @Test public void basicApproval() throws Exception {
@@ -143,14 +143,13 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has RUN_SCRIPTS privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode.
      */
-    @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("devel");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -174,10 +173,10 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user has RUN_SCRIPTS privs => should default to non sandboxed
+        // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has RUN_SCRIPTS privs, the script should not have ended up pending approval
+        // Because it has ADMINISTER privs, the script should not have ended up pending approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
         assertEquals(0, pendingScripts.size());
 
@@ -186,9 +185,9 @@ public class SecureGroovyScriptTest {
     }
 
     /**
-     * Test where the user doesn't have RUN_SCRIPTS privs, default to sandbox mode.
+     * Test where the user doesn't have ADMINISTER privs, default to sandbox mode.
      */
-    @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_without_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -215,7 +214,7 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user doesn't have RUN_SCRIPTS privs => should default to sandboxed mode
+        // The user doesn't have ADMINISTER privs => should default to sandboxed mode
         assertTrue(publisher.getScript().isSandbox());
 
         // When sandboxed, only approved classpath entries are allowed so doesn't get added to pending approvals list.
@@ -675,7 +674,6 @@ public class SecureGroovyScriptTest {
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
         mockStrategy.grant(Jenkins.READ).everywhere().to("approver");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("approver");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("approver");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -721,7 +719,7 @@ public class SecureGroovyScriptTest {
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved
+        // If configured by a user with ADMINISTER, the classpath is automatically approved
         {
             r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
             
@@ -738,7 +736,7 @@ public class SecureGroovyScriptTest {
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
-        // If configured by a user without RUN_SCRIPTS, approval is requested
+        // If configured by a user without ADMINISTER, approval is requested
         {
             r.submit(wcDevel.getPage(p, "configure").getFormByName("config"));
             
@@ -750,7 +748,7 @@ public class SecureGroovyScriptTest {
             // don't remove pending classpaths.
         }
         
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved, and removed from approval request.
+        // If configured by a user with ADMINISTER, the classpath is automatically approved, and removed from approval request.
         {
             assertNotEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());

@@ -66,7 +66,7 @@ public class ScriptApprovalNote extends ConsoleNote<Object> {
 
     @Override
     public ConsoleAnnotator<Object> annotate(Object context, MarkupText text, int charPos) {
-        if (Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+        if (Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
             String url = ScriptApproval.get().getUrlName();
             StaplerRequest req = Stapler.getCurrentRequest();
             if (req != null) {
