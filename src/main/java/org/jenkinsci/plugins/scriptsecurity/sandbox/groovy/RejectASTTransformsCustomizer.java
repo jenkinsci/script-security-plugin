@@ -24,7 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.collect.ImmutableList;
 import groovy.lang.Grab;
 import groovy.lang.GrabConfig;
 import groovy.lang.GrabExclude;
@@ -46,12 +45,13 @@ import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class RejectASTTransformsCustomizer extends CompilationCustomizer {
-    private static final List<String> BLOCKED_TRANSFORMS = ImmutableList.of(ASTTest.class.getCanonicalName(), Grab.class.getCanonicalName(),
+    private static final List<String> BLOCKED_TRANSFORMS = Collections.unmodifiableList(Arrays.asList(ASTTest.class.getCanonicalName(), Grab.class.getCanonicalName(),
             GrabConfig.class.getCanonicalName(), GrabExclude.class.getCanonicalName(), GrabResolver.class.getCanonicalName(),
-            Grapes.class.getCanonicalName(), AnnotationCollector.class.getCanonicalName());
+            Grapes.class.getCanonicalName(), AnnotationCollector.class.getCanonicalName()));
 
     public RejectASTTransformsCustomizer() {
         super(CompilePhase.CONVERSION);
