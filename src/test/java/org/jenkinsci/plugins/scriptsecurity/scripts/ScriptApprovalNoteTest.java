@@ -54,7 +54,7 @@ public class ScriptApprovalNoteTest {
     @Test public void smokes() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
-            grant(Jenkins.ADMINISTER, Jenkins.READ, Item.READ).everywhere().to("runScriptsUser").
+            grant(Jenkins.ADMINISTER, Jenkins.READ, Item.READ).everywhere().to("adminUser").
             grant(Jenkins.READ, Item.READ).everywhere().to("otherUser"));
         FreeStyleProject p = r.createFreeStyleProject("p");
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
@@ -64,7 +64,7 @@ public class ScriptApprovalNoteTest {
         
         JenkinsRule.WebClient wc = r.createWebClient();
 
-        wc.login("runScriptsUser");
+        wc.login("adminUser");
         // make sure we see the annotation for the ADMINISTER user.
         HtmlPage rsp = wc.getPage(b, "console");
         assertEquals(1, DomNodeUtil.selectNodes(rsp, "//A[@href='" + r.contextPath + "/scriptApproval']").size());
