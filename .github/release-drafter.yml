@@ -1,0 +1,3 @@
+_extends: .github
+name-template: Script Security v$NEXT_MINOR_VERSION
+tag-template: script-security-$NEXT_MINOR_VERSION
