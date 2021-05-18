@@ -218,6 +218,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         abstract boolean exists() throws Exception;
         final Class<?> type(String name) throws Exception {
+            // TODO this should be more strict: binary name is required for nested classes
             return ClassUtils.getClass(name);
         }
         final Class<?>[] types(String[] names) throws Exception {
