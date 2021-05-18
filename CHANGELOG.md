@@ -1,5 +1,7 @@
 # Changelog
 
+From of version 1.77 see [GitHub Releases](https://github.com/jenkinsci/script-security-plugin/releases)
+
 ## Version 1.76
 
 Release date: 2021-02-01
