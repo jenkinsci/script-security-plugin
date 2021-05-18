@@ -1,9 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.16</version>
+    <version>4.18</version>
     <relativePath />
   </parent>
 
@@ -12,13 +13,13 @@
   <packaging>hpi</packaging>
   <name>Script Security Plugin</name>
   <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
-  <url>https://github.com/jenkinsci/script-security-plugin</url>
+  <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   <properties>
     <revision>1.77</revision>
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.222.4</jenkins.version>
     <java.level>8</java.level>
-    <configuration-as-code.version>1.47</configuration-as-code.version>
+    <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
   <licenses>
     <license>
@@ -27,9 +28,9 @@
     </license>
   </licenses>
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    <connection>scm:git:git://github.com/${gitHubRepo}.git</connection>
+    <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
+    <url>https://github.com/${gitHubRepo}</url>
     <tag>${scmTag}</tag>
   </scm>
 
@@ -59,6 +60,18 @@
     </plugins>
   </build>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.jenkins.tools.bom</groupId>
+        <artifactId>bom-2.222.x</artifactId>
+        <version>807.v6d348e44c987</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.kohsuke</groupId>
@@ -72,20 +85,17 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.github.ben-manes.caffeine</groupId>
-      <artifactId>caffeine</artifactId>
-      <version>2.9.0</version> <!-- 3.0.0 requires Java 11. -->
+      <groupId>io.jenkins.plugins</groupId>
+      <artifactId>caffeine-api</artifactId>
     </dependency>
     <dependency>
       <groupId>io.jenkins</groupId>
       <artifactId>configuration-as-code</artifactId>
-      <version>${configuration-as-code.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.jenkins.configuration-as-code</groupId>
       <artifactId>test-harness</artifactId>
-      <version>${configuration-as-code.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
