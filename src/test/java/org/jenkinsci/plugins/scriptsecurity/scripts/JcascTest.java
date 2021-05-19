@@ -26,6 +26,9 @@ public class JcascTest {
         String[] approved = ScriptApproval.get().getApprovedSignatures();
         assertTrue(approved.length == 1);
         assertEquals(approved[0], "method java.net.URI getHost");
+        String[] approvedScriptHashes = ScriptApproval.get().getApprovedScriptHashes();
+        assertTrue(approvedScriptHashes.length == 1);
+        assertEquals(approvedScriptHashes[0], "fccae58c5762bdd15daca97318e9d74333203106");
     }
 
     @Test
