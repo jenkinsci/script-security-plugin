@@ -31,7 +31,6 @@ import hudson.model.Result;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
@@ -52,11 +51,15 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.rules.ExpectedException;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
     @Rule
     public LoggerRule logging = new LoggerRule();
 
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+    
     private static final String CLEAR_ALL_ID = "approvedScripts-clear";
 
     private static final AtomicLong COUNTER = new AtomicLong(0L);
@@ -73,14 +76,12 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Test
     @LocalData("malformedScriptApproval")
     public void malformedScriptApproval() throws Exception {
+        exception.expect(IOException.class);
+        exception.expectMessage("Malformed signature entry: ' new java.lang.Exception java.lang.String'");
         logging.record(ScriptApproval.class, Level.FINER).capture(100);
-        try {
-            Whitelist w = new ScriptApproval.ApprovedWhitelist();
-        } catch (Exception e) {
-            // ignore - we want to make sure we're logging this properly.
-        }
-        assertThat(logging.getRecords(), Matchers.hasSize(Matchers.equalTo(1)));
-        assertEquals("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'",
+        new ScriptApproval.ApprovedWhitelist().reconfigure();
+        assertThat(logging.getRecords(), Matchers.hasSize(Matchers.equalTo(2)));
+        assertEquals("Malformed signature entry: ' new java.lang.Exception java.lang.String' in scriptApproval.xml",
                 logging.getRecords().get(0).getMessage());
     }
 
