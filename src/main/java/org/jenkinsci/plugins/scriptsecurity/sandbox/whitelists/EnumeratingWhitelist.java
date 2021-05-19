@@ -398,8 +398,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override boolean exists() throws Exception {
             try {
-                type(type).getField(field);
-                return true;
+                return !Modifier.isStatic(type(type).getField(field).getModifiers());
             } catch (NoSuchFieldException x) {
                 return false;
             }
@@ -417,6 +416,13 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         @Override public String toString() {
             return "staticField " + signaturePart();
+        }
+        @Override boolean exists() throws Exception {
+            try {
+                return Modifier.isStatic(type(type).getField(field).getModifiers());
+            } catch (NoSuchFieldException x) {
+                return false;
+            }
         }
     }
 
