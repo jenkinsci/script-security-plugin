@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
@@ -98,13 +99,17 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
 
         // The fact that the user doesn't have RUN_SCRIPT privs means sandbox mode should be on by default.
         // We need to switch it off to force it into approval.
-        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) config.getInputsByName("_.sandbox").get(0);
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
         assertEquals(true, sandboxRB.isChecked()); // should be checked
         sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
 
@@ -124,7 +129,9 @@ public class SecureGroovyScriptTest {
         r.assertLogContains(UnapprovedUsageException.class.getName(), r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
         page = wc.getPage(p, "configure");
         config = page.getFormByName("config");
-        script = config.getTextAreaByName("_.script");
+        scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        script = scripts.get(scripts.size() - 1);
         groovy = "build.externalizableId.toUpperCase()";
         script.setText(groovy);
         r.submit(config);
@@ -164,7 +171,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
@@ -205,7 +214,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
