@@ -34,6 +34,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +67,7 @@ public class ProxyWhitelist extends Whitelist {
     private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
 
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
-    private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
+    private final Map<ProxyWhitelist,Void> wrappers = Collections.synchronizedMap(new WeakHashMap<ProxyWhitelist,Void>());
 
     // TODO Consider StampedLock when we switch to Java8 for better performance - https://dzone.com/articles/a-look-at-stampedlock
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
