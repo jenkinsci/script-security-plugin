@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -139,12 +140,15 @@ public class ProxyWhitelist extends Whitelist {
                     this.delegates.add(delegate);
                 }
             }
-            for (ProxyWhitelist pw : wrappers.keySet()) {
-                pw.reset();
+            Iterator<ProxyWhitelist> pwIterator = wrappers.keySet().iterator();
+            synchronized (wrappers) {
+                while (pwIterator.hasNext()) {
+                    pwIterator.next().reset();
+                }
             }
             if (this.wrappers.isEmpty()) {  // Top-level ProxyWhitelist should be the only cache
                 // Top-level ProxyWhitelist should precache the statically permitted signatures
-                ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
+                ((EnumeratingWhitelist) (this.delegates.get(0))).precache();
             }
         } finally {
             writer.unlock();
