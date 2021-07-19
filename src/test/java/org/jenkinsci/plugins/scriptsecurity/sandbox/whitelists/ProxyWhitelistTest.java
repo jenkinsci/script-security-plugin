@@ -89,7 +89,7 @@ public class ProxyWhitelistTest {
         int threadPoolSize = 2;
         List<Whitelist> delegates = Arrays.asList(
             new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST"))),
-            new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")))
+            new ProxyWhitelist(new StaticWhitelist(new StringReader("method java.lang.String length")))
         );
 
         ExecutorService es = Executors.newFixedThreadPool(threadPoolSize);
