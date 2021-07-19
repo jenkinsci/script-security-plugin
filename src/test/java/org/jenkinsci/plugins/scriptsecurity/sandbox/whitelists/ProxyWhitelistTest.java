@@ -30,7 +30,9 @@ import org.jvnet.hudson.test.Issue;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -78,26 +80,29 @@ public class ProxyWhitelistTest {
      * to enter an infinite loop when using a {@link java.util.WeakHashMap} to hold the delegates as it is not 
      * synchronized. This is a rare case that is also related to Garbage Collection.
      * If contention is acceptable and/or the delegates collection behave, this test should be quite fast, just a few 
-     * seconds. A timeout is allowed to process the creation of 1000000 {@link ProxyWhitelist} using an original 
-     * delegate. If the tasks have not completed by then, we can assume that there is a problem.
+     * seconds. A timeout is allowed to process the creation of 1000000 {@link ProxyWhitelist} using an original list of
+     * 2 delegates. If the tasks have not completed by then, we can assume that there is a problem.
      */
     @Issue("JENKINS-41797")
     @Test(timeout = 30000)
     public void testConcurrent() throws InterruptedException, IOException {
         int threadPoolSize = 2;
-        ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")));
+        List<Whitelist> delegates = Arrays.asList(
+            new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST"))),
+            new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")))
+        );
 
         ExecutorService es = Executors.newFixedThreadPool(threadPoolSize);
         
         for (int i = 1; i < 1000000; i++) {
             es.submit(() -> {
-                new ProxyWhitelist(pw1);
+                new ProxyWhitelist(delegates);
             });
         }
 
         es.shutdown();
         // If interrupted after the timeout, something went wrong
-        assert es.awaitTermination(10000, TimeUnit.MILLISECONDS);
+        assert es.awaitTermination(15000, TimeUnit.MILLISECONDS);
     }
 
 }
