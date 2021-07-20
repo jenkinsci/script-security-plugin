@@ -75,8 +75,51 @@ public class ProxyWhitelist extends Whitelist {
         reset(delegates);
     }
 
+    /**
+     * This should only be called from {@link ProxyWhitelist#reset(Collection)}. So we can assume that a write 
+     * lock is held.
+     * @param wrapper the wrapper
+     */
+    private void addWrapper(ProxyWhitelist wrapper) {
+        assert wrapper.lock.writeLock().isHeldByCurrentThread();
+        lock.writeLock().lock();
+        try {
+            wrappers.put(wrapper, null);
+            lock.readLock().lock();
+        } finally {
+            lock.writeLock().unlock();
+        }
+        try {
+            for (Whitelist subdelegate : delegates) {
+                if (subdelegate instanceof EnumeratingWhitelist) {
+                    ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
+                    continue; // this is handled specially
+                }
+                wrapper.delegates.add(subdelegate);
+            }
+            wrapper.methodSignatures.addAll(methodSignatures);
+            wrapper.newSignatures.addAll(newSignatures);
+            wrapper.staticMethodSignatures.addAll(staticMethodSignatures);
+            wrapper.fieldSignatures.addAll(fieldSignatures);
+            wrapper.staticFieldSignatures.addAll(staticFieldSignatures);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * This only exists for consistency. Access to originalDelegates should require a read lock and this 
+     * method should be called by a <b>wrapped</b> instance's {@link ProxyWhitelist#reset(Collection)}.
+     */
     private void reset() {
-        reset(originalDelegates);
+        Collection<? extends Whitelist> delegatesCollection;
+        this.lock.readLock().lock();
+        try {
+            delegatesCollection = originalDelegates;
+        } finally {
+            lock.readLock().unlock();
+        }
+        reset(delegatesCollection);
     }
 
     public final void reset(Collection<? extends Whitelist> delegates) {
@@ -120,19 +163,7 @@ public class ProxyWhitelist extends Whitelist {
                     ew.clearCache();
                 } else if (delegate instanceof ProxyWhitelist) {
                     ProxyWhitelist pw = (ProxyWhitelist) delegate;
-                    pw.addWrapper(this, null);
-                    for (Whitelist subdelegate : pw.delegates) {
-                        if (subdelegate instanceof EnumeratingWhitelist) {
-                            ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
-                            continue; // this is handled specially
-                        }
-                        this.delegates.add(subdelegate);
-                    }
-                    methodSignatures.addAll(pw.methodSignatures);
-                    newSignatures.addAll(pw.newSignatures);
-                    staticMethodSignatures.addAll(pw.staticMethodSignatures);
-                    fieldSignatures.addAll(pw.fieldSignatures);
-                    staticFieldSignatures.addAll(pw.staticFieldSignatures);
+                    pw.addWrapper(this);
                 } else {
                     Objects.requireNonNull(delegate);
                     this.delegates.add(delegate);
@@ -152,15 +183,6 @@ public class ProxyWhitelist extends Whitelist {
 
     public ProxyWhitelist(Whitelist... delegates) {
         this(Arrays.asList(delegates));
-    }
-
-    private void addWrapper(ProxyWhitelist key, Void value) {
-        lock.writeLock().lock();
-        try {
-            this.wrappers.put(key, value);
-        } finally {
-            lock.writeLock().unlock();
-        }
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
