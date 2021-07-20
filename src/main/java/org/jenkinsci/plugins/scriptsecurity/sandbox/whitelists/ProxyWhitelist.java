@@ -112,14 +112,12 @@ public class ProxyWhitelist extends Whitelist {
      * method should be called by a <b>wrapped</b> instance's {@link ProxyWhitelist#reset(Collection)}.
      */
     private void reset() {
-        Collection<? extends Whitelist> delegatesCollection;
-        this.lock.readLock().lock();
+        lock.writeLock().lock();
         try {
-            delegatesCollection = originalDelegates;
+            reset(originalDelegates);
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
-        reset(delegatesCollection);
     }
 
     public final void reset(Collection<? extends Whitelist> delegates) {
