@@ -75,16 +75,15 @@ public class ProxyWhitelist extends Whitelist {
         reset(delegates);
     }
 
-    /**
-     * This should only be called from {@link ProxyWhitelist#reset(Collection)}. So we can assume that a write 
-     * lock is held.
-     * @param wrapper the wrapper
-     */
     private void addWrapper(ProxyWhitelist wrapper) {
+        // This method should only be called from {@link ProxyWhitelist#reset(Collection)}
+        // where this thread already holds a write lock on the wrapper.
         assert wrapper.lock.writeLock().isHeldByCurrentThread();
         lock.writeLock().lock();
         try {
             wrappers.put(wrapper, null);
+            // The rest of the method only reads the current instance's fields
+            // So we downgrade this lock from write to read to reduce contention
             lock.readLock().lock();
         } finally {
             lock.writeLock().unlock();
@@ -92,10 +91,11 @@ public class ProxyWhitelist extends Whitelist {
         try {
             for (Whitelist subdelegate : delegates) {
                 if (subdelegate instanceof EnumeratingWhitelist) {
-                    ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
-                    continue; // this is handled specially
+                    // Discard any cache that is not the top-level cache
+                    ((EnumeratingWhitelist) subdelegate).clearCache();
+                } else {
+                    wrapper.delegates.add(subdelegate);
                 }
-                wrapper.delegates.add(subdelegate);
             }
             wrapper.methodSignatures.addAll(methodSignatures);
             wrapper.newSignatures.addAll(newSignatures);
@@ -107,33 +107,32 @@ public class ProxyWhitelist extends Whitelist {
         }
     }
 
-    /**
-     * This only exists for consistency. Access to originalDelegates should require a read lock and this 
-     * method should be called by a <b>wrapped</b> instance's {@link ProxyWhitelist#reset(Collection)}.
-     */
-    private void reset() {
+    public final void reset(Collection<? extends Whitelist> delegates) {
         lock.writeLock().lock();
+
         try {
-            reset(originalDelegates);
+            // store the incoming delegates for use during this reset
+            // and during future reset propagation
+            originalDelegates = delegates;
+            reset();
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    public final void reset(Collection<? extends Whitelist> delegates) {
-        ReentrantReadWriteLock.WriteLock writer = lock.writeLock();
-        writer.lock();
+    private void reset() {
+        lock.writeLock().lock();
 
         try {
-            originalDelegates = delegates;
-            this.delegates.clear();
+            delegates.clear();
             methodSignatures.clear();
             newSignatures.clear();
             staticMethodSignatures.clear();
             fieldSignatures.clear();
             staticFieldSignatures.clear();
 
-            this.delegates.add(new EnumeratingWhitelist() {
+            // Make the first delegate an adapter that points the fields of this proxy instance
+            delegates.add(new EnumeratingWhitelist() {
                 @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
                     return methodSignatures;
                 }
@@ -150,7 +149,7 @@ public class ProxyWhitelist extends Whitelist {
                     return staticFieldSignatures;
                 }
             });
-            for (Whitelist delegate : delegates) {
+            for (Whitelist delegate : originalDelegates) {
                 if (delegate instanceof EnumeratingWhitelist) {
                     EnumeratingWhitelist ew = (EnumeratingWhitelist) delegate;
                     methodSignatures.addAll(ew.methodSignatures());
@@ -167,15 +166,18 @@ public class ProxyWhitelist extends Whitelist {
                     this.delegates.add(delegate);
                 }
             }
-            for (ProxyWhitelist pw : wrappers.keySet()) {
-                pw.reset();
+            for (ProxyWhitelist wrapper : wrappers.keySet()) {
+                wrapper.reset();
             }
-            if (this.wrappers.isEmpty()) {  // Top-level ProxyWhitelist should be the only cache
-                // Top-level ProxyWhitelist should precache the statically permitted signatures
-                ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
+            if (wrappers.isEmpty()) {
+                // The first delegate is always an adapter pointing the fields of this proxy instance
+                EnumeratingWhitelist adapter = (EnumeratingWhitelist)delegates.get(0);
+                // Top-level ProxyWhitelist should be the only cache
+                // and should precache the statically permitted signatures
+                adapter.precache();
             }
         } finally {
-            writer.unlock();
+            lock.writeLock().unlock();
         }
     }
 
