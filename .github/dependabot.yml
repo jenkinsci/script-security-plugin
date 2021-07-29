@@ -2,8 +2,6 @@ version: 2
 updates:
   - package-ecosystem: "maven"
     directory: "/"
-    reviewers:
-      - "dwnusbaum"
     schedule:
       interval: "daily"
     ignore:
