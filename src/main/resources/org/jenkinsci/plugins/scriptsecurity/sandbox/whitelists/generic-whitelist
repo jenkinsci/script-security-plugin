@@ -292,6 +292,7 @@ new java.lang.StringBuilder int
 new java.lang.StringBuilder java.lang.CharSequence
 new java.lang.StringBuilder java.lang.String
 staticMethod java.lang.System currentTimeMillis
+staticMethod java.lang.System identityHashCode java.lang.Object
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
 method java.lang.Throwable printStackTrace java.io.PrintStream
@@ -678,6 +679,7 @@ method java.util.Date setTime long
 method java.util.Date setYear int
 method java.util.Date toGMTString
 method java.util.Date toLocaleString
+new java.util.HashMap
 new java.util.HashSet
 new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
@@ -1121,6 +1123,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Ite
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Iterator java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.List groovy.lang.Closure
