@@ -680,6 +680,7 @@ method java.util.Date setYear int
 method java.util.Date toGMTString
 method java.util.Date toLocaleString
 new java.util.HashMap
+new java.util.HashMap java.util.Map
 new java.util.HashSet
 new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
