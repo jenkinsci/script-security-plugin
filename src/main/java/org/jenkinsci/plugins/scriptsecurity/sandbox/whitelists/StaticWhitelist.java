@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -100,7 +100,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @param line Line to filter.
      * @return {@code null} if the like must be skipped or the content to process if not.
      */
-    static @CheckForNull String filter(@Nonnull String line) {
+    static @CheckForNull String filter(@NonNull String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#")) {
             return null;
@@ -111,7 +111,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     /**
      * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_METHODS}
      */
-    public static boolean isPermanentlyBlacklistedMethod(@Nonnull Method m) {
+    public static boolean isPermanentlyBlacklistedMethod(@NonNull Method m) {
         String signature = canonicalMethodSig(m);
 
         for (String s : PERMANENTLY_BLACKLISTED_METHODS) {
@@ -126,7 +126,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     /**
      * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_STATIC_METHODS}
      */
-    public static boolean isPermanentlyBlacklistedStaticMethod(@Nonnull Method m) {
+    public static boolean isPermanentlyBlacklistedStaticMethod(@NonNull Method m) {
         String signature = canonicalStaticMethodSig(m);
 
         for (String s : PERMANENTLY_BLACKLISTED_STATIC_METHODS) {
@@ -141,7 +141,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     /**
      * Returns true if the given constructor is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_CONSTRUCTORS}
      */
-    public static boolean isPermanentlyBlacklistedConstructor(@Nonnull Constructor c) {
+    public static boolean isPermanentlyBlacklistedConstructor(@NonNull Constructor c) {
         String signature = canonicalConstructorSig(c);
 
         for (String s : PERMANENTLY_BLACKLISTED_CONSTRUCTORS) {
@@ -260,31 +260,31 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return staticFieldSignatures;
     }
 
-    public static RejectedAccessException rejectMethod(@Nonnull Method m) {
+    public static RejectedAccessException rejectMethod(@NonNull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectMethod(@Nonnull Method m, String info) {
+    public static RejectedAccessException rejectMethod(@NonNull Method m, String info) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()), info));
     }
 
-    public static RejectedAccessException rejectNew(@Nonnull Constructor<?> c) {
+    public static RejectedAccessException rejectNew(@NonNull Constructor<?> c) {
         return blacklist(new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectStaticMethod(@Nonnull Method m) {
+    public static RejectedAccessException rejectStaticMethod(@NonNull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) != 0;
         return blacklist(new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectField(@Nonnull Field f) {
+    public static RejectedAccessException rejectField(@NonNull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }
 
-    public static RejectedAccessException rejectStaticField(@Nonnull Field f) {
+    public static RejectedAccessException rejectStaticField(@NonNull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) != 0;
         return blacklist(new RejectedAccessException("staticField", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }

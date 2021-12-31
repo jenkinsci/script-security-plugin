@@ -66,8 +66,8 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
@@ -112,7 +112,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /** Gets the singleton instance. */
-    public static @Nonnull ScriptApproval get() {
+    public static @NonNull ScriptApproval get() {
         ScriptApproval instance = ExtensionList.lookup(RootAction.class).get(ScriptApproval.class);
         if (instance == null) {
             throw new IllegalStateException("maybe need to rebuild plugin?");
@@ -186,13 +186,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         /** @deprecated only used from historical records */
         @Deprecated private String user;
         
-        private @Nonnull ApprovalContext context;
+        private @NonNull ApprovalContext context;
 
-        PendingThing(@Nonnull ApprovalContext context) {
+        PendingThing(@NonNull ApprovalContext context) {
             this.context = context;
         }
 
-        public @Nonnull ApprovalContext getContext() {
+        public @NonNull ApprovalContext getContext() {
             return context;
         }
 
@@ -210,7 +210,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public static final class PendingScript extends PendingThing {
         public final String script;
         private final String language;
-        PendingScript(@Nonnull String script, @Nonnull Language language, @Nonnull ApprovalContext context) {
+        PendingScript(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
             super(context);
             this.script = script;
             this.language = language.getName();
@@ -246,7 +246,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public static final class PendingSignature extends PendingThing {
         public final String signature;
         public final boolean dangerous;
-        PendingSignature(@Nonnull String signature, boolean dangerous, @Nonnull ApprovalContext context) {
+        PendingSignature(@NonNull String signature, boolean dangerous, @NonNull ApprovalContext context) {
             super(context);
             this.signature = signature;
             this.dangerous = dangerous;
@@ -287,7 +287,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             }
         }
         
-        PendingClasspathEntry(@Nonnull String hash, @Nonnull URL url, @Nonnull ApprovalContext context) {
+        PendingClasspathEntry(@NonNull String hash, @NonNull URL url, @NonNull ApprovalContext context) {
             super(context);
             /**
              * hash should be stored as files located at the classpath can be modified.
@@ -296,11 +296,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             this.url = url;
         }
         
-        public @Nonnull String getHash() {
+        public @NonNull String getHash() {
             return hash;
         }
         
-        public @Nonnull URL getURL() {
+        public @NonNull URL getURL() {
             return url;
         }
         @Override public int hashCode() {
@@ -313,7 +313,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             return hash.compareTo(o.hash);
         }
         
-        public static @Nonnull PendingClasspathEntry searchKeyFor(@Nonnull String hash) {
+        public static @NonNull PendingClasspathEntry searchKeyFor(@NonNull String hash) {
             final PendingClasspathEntry entry = new PendingClasspathEntry(hash, 
                     SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
             return entry;
@@ -327,7 +327,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
 
     @CheckForNull
-    private PendingClasspathEntry getPendingClasspathEntry(@Nonnull String hash) {
+    private PendingClasspathEntry getPendingClasspathEntry(@NonNull String hash) {
         PendingClasspathEntry e = pendingClasspathEntries.floor(PendingClasspathEntry.searchKeyFor(hash));
         if (e != null && e.hash.equals(hash)) {
             return e;
@@ -433,7 +433,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return {@code script}, for convenience
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized String configuring(@Nonnull String script, @Nonnull Language language, @Nonnull ApprovalContext context) {
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
         final String hash = hash(script, language.getName());
         if (!approvedScriptHashes.contains(hash)) {
             if (!Jenkins.getInstance().isUseSecurity() || Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
@@ -462,7 +462,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return {@code script}, for convenience
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
-    public synchronized String using(@Nonnull String script, @Nonnull Language language) throws UnapprovedUsageException {
+    public synchronized String using(@NonNull String script, @NonNull Language language) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
@@ -488,7 +488,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param context any additional information
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized void configuring(@Nonnull ClasspathEntry entry, @Nonnull ApprovalContext context) {
+    public synchronized void configuring(@NonNull ClasspathEntry entry, @NonNull ApprovalContext context) {
         // In order to try to minimize changes for existing class directories that could be saved
         // - Class directories are ignored here (issuing a warning)
         // - When trying to use them, the job will fail
@@ -537,7 +537,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return whether it will be approved
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
+    public synchronized FormValidation checking(@NonNull ClasspathEntry entry) {
         //TODO: better error propagation
         if (entry.isClassDirectory()) {
             return FormValidation.error(Messages.ClasspathEntry_path_noDirsAllowed());
@@ -563,7 +563,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @throws IOException when failed to the entry is inaccessible
      * @throws UnapprovedClasspathException when the entry is not approved
      */
-    public synchronized void using(@Nonnull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
+    public synchronized void using(@NonNull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
         URL url = entry.getURL();
         String hash = hashClasspathEntry(url);
         
@@ -592,7 +592,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param language the language in which it is written
      * @return a warning in case the script is not yet approved and this user lacks {@link Jenkins#ADMINISTER}, else {@link FormValidation#ok()}
      */
-    public synchronized FormValidation checking(@Nonnull String script, @Nonnull Language language) {
+    public synchronized FormValidation checking(@NonNull String script, @NonNull Language language) {
         if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER) && !approvedScriptHashes.contains(hash(script, language.getName()))) {
             return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used.");
         } else {
@@ -608,7 +608,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param language the language in which it is written
      * @return {@code script}, for convenience
      */
-    public synchronized String preapprove(@Nonnull String script, @Nonnull Language language) {
+    public synchronized String preapprove(@NonNull String script, @NonNull Language language) {
         approvedScriptHashes.add(hash(script, language.getName()));
         return script;
     }
@@ -634,7 +634,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @deprecated Unnecessary if using {@link GroovySandbox#enter}.
      */
     @Deprecated
-    public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
+    public synchronized RejectedAccessException accessRejected(@NonNull RejectedAccessException x, @NonNull ApprovalContext context) {
         String signature = x.getSignature();
         if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             save();
@@ -645,7 +645,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     private static final ThreadLocal<Stack<Consumer<RejectedAccessException>>> callbacks = ThreadLocal.withInitial(Stack::new);
 
     @Restricted(NoExternalUse.class)
-    public static void maybeRegister(@Nonnull RejectedAccessException x) {
+    public static void maybeRegister(@NonNull RejectedAccessException x) {
         for (Consumer<RejectedAccessException> callback : callbacks.get()) {
             callback.accept(x);
         }

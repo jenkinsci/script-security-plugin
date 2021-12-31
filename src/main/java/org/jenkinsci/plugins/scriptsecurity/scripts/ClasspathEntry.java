@@ -43,8 +43,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A classpath entry used for a script.
@@ -52,10 +52,10 @@ import javax.annotation.Nonnull;
 public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> implements Serializable {
 
     private static final long serialVersionUID = -2873408550951192200L;
-    private final @Nonnull URL url;
+    private final @NonNull URL url;
     
     @DataBoundConstructor
-    public ClasspathEntry(@Nonnull String path) throws MalformedURLException {
+    public ClasspathEntry(@NonNull String path) throws MalformedURLException {
         url = pathToURL(path);
     }
     
@@ -76,7 +76,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
     }
 
     /** Returns {@code null} if another protocol or unable to perform the conversion. */
-    private static File urlToFile(@Nonnull URL url) {
+    private static File urlToFile(@NonNull URL url) {
         if (url.getProtocol().equals("file")) {
             try {
                 return new File(url.toURI());
@@ -99,7 +99,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
      * In the case the URL uses a {@code file:} protocol a check is performed to see if it is a directory as an additional guard
      * in case a different class loader is used by other {@link Language} implementation.
      */
-    static boolean isClassDirectoryURL(@Nonnull URL url) {
+    static boolean isClassDirectoryURL(@NonNull URL url) {
         final File file = urlToFile(url);
         if (file != null && file.isDirectory()) {
             return true;
@@ -118,11 +118,11 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
         return isClassDirectoryURL(url);
     }
     
-    public @Nonnull String getPath() {
+    public @NonNull String getPath() {
         return urlToPath(url);
     }
 
-    public @Nonnull URL getURL() {
+    public @NonNull URL getURL() {
         return url;
     }
 
