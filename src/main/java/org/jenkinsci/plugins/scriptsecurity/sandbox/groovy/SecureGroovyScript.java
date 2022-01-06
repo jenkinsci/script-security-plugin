@@ -55,8 +55,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -83,20 +83,20 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> implements Serializable {
  
     private static final long serialVersionUID = -4347442065624787928L;
-    private final @Nonnull String script;
+    private final @NonNull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
     private transient boolean calledConfiguring;
 
     static final Logger LOGGER = Logger.getLogger(SecureGroovyScript.class.getName());
 
-    @DataBoundConstructor public SecureGroovyScript(@Nonnull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
+    @DataBoundConstructor public SecureGroovyScript(@NonNull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
     }
 
-    @Deprecated public SecureGroovyScript(@Nonnull String script, boolean sandbox) {
+    @Deprecated public SecureGroovyScript(@NonNull String script, boolean sandbox) {
         this(script, sandbox, null);
     }
 
@@ -105,7 +105,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return this;
     }
 
-    public @Nonnull String getScript() {
+    public @NonNull String getScript() {
         return script;
     }
 
@@ -113,7 +113,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return sandbox;
     }
 
-    public @Nonnull List<ClasspathEntry> getClasspath() {
+    public @NonNull List<ClasspathEntry> getClasspath() {
         return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
     }
 
@@ -196,7 +196,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     // TODO copied with modifications from CpsFlowExecution; need to find a way to share commonalities
 
-    private static void cleanUpGlobalClassValue(@Nonnull ClassLoader loader) throws Exception {
+    private static void cleanUpGlobalClassValue(@NonNull ClassLoader loader) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo");
         // TODO switch to MethodHandle for speed
         Field globalClassValueF = classInfoC.getDeclaredField("globalClassValue");
@@ -247,7 +247,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
-    private static void cleanUpGlobalClassSet(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpGlobalClassSet(@NonNull Class<?> clazz) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo"); // or just ClassInfo.class, but unclear whether this will always be there
         Field globalClassSetF = classInfoC.getDeclaredField("globalClassSet");
         globalClassSetF.setAccessible(true);
@@ -279,7 +279,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
-    private static void cleanUpClassHelperCache(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpClassHelperCache(@NonNull Class<?> clazz) throws Exception {
         Field classCacheF = Class.forName("org.codehaus.groovy.ast.ClassHelper$ClassHelperCache").getDeclaredField("classCache");
         classCacheF.setAccessible(true);
         Object classCache = classCacheF.get(null);
@@ -289,7 +289,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         classCache.getClass().getMethod("remove", Object.class).invoke(classCache, clazz);
     }
 
-    private static void cleanUpObjectStreamClassCaches(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpObjectStreamClassCaches(@NonNull Class<?> clazz) throws Exception {
         Class<?> cachesC = Class.forName("java.io.ObjectStreamClass$Caches");
         for (String cacheFName : new String[] {"localDescs", "reflectors"}) {
             Field cacheF = cachesC.getDeclaredField(cacheFName);

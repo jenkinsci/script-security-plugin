@@ -25,8 +25,8 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import hudson.ExtensionPoint;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A language for which we can request {@link ScriptApproval}.
@@ -37,13 +37,13 @@ public abstract class Language implements ExtensionPoint {
      * Unique, permanent, internal identifier of this language.
      * @return a short unlocalized identifier, such as might be used for a filename extension
      */
-    public abstract @Nonnull String getName();
+    public abstract @NonNull String getName();
 
     /**
      * Display name of the language for use in the UI.
      * @return a localized name
      */
-    public abstract @Nonnull String getDisplayName();
+    public abstract @NonNull String getDisplayName();
 
     /**
      * A CodeMirror mode string, for purposes of displaying scripts in HTML.

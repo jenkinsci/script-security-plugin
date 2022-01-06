@@ -29,7 +29,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -52,7 +52,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             this.restricted = restricted;
         }
 
-        private boolean allowed(@Nonnull AccessibleObject o) {
+        private boolean allowed(@NonNull AccessibleObject o) {
             Whitelisted ann = o.getAnnotation(Whitelisted.class);
             if (ann == null) {
                 return false;

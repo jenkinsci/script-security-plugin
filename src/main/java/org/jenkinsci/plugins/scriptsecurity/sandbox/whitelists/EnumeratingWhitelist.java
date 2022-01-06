@@ -35,8 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A whitelist based on listing signatures and searching them. Lists of signatures should not change
@@ -184,7 +184,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return permitsStaticFieldGet(field);
     }
 
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
+    public static @NonNull String getName(@NonNull Class<?> c) {
         Class<?> e = c.getComponentType();
         if (e == null) {
             return c.getName();
@@ -193,7 +193,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    public static @Nonnull String getName(@CheckForNull Object o) {
+    public static @NonNull String getName(@CheckForNull Object o) {
         return o == null ? "null" : getName(o.getClass());
     }
 
@@ -251,37 +251,37 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     /** Canonical name for a field access. */
-    static String canonicalFieldString(@Nonnull Field field) {
+    static String canonicalFieldString(@NonNull Field field) {
         return getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
     /** Canonical name for a method call. */
-    static String canonicalMethodString(@Nonnull Method method) {
+    static String canonicalMethodString(@NonNull Method method) {
         return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
     }
 
     /** Canonical name for a constructor call. */
-    static String canonicalConstructorString(@Nonnull Constructor cons) {
+    static String canonicalConstructorString(@NonNull Constructor cons) {
         return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
     }
 
-    static String canonicalMethodSig(@Nonnull Method method) {
+    static String canonicalMethodSig(@NonNull Method method) {
         return "method "+canonicalMethodString(method);
     }
 
-    static String canonicalStaticMethodSig(@Nonnull Method method) {
+    static String canonicalStaticMethodSig(@NonNull Method method) {
         return "staticMethod "+canonicalMethodString(method);
     }
 
-    static String canonicalConstructorSig(@Nonnull Constructor cons) {
+    static String canonicalConstructorSig(@NonNull Constructor cons) {
         return "new "+canonicalConstructorString(cons);
     }
 
-    static String canonicalFieldSig(@Nonnull Field field) {
+    static String canonicalFieldSig(@NonNull Field field) {
         return "field "+canonicalFieldString(field);
     }
 
-    static String canonicalStaticFieldSig(@Nonnull Field field) {
+    static String canonicalStaticFieldSig(@NonNull Field field) {
         return "staticField "+canonicalFieldString(field);
     }
 
