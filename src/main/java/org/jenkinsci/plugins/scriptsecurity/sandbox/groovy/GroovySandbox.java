@@ -43,8 +43,8 @@ import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -105,7 +105,7 @@ public final class GroovySandbox {
         return this;
     }
 
-    private @Nonnull Whitelist whitelist() {
+    private @NonNull Whitelist whitelist() {
         return whitelist != null ? whitelist : Whitelist.all();
     }
 
@@ -153,7 +153,7 @@ public final class GroovySandbox {
      * @param script the script to run
      * @return the return value of the script
      */
-    public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
+    public Object runScript(@NonNull GroovyShell shell, @NonNull String script) {
         GroovySandbox derived = new GroovySandbox().
             withApprovalContext(context).
             withTaskListener(listener).
@@ -178,7 +178,7 @@ public final class GroovySandbox {
      *
      * @return a compiler configuration set up to use the sandbox
      */
-    public static @Nonnull CompilerConfiguration createSecureCompilerConfiguration() {
+    public static @NonNull CompilerConfiguration createSecureCompilerConfiguration() {
         CompilerConfiguration cc = createBaseCompilerConfiguration();
         cc.addCompilationCustomizers(new SandboxTransformer());
         return cc;
@@ -187,7 +187,7 @@ public final class GroovySandbox {
     /**
      * Prepares a compiler configuration that rejects certain AST transformations. Used by {@link #createSecureCompilerConfiguration()}.
      */
-    public static @Nonnull CompilerConfiguration createBaseCompilerConfiguration() {
+    public static @NonNull CompilerConfiguration createBaseCompilerConfiguration() {
         CompilerConfiguration cc = new CompilerConfiguration();
         cc.addCompilationCustomizers(new RejectASTTransformsCustomizer());
         cc.setDisabledGlobalASTTransformations(new HashSet<>(Collections.singletonList(GrabAnnotationTransformation.class.getName())));
@@ -200,7 +200,7 @@ public final class GroovySandbox {
      * See {@link #createSecureCompilerConfiguration()} for the discussion.
      */
     @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Should be managed by the caller.")
-    public static @Nonnull ClassLoader createSecureClassLoader(ClassLoader base) {
+    public static @NonNull ClassLoader createSecureClassLoader(ClassLoader base) {
         return new SandboxResolvingClassLoader(base);
     }
     
@@ -214,7 +214,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #enter}
      */
     @Deprecated
-    public static void runInSandbox(@Nonnull Runnable r, @Nonnull Whitelist whitelist) throws RejectedAccessException {
+    public static void runInSandbox(@NonNull Runnable r, @NonNull Whitelist whitelist) throws RejectedAccessException {
         try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             r.run();
         }
@@ -232,7 +232,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #enter}
      */
     @Deprecated
-    public static <V> V runInSandbox(@Nonnull Callable<V> c, @Nonnull Whitelist whitelist) throws Exception {
+    public static <V> V runInSandbox(@NonNull Callable<V> c, @NonNull Whitelist whitelist) throws Exception {
         try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             return c.call();
         }
@@ -244,7 +244,7 @@ public final class GroovySandbox {
      * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} or {@link #runScript}
      */
     @Deprecated
-    public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+    public static Object run(@NonNull Script script, @NonNull final Whitelist whitelist) throws RejectedAccessException {
         LOGGER.log(Level.WARNING, null, new IllegalStateException(Messages.GroovySandbox_useOfInsecureRunOverload()));
         Whitelist wrapperWhitelist = new ProxyWhitelist(
                 new ClassLoaderWhitelist(script.getClass().getClassLoader()),
@@ -265,7 +265,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #runScript}
      */
     @Deprecated
-    public static Object run(@Nonnull final GroovyShell shell, @Nonnull final String script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+    public static Object run(@NonNull final GroovyShell shell, @NonNull final String script, @NonNull final Whitelist whitelist) throws RejectedAccessException {
         return new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
     }
 
@@ -276,7 +276,7 @@ public final class GroovySandbox {
      * @param classLoader The {@link GroovyClassLoader} to use during compilation.
      * @return The {@link FormValidation} for the compilation check.
      */
-    public static @Nonnull FormValidation checkScriptForCompilationErrors(String script, GroovyClassLoader classLoader) {
+    public static @NonNull FormValidation checkScriptForCompilationErrors(String script, GroovyClassLoader classLoader) {
         try {
             CompilationUnit cu = new CompilationUnit(
                     createSecureCompilerConfiguration(),
