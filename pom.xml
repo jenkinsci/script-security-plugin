@@ -17,7 +17,7 @@
   <properties>
     <revision>1.79</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.326-rc31849.960925fc5055</jenkins.version> <!-- TODO https://github.com/jenkinsci/jenkins/pull/5939 -->
+    <jenkins.version>2.326</jenkins.version>
     <java.level>8</java.level>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
