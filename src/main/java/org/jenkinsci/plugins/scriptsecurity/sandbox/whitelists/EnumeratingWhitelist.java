@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -32,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -217,9 +217,35 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             return toString().hashCode();
         }
         abstract boolean exists() throws Exception;
-        final Class<?> type(String name) throws Exception {
-            // TODO this should be more strict: binary name is required for nested classes
-            return ClassUtils.getClass(name);
+        /** opposite of {@link #getName(Class)} */
+        static final Class<?> type(String name) throws Exception {
+            // ClassUtils.getClass is too lax: permits Outer.Inner where we require Outer$Inner.
+            if (name.endsWith("[]")) {
+                // https://stackoverflow.com/q/1679421/12916; TODO Java 12+ use Class.arrayType
+                return Array.newInstance(type(name.substring(0, name.length() - 2)), 0).getClass();
+            }
+            switch (name) {
+            case "boolean":
+                return boolean.class;
+            case "char":
+                return char.class;
+            case "byte":
+                return byte.class;
+            case "short":
+                return short.class;
+            case "int":
+                return int.class;
+            case "long":
+                return long.class;
+            case "float":
+                return float.class;
+            case "double":
+                return double.class;
+            case "void":
+                return void.class;
+            default:
+                return Class.forName(name);
+            }
         }
         final Class<?>[] types(String[] names) throws Exception {
             Class<?>[] r = new Class<?>[names.length];
