@@ -61,7 +61,7 @@ public class EnumeratingWhitelistTest {
         assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
         assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
         assertEquals(EnumeratingWhitelistTest.class.getName() + "$C", EnumeratingWhitelist.getName(C.class));
-        for (Class<?> c : new Class<?>[] {String.class, Map.Entry.class, int.class, String[].class, Map.Entry[].class, int[].class, String[][].class, Map.Entry[][].class, int[][].class, }) {
+        for (Class<?> c : new Class<?>[] {String.class, Map.Entry.class, int.class, String[].class, Map.Entry[].class, int[].class, String[][].class, Map.Entry[][].class, int[][].class}) {
             assertEquals(c, EnumeratingWhitelist.Signature.type(EnumeratingWhitelist.getName(c)));
         }
     }
