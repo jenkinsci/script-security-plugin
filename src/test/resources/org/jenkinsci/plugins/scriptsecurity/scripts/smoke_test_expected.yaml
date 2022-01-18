@@ -1,2 +1,4 @@
+approvedScriptHashes:
+- "fccae58c5762bdd15daca97318e9d74333203106"
 approvedSignatures:
 - "method java.net.URI getHost"
