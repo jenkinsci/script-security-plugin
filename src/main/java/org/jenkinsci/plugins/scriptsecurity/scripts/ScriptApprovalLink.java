@@ -38,7 +38,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         if (ScriptApproval.get().isEmpty()) {
             return null;
         }
-        return "notepad.png";
+        return "notepad.svg";
     }
 
     @Override public String getUrlName() {
