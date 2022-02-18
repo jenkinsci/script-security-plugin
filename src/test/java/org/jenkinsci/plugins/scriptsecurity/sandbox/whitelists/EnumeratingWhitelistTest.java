@@ -56,11 +56,14 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.FieldSignature(C.class, "other").matches(f));
     }
 
-    @Test public void getName() {
+    @Test public void getName() throws Exception {
         assertEquals("java.lang.Object", EnumeratingWhitelist.getName(Object.class));
         assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
         assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
         assertEquals(EnumeratingWhitelistTest.class.getName() + "$C", EnumeratingWhitelist.getName(C.class));
+        for (Class<?> c : new Class<?>[] {String.class, Map.Entry.class, int.class, String[].class, Map.Entry[].class, int[].class, String[][].class, Map.Entry[][].class, int[][].class}) {
+            assertEquals(c, EnumeratingWhitelist.Signature.type(EnumeratingWhitelist.getName(c)));
+        }
     }
 
     @Test public void methodExists() throws Exception {
@@ -74,6 +77,9 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.MethodSignature(LinkedHashMap.class, "size").exists());
         assertFalse(new EnumeratingWhitelist.MethodSignature(HashMap.class, "size").exists());
         assertTrue(new EnumeratingWhitelist.MethodSignature(Map.class, "size").exists());
+        assertTrue(new EnumeratingWhitelist.MethodSignature(Map.Entry.class, "getKey").exists());
+        assertTrue(new EnumeratingWhitelist.MethodSignature("java.util.Map$Entry", "getKey", new String[0]).exists());
+        assertThrows(ClassNotFoundException.class, new EnumeratingWhitelist.MethodSignature("java.util.Map.Entry", "getKey", new String[0])::exists);
     }
 
     @Test
