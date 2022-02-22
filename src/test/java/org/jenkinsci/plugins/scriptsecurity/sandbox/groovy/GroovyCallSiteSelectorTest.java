@@ -24,13 +24,14 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.io.NullOutputStream;
 import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
 import hudson.EnvVars;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Hudson;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -59,7 +60,12 @@ public class GroovyCallSiteSelectorTest {
     }
 
     @Test public void overloads() throws Exception {
-        PrintWriter receiver = new PrintWriter(new NullOutputStream());
+        PrintWriter receiver = new PrintWriter(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                // Do nothing, we do not care
+            }
+        });
         assertEquals(PrintWriter.class.getMethod("print", Object.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {new Object()}));
         assertEquals(PrintWriter.class.getMethod("print", String.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {"message"}));
         assertEquals(PrintWriter.class.getMethod("print", int.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {42}));
