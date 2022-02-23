@@ -1266,6 +1266,7 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods drop java.lang.Char
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods dropWhile java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods endsWithAny java.lang.CharSequence java.lang.CharSequence[]
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.String
@@ -1321,6 +1322,7 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.l
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods startsWithAny java.lang.CharSequence java.lang.CharSequence[]
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toBoolean java.lang.String
