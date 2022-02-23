@@ -42,6 +42,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
+import org.apache.commons.io.output.NullOutputStream;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
