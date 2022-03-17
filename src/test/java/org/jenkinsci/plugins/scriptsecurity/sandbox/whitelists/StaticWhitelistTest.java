@@ -100,6 +100,10 @@ public class StaticWhitelistTest {
         for (EnumeratingWhitelist.Signature sig : sigs) {
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
+            } catch (AssertionError e) {
+                if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
+                    throw e;
+                }
             } catch (ClassNotFoundException x) {
                 if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
                     throw new Exception("Unable to verify existence of " + sig, x);
@@ -109,15 +113,19 @@ public class StaticWhitelistTest {
     }
 
     /**
-     * A set of signatures that are well-formed, but for which {@link Signature#exists} throws an exception because
-     * they involve types that are not available on the classpath when these tests run.
+     * A set of signatures that are well-formed, but for which {@link Signature#exists} may throw an exception depending
+     * on the test environment.
      */
     private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
-            // From blacklist
+            // From workflow-support, which is not a dependency of this plugin.
             new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild", new String[0]),
-            // From generic-whitelist
+            // From groovy-cps, which is not a dependency of this plugin.
             new StaticMethodSignature("com.cloudbees.groovy.cps.CpsDefaultGroovyMethods", "each",
-                    new String[] { "java.util.Iterator", "groovy.lang.Closure" })
+                    new String[] { "java.util.Iterator", "groovy.lang.Closure" }),
+            // Overrides CharSequence.isEmpty in Java 15+.
+            new MethodSignature(String.class, "isEmpty", new Class<?>[0]),
+            // Does not exist until Java 15.
+            new MethodSignature(CharSequence.class, "isEmpty", new Class<?>[0])
     ));
 
     @Test public void sanity() throws Exception {
