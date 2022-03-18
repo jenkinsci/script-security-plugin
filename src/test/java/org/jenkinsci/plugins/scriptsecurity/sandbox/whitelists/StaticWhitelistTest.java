@@ -99,16 +99,14 @@ public class StaticWhitelistTest {
 
 
         for (EnumeratingWhitelist.Signature sig : sigs) {
+            if (KNOWN_GOOD_SIGNATURES.contains(sig)) {
+                continue;
+            }
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
-            } catch (AssertionError e) {
-                if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
-                    throw e;
-                }
             } catch (ClassNotFoundException x) {
-                if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
-                    throw new Exception("Unable to verify existence of " + sig, x);
-                }
+                // Wrapping exception to include the full signature in the error message.
+                throw new Exception("Unable to verify existence of " + sig, x);
             }
         }
     }
