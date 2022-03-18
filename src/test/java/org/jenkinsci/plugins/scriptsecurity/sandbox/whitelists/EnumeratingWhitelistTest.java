@@ -78,8 +78,8 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.MethodSignature(HashMap.class, "size").exists());
         assertTrue(new EnumeratingWhitelist.MethodSignature(Map.class, "size").exists());
         assertTrue(new EnumeratingWhitelist.MethodSignature(Map.Entry.class, "getKey").exists());
-        assertTrue(new EnumeratingWhitelist.MethodSignature("java.util.Map$Entry", "getKey", new String[0]).exists());
-        assertThrows(ClassNotFoundException.class, new EnumeratingWhitelist.MethodSignature("java.util.Map.Entry", "getKey", new String[0])::exists);
+        assertTrue(new EnumeratingWhitelist.MethodSignature("java.util.Map$Entry", "getKey").exists());
+        assertThrows(ClassNotFoundException.class, new EnumeratingWhitelist.MethodSignature("java.util.Map.Entry", "getKey")::exists);
     }
 
     @Test

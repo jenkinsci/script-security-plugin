@@ -115,6 +115,7 @@ staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
+method java.lang.CharSequence isEmpty
 method java.lang.CharSequence length
 method java.lang.CharSequence subSequence int int
 method java.lang.Class getName
@@ -773,6 +774,14 @@ staticField java.util.concurrent.TimeUnit HOURS
 staticField java.util.concurrent.TimeUnit MILLISECONDS
 staticField java.util.concurrent.TimeUnit MINUTES
 staticField java.util.concurrent.TimeUnit SECONDS
+method java.util.random.RandomGenerator nextBoolean
+method java.util.random.RandomGenerator nextBytes byte[]
+method java.util.random.RandomGenerator nextDouble
+method java.util.random.RandomGenerator nextFloat
+method java.util.random.RandomGenerator nextGaussian
+method java.util.random.RandomGenerator nextInt
+method java.util.random.RandomGenerator nextInt int
+method java.util.random.RandomGenerator nextLong
 method java.util.regex.MatchResult end
 method java.util.regex.MatchResult end int
 method java.util.regex.MatchResult group
