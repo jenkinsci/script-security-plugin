@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
@@ -125,7 +126,25 @@ public class StaticWhitelistTest {
             // Overrides CharSequence.isEmpty in Java 15+.
             new MethodSignature(String.class, "isEmpty", new Class<?>[0]),
             // Does not exist until Java 15.
-            new MethodSignature(CharSequence.class, "isEmpty", new Class<?>[0])
+            new MethodSignature(CharSequence.class, "isEmpty", new Class<?>[0]),
+            // Override the corresponding RandomGenerator methods in Java 17+.
+            new MethodSignature(Random.class, "nextBoolean", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextBytes", new Class<?>[] {byte[].class}),
+            new MethodSignature(Random.class, "nextDouble", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextFloat", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextGaussian", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextInt", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextInt", new Class<?>[] {int.class}),
+            new MethodSignature(Random.class, "nextLong", new Class<?>[0]),
+            // Do not exist until Java 17.
+            new MethodSignature("java.util.random.RandomGenerator", "nextBoolean", new String[0]),
+            new MethodSignature("java.util.random.RandomGenerator", "nextBytes", new String[] {"byte[]"}),
+            new MethodSignature("java.util.random.RandomGenerator", "nextDouble", new String[0]),
+            new MethodSignature("java.util.random.RandomGenerator", "nextFloat", new String[0]),
+            new MethodSignature("java.util.random.RandomGenerator", "nextGaussian", new String[0]),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt", new String[0]),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt", new String[] {"int"}),
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong", new String[0])
     ));
 
     @Test public void sanity() throws Exception {
