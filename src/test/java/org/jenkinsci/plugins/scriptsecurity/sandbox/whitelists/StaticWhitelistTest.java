@@ -117,32 +117,32 @@ public class StaticWhitelistTest {
      */
     private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
             // From workflow-support, which is not a dependency of this plugin.
-            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild", new String[0]),
+            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild"),
             // From groovy-cps, which is not a dependency of this plugin.
             new StaticMethodSignature("com.cloudbees.groovy.cps.CpsDefaultGroovyMethods", "each",
-                    new String[] { "java.util.Iterator", "groovy.lang.Closure" }),
+                    "java.util.Iterator", "groovy.lang.Closure"),
             // Overrides CharSequence.isEmpty in Java 15+.
-            new MethodSignature(String.class, "isEmpty", new Class<?>[0]),
+            new MethodSignature(String.class, "isEmpty"),
             // Does not exist until Java 15.
-            new MethodSignature(CharSequence.class, "isEmpty", new Class<?>[0]),
+            new MethodSignature(CharSequence.class, "isEmpty"),
             // Override the corresponding RandomGenerator methods in Java 17+.
-            new MethodSignature(Random.class, "nextBoolean", new Class<?>[0]),
-            new MethodSignature(Random.class, "nextBytes", new Class<?>[] {byte[].class}),
-            new MethodSignature(Random.class, "nextDouble", new Class<?>[0]),
-            new MethodSignature(Random.class, "nextFloat", new Class<?>[0]),
-            new MethodSignature(Random.class, "nextGaussian", new Class<?>[0]),
-            new MethodSignature(Random.class, "nextInt", new Class<?>[0]),
-            new MethodSignature(Random.class, "nextInt", new Class<?>[] {int.class}),
-            new MethodSignature(Random.class, "nextLong", new Class<?>[0]),
+            new MethodSignature(Random.class, "nextBoolean"),
+            new MethodSignature(Random.class, "nextBytes", byte[].class),
+            new MethodSignature(Random.class, "nextDouble"),
+            new MethodSignature(Random.class, "nextFloat"),
+            new MethodSignature(Random.class, "nextGaussian"),
+            new MethodSignature(Random.class, "nextInt"),
+            new MethodSignature(Random.class, "nextInt", int.class),
+            new MethodSignature(Random.class, "nextLong"),
             // Do not exist until Java 17.
-            new MethodSignature("java.util.random.RandomGenerator", "nextBoolean", new String[0]),
-            new MethodSignature("java.util.random.RandomGenerator", "nextBytes", new String[] {"byte[]"}),
-            new MethodSignature("java.util.random.RandomGenerator", "nextDouble", new String[0]),
-            new MethodSignature("java.util.random.RandomGenerator", "nextFloat", new String[0]),
-            new MethodSignature("java.util.random.RandomGenerator", "nextGaussian", new String[0]),
-            new MethodSignature("java.util.random.RandomGenerator", "nextInt", new String[0]),
-            new MethodSignature("java.util.random.RandomGenerator", "nextInt", new String[] {"int"}),
-            new MethodSignature("java.util.random.RandomGenerator", "nextLong", new String[0])
+            new MethodSignature("java.util.random.RandomGenerator", "nextBoolean"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextBytes", "byte[]"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextDouble"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextFloat"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextGaussian"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt", "int"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong")
     ));
 
     @Test public void sanity() throws Exception {

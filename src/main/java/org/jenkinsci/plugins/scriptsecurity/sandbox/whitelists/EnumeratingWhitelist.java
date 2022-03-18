@@ -314,7 +314,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     public static class MethodSignature extends Signature {
         final String receiverType, method;
         final String[] argumentTypes;
-        public MethodSignature(String receiverType, String method, String[] argumentTypes) {
+        public MethodSignature(String receiverType, String method, String... argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
             this.argumentTypes = argumentTypes.clone();
@@ -360,7 +360,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     static class StaticMethodSignature extends MethodSignature {
-        StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
+        StaticMethodSignature(String receiverType, String method, String... argumentTypes) {
             super(receiverType, method, argumentTypes);
         }
         @Override public String toString() {
