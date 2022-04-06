@@ -199,7 +199,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
         Script(String groovy) {
             final ApprovalContext ac = ApprovalContext.create();
-            this.groovy = ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ac);
+            this.groovy = ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ac, true);
             this.hash = new ScriptApproval.PendingScript(groovy, GroovyLanguage.get(), ac).getHash();
         }
 
