@@ -24,12 +24,16 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.Serializable;
 
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.Extension;
@@ -52,8 +56,12 @@ import javax.annotation.Nonnull;
 public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry> implements Serializable {
 
     private static final long serialVersionUID = -2873408550951192200L;
-    private final @Nonnull URL url;
-    
+
+    private final @NonNull URL url;
+    private transient String oldPath;
+    private transient boolean shouldBeApproved;
+
+    @SuppressFBWarnings(value = {"SE_TRANSIENT_FIELD_NOT_RESTORED"}, justification = "Null is the expected value for deserealized instances of this class")
     @DataBoundConstructor
     public ClasspathEntry(@Nonnull String path) throws MalformedURLException {
         url = pathToURL(path);
@@ -133,7 +141,36 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             return null;
         }
     }
-    
+
+    @Restricted(NoExternalUse.class) // for jelly view
+    public String getOldPath() {
+        return oldPath;
+    }
+
+    @DataBoundSetter
+    public void setOldPath(String oldPath) {
+        this.oldPath = oldPath;
+    }
+
+    public boolean isShouldBeApproved() {
+        return shouldBeApproved;
+    }
+
+    @DataBoundSetter
+    public void setShouldBeApproved(boolean shouldBeApproved) {
+        this.shouldBeApproved = shouldBeApproved;
+    }
+
+    @Restricted(NoExternalUse.class) // for jelly view
+    public boolean isScriptAutoApprovalEnabled() {
+        return ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+    }
+
+    @Restricted(NoExternalUse.class) // for jelly view
+    public boolean isEntryApproved() {
+        return ScriptApproval.get().isClasspathEntryApproved(url);
+    }
+
     @Override
     public String toString() {
         return url.toString();
@@ -167,12 +204,15 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             return "ClasspathEntry";
         }
         
-        public FormValidation doCheckPath(@QueryParameter String value) {
+        public FormValidation doCheckPath(@QueryParameter String value, @QueryParameter String oldPath, @QueryParameter boolean shouldBeApproved) {
             if (StringUtils.isBlank(value)) {
                 return FormValidation.warning("Enter a file path or URL."); // TODO I18N
             }
             try {
-                return ScriptApproval.get().checking(new ClasspathEntry(value));
+                ClasspathEntry entry = new ClasspathEntry(value);
+                entry.setShouldBeApproved(shouldBeApproved);
+                entry.setOldPath(oldPath);
+                return ScriptApproval.get().checking(entry);
             } catch (MalformedURLException x) {
                 return FormValidation.error(x, "Could not parse: " + value); // TODO I18N
             }

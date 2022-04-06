@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <input type="hidden" name="oldScript" value="${instance.script}" />
     <f:entry field="script" title="${%Groovy Script}">
         <!-- TODO <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.JENKINS-15604"/> -->
         <!-- TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1 means no true Groovy support -->
