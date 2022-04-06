@@ -48,7 +48,6 @@ import hudson.util.FormValidation;
 import hudson.util.XStream2;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -550,6 +549,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     
     /**
      * Like {@link #checking(String, Language, boolean)} but for classpath entries.
+     * However, this method does not actually check whether the classpath entry is approved, 
+     * because it would have to connect to the URL and download the contents, 
+     * which may be unsafe if this is called via a web method by an unprivileged user
      * (This is automatic if use {@link ClasspathEntry} as a configuration element.)
      * @param entry the classpath entry to verify
      * @return whether it will be approved
@@ -560,18 +562,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (entry.isClassDirectory()) {
             return FormValidation.error(Messages.ClasspathEntry_path_noDirsAllowed());
         }
-        URL url = entry.getURL();
-        try {
-            if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
-                return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
-            } else {
-                return FormValidation.ok();
-            }
-        } catch (FileNotFoundException x) {
-            return FormValidation.error(Messages.ClasspathEntry_path_notExists());
-        } catch (IOException x) {
-            return FormValidation.error(x, "Could not verify: " + url); // TODO NO18N
-        }
+        // We intentionally do not call hashClasspathEntry because that method downloads the contents
+        // of the URL in order to hash it, making it an attractive DoS vector, and we do not have enough
+        // context here to be able to easily perform an appropriate permission check.
+        return FormValidation.ok();
     }
     
     /**
