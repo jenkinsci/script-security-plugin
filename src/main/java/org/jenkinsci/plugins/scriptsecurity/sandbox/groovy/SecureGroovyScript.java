@@ -58,6 +58,7 @@ import java.util.logging.Logger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -68,7 +69,10 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
@@ -86,6 +90,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     private final @NonNull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
+    private transient String oldScript;
     private transient boolean calledConfiguring;
 
     static final Logger LOGGER = Logger.getLogger(SecureGroovyScript.class.getName());
@@ -117,6 +122,20 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
     }
 
+    public String getOldScript() {
+        return oldScript;
+    }
+
+    @DataBoundSetter
+    public void setOldScript(String oldScript) {
+        this.oldScript = oldScript;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public boolean isScriptAutoApprovalEnabled() {
+        return ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+    }
+
     /**
      * To be called in your own {@link DataBoundConstructor} when storing the field of this type.
      * @param context an approval context
@@ -125,7 +144,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     public SecureGroovyScript configuring(ApprovalContext context) {
         calledConfiguring = true;
         if (!sandbox) {
-            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
+            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context, !StringUtils.equals(this.oldScript, this.script));
         }
         for (ClasspathEntry entry : getClasspath()) {
             ScriptApproval.get().configuring(entry, context);
@@ -457,13 +476,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
         @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
         @RequirePOST
-        public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
+        public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox, @QueryParameter String oldScript) {
             FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
                     new GroovyClassLoader(Jenkins.get().getPluginManager().uberClassLoader));
             if (validationResult.kind != FormValidation.Kind.OK) {
                 return validationResult;
             }
-            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
+            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get(), !StringUtils.equals(oldScript, value));
         }
 
     }
