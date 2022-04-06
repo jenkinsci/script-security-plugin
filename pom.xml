@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>script-security</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>1.78.1</version>
   <packaging>hpi</packaging>
   <name>Script Security Plugin</name>
   <description>Allows Jenkins administrators to control what in-process scripts can be run by less-privileged users.</description>
@@ -31,7 +31,7 @@
     <connection>scm:git:git://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
     <url>https://github.com/${gitHubRepo}</url>
-    <tag>${scmTag}</tag>
+    <tag>script-security-1.78.1</tag>
   </scm>
 
   <repositories>
