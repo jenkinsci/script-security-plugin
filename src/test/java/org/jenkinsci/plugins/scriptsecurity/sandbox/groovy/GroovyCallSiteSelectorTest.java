@@ -128,14 +128,12 @@ public class GroovyCallSiteSelectorTest {
     @Test
     public void varargsFailureCases() throws Exception {
         // If there's a partial match, we should get a ClassCastException
-        try {
-            assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
-                    new Object[]{new BooleanParameterValue("someBool", true), "x"}));
-        } catch (Exception e) {
-            assertTrue(e instanceof ClassCastException);
-            assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
-                    e.getMessage());
-        }
+        final Exception e = assertThrows(Exception.class,
+                () -> assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
+                        new Object[]{new BooleanParameterValue("someBool", true), "x"})));
+        assertTrue(e instanceof ClassCastException);
+        assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
+                e.getMessage());
         // If it's a complete non-match, we just shouldn't get a constructor.
         assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
     }

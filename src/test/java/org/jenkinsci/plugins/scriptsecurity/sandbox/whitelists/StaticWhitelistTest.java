@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,9 +59,8 @@ public class StaticWhitelistTest {
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
         List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
-        InputStream is = definition.openStream();
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        try (InputStream is = definition.openStream()) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String line;
             while ((line = br.readLine()) != null) {
                 line = StaticWhitelist.filter(line);
@@ -69,8 +69,6 @@ public class StaticWhitelistTest {
                 }
                 sigs.add(StaticWhitelist.parse(line));
             }
-        } finally {
-            is.close();
         }
 
         HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<EnumeratingWhitelist.Signature>(sigs.size());

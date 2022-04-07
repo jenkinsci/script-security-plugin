@@ -51,6 +51,7 @@ import java.util.logging.Level;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
@@ -118,19 +119,15 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Issue("SECURITY-1866")
     @Test public void classpathEntriesEscaped() throws Exception {
         // Add pending classpath entry.
-        String hash = null;
-        try {
-            ScriptApproval.get().using(new ClasspathEntry("https://www.example.com/#value=Hack<img id='xss' src=x onerror=alert(123)>Hack"));
-            fail("Classpath should not already be approved");
-        } catch (UnapprovedClasspathException e) {
-            hash = e.getHash();
-        }
+        final UnapprovedClasspathException e = assertThrows(UnapprovedClasspathException.class, () ->
+            ScriptApproval.get().using(new ClasspathEntry("https://www.example.com/#value=Hack<img id='xss' src=x onerror=alert(123)>Hack")));
+
         // Check for XSS in pending approvals.
         JenkinsRule.WebClient wc = r.createWebClient();
         HtmlPage approvalPage = wc.goTo("scriptApproval");
         assertThat(approvalPage.getElementById("xss"), nullValue());
         // Approve classpath entry.
-        ScriptApproval.get().approveClasspathEntry(hash);
+        ScriptApproval.get().approveClasspathEntry(e.getHash());
         // Check for XSS in approved classpath entries.
         HtmlPage approvedPage = wc.goTo("scriptApproval");
         assertThat(approvedPage.getElementById("xss"), nullValue());

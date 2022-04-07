@@ -72,24 +72,10 @@ public class ClasspathEntryTest {
         ClasspathEntry ignore = new ClasspathEntry("http://nowhere.net/");
         ignore = new ClasspathEntry(rule.newFile("x.jar").getAbsolutePath());
         ignore = new ClasspathEntry(rule.newFolder().getAbsolutePath());
-        try {
-            ignore = new ClasspathEntry("");
-            fail();
-        } catch (MalformedURLException x) {
-            // good
-        }
-        try {
-            ignore = new ClasspathEntry(" ");
-            fail();
-        } catch (MalformedURLException x) {
-            // good
-        }
-        try {
-            ignore = new ClasspathEntry("relative");
-            fail();
-        } catch (MalformedURLException x) {
-            // good
-        }
+
+        assertThrows(MalformedURLException.class, () -> new ClasspathEntry(""));
+        assertThrows(MalformedURLException.class, () -> new ClasspathEntry(" "));
+        assertThrows(MalformedURLException.class, () -> new ClasspathEntry("relative"));
     }
 
 }
