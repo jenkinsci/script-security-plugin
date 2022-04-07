@@ -28,11 +28,11 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.CLASS_NOT_FOUND;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.parentClassCache;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class SandboxResolvingClassLoaderTest {
