@@ -47,26 +47,26 @@ public class ProxyWhitelist extends Whitelist {
     private Collection<? extends Whitelist> originalDelegates;
 
     @GuardedBy("lock")
-    final List<Whitelist> delegates = new ArrayList<Whitelist>();
+    final List<Whitelist> delegates = new ArrayList<>();
 
     @GuardedBy("lock")
-    private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
+    private final List<EnumeratingWhitelist.MethodSignature> methodSignatures = new ArrayList<>();
 
     @GuardedBy("lock")
-    private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<EnumeratingWhitelist.NewSignature>();
+    private final List<EnumeratingWhitelist.NewSignature> newSignatures = new ArrayList<>();
 
     @GuardedBy("lock")
-    private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<EnumeratingWhitelist.MethodSignature>();
+    private final List<EnumeratingWhitelist.MethodSignature> staticMethodSignatures = new ArrayList<>();
 
     @GuardedBy("lock")
-    private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+    private final List<EnumeratingWhitelist.FieldSignature> fieldSignatures = new ArrayList<>();
 
     @GuardedBy("lock")
-    private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
+    private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<>();
 
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
     @GuardedBy("lock")
-    private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
+    private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<>();
 
     // TODO Consider StampedLock when we switch to Java8 for better performance - https://dzone.com/articles/a-look-at-stampedlock
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
