@@ -234,10 +234,12 @@ THE SOFTWARE.
                 </j:otherwise>
             </j:choose>
             <p>Signatures already approved:</p>
+            <br>
             <textarea readonly="readonly" id="approvedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.approvedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
             <p>Signatures already approved assuming permission check:</p>
+            <br>
             <textarea readonly="readonly" id="aclApprovedSignatures" rows="10" cols="80">
                 <j:forEach var="line" items="${it.aclApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
             </textarea>
