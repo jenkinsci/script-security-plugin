@@ -30,7 +30,7 @@ THE SOFTWARE.
         <f:textarea checkMethod="post" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save();editor.getTextArea().onchange();} })//" />
     </f:entry>
     <f:entry field="sandbox">
-        <f:checkbox title="${%Use Groovy Sandbox}" default="${!h.hasPermission(app.RUN_SCRIPTS)}" />
+        <f:checkbox title="${%Use Groovy Sandbox}" default="${!h.hasPermission(app.ADMINISTER)}" />
     </f:entry>
     <f:entry title="${%Additional classpath}" field="classpath">
         <f:repeatableProperty add="${%Add entry}" header="${%Classpath entry}" field="classpath"/>

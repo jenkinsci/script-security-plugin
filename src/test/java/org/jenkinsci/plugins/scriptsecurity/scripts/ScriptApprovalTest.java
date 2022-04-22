@@ -26,10 +26,14 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,6 +48,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -110,6 +115,27 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
     }
 
+    @Issue("SECURITY-1866")
+    @Test public void classpathEntriesEscaped() throws Exception {
+        // Add pending classpath entry.
+        String hash = null;
+        try {
+            ScriptApproval.get().using(new ClasspathEntry("https://www.example.com/#value=Hack<img id='xss' src=x onerror=alert(123)>Hack"));
+            fail("Classpath should not already be approved");
+        } catch (UnapprovedClasspathException e) {
+            hash = e.getHash();
+        }
+        // Check for XSS in pending approvals.
+        JenkinsRule.WebClient wc = r.createWebClient();
+        HtmlPage approvalPage = wc.goTo("scriptApproval");
+        assertThat(approvalPage.getElementById("xss"), nullValue());
+        // Approve classpath entry.
+        ScriptApproval.get().approveClasspathEntry(hash);
+        // Check for XSS in approved classpath entries.
+        HtmlPage approvedPage = wc.goTo("scriptApproval");
+        assertThat(approvedPage.getElementById("xss"), nullValue());
+    }
+
     @Test public void clearMethodsLifeCycle() throws Exception {
         ScriptApproval sa = ScriptApproval.get();
         assertEquals(0, sa.getApprovedSignatures().length);
@@ -117,23 +143,40 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.approveSignature(WHITELISTED_SIGNATURE);
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearApprovedSignatures();
         assertEquals(0, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
-    
+
         sa.approveSignature(WHITELISTED_SIGNATURE);
         sa.approveSignature(DANGEROUS_SIGNATURE);
         assertEquals(2, sa.getApprovedSignatures().length);
         assertEquals(1, sa.getDangerousApprovedSignatures().length);
-        
+
         sa.clearDangerousApprovedSignatures();
         assertEquals(1, sa.getApprovedSignatures().length);
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
+    }
+
+    @Issue({"JENKINS-57563", "JENKINS-62708"})
+    @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance' and a script printing all labels
+    @Test
+    public void upgradeSmokes() throws Exception {
+        configureSecurity();
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("println(jenkins.model.Jenkins.instance.getLabels())", false, null)));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException: "
+                        + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
     }
 
     private Script script(String groovy) {

@@ -30,7 +30,6 @@ import java.lang.reflect.Method;
 
 import net.jcip.annotations.GuardedBy;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,6 +65,7 @@ public class ProxyWhitelist extends Whitelist {
     private final List<EnumeratingWhitelist.FieldSignature> staticFieldSignatures = new ArrayList<EnumeratingWhitelist.FieldSignature>();
 
     /** anything wrapping us, so that we can propagate {@link #reset} calls up the chain */
+    @GuardedBy("lock")
     private final Map<ProxyWhitelist,Void> wrappers = new WeakHashMap<ProxyWhitelist,Void>();
 
     // TODO Consider StampedLock when we switch to Java8 for better performance - https://dzone.com/articles/a-look-at-stampedlock
@@ -75,23 +75,64 @@ public class ProxyWhitelist extends Whitelist {
         reset(delegates);
     }
 
-    private void reset() {
-        reset(originalDelegates);
+    private void addWrapper(ProxyWhitelist wrapper) {
+        // This method should only be called from {@link ProxyWhitelist#reset(Collection)}
+        // where this thread already holds a write lock on the wrapper.
+        assert wrapper.lock.writeLock().isHeldByCurrentThread();
+        lock.writeLock().lock();
+        try {
+            wrappers.put(wrapper, null);
+            // The rest of the method only reads the current instance's fields
+            // So we downgrade this lock from write to read to reduce contention
+            lock.readLock().lock();
+        } finally {
+            lock.writeLock().unlock();
+        }
+        try {
+            for (Whitelist subdelegate : delegates) {
+                if (subdelegate instanceof EnumeratingWhitelist) {
+                    // Discard any cache that is not the top-level cache
+                    ((EnumeratingWhitelist) subdelegate).clearCache();
+                } else {
+                    wrapper.delegates.add(subdelegate);
+                }
+            }
+            wrapper.methodSignatures.addAll(methodSignatures);
+            wrapper.newSignatures.addAll(newSignatures);
+            wrapper.staticMethodSignatures.addAll(staticMethodSignatures);
+            wrapper.fieldSignatures.addAll(fieldSignatures);
+            wrapper.staticFieldSignatures.addAll(staticFieldSignatures);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public final void reset(Collection<? extends Whitelist> delegates) {
-        ReentrantReadWriteLock.WriteLock writer = lock.writeLock();
-        writer.lock();
+        lock.writeLock().lock();
 
         try {
+            // store the incoming delegates for use during this reset
+            // and during future reset propagation
             originalDelegates = delegates;
-            this.delegates.clear();
+            reset();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private void reset() {
+        lock.writeLock().lock();
+
+        try {
+            delegates.clear();
             methodSignatures.clear();
             newSignatures.clear();
             staticMethodSignatures.clear();
             fieldSignatures.clear();
+            staticFieldSignatures.clear();
 
-            this.delegates.add(new EnumeratingWhitelist() {
+            // Make the first delegate an adapter that points the fields of this proxy instance
+            delegates.add(new EnumeratingWhitelist() {
                 @Override protected List<EnumeratingWhitelist.MethodSignature> methodSignatures() {
                     return methodSignatures;
                 }
@@ -108,7 +149,7 @@ public class ProxyWhitelist extends Whitelist {
                     return staticFieldSignatures;
                 }
             });
-            for (Whitelist delegate : delegates) {
+            for (Whitelist delegate : originalDelegates) {
                 if (delegate instanceof EnumeratingWhitelist) {
                     EnumeratingWhitelist ew = (EnumeratingWhitelist) delegate;
                     methodSignatures.addAll(ew.methodSignatures());
@@ -119,33 +160,24 @@ public class ProxyWhitelist extends Whitelist {
                     ew.clearCache();
                 } else if (delegate instanceof ProxyWhitelist) {
                     ProxyWhitelist pw = (ProxyWhitelist) delegate;
-                    pw.wrappers.put(this, null);
-                    for (Whitelist subdelegate : pw.delegates) {
-                        if (subdelegate instanceof EnumeratingWhitelist) {
-                            ((EnumeratingWhitelist) subdelegate).clearCache();  // We only care about top-level cache
-                            continue; // this is handled specially
-                        }
-                        this.delegates.add(subdelegate);
-                    }
-                    methodSignatures.addAll(pw.methodSignatures);
-                    newSignatures.addAll(pw.newSignatures);
-                    staticMethodSignatures.addAll(pw.staticMethodSignatures);
-                    fieldSignatures.addAll(pw.fieldSignatures);
-                    staticFieldSignatures.addAll(pw.staticFieldSignatures);
+                    pw.addWrapper(this);
                 } else {
                     Objects.requireNonNull(delegate);
                     this.delegates.add(delegate);
                 }
             }
-            for (ProxyWhitelist pw : wrappers.keySet()) {
-                pw.reset();
+            for (ProxyWhitelist wrapper : wrappers.keySet()) {
+                wrapper.reset();
             }
-            if (this.wrappers.isEmpty()) {  // Top-level ProxyWhitelist should be the only cache
-                // Top-level ProxyWhitelist should precache the statically permitted signatures
-                ((EnumeratingWhitelist)(this.delegates.get(0))).precache();
+            if (wrappers.isEmpty()) {
+                // The first delegate is always an adapter pointing the fields of this proxy instance
+                EnumeratingWhitelist adapter = (EnumeratingWhitelist)delegates.get(0);
+                // Top-level ProxyWhitelist should be the only cache
+                // and should precache the statically permitted signatures
+                adapter.precache();
             }
         } finally {
-            writer.unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -250,6 +282,15 @@ public class ProxyWhitelist extends Whitelist {
             lock.readLock().unlock();
         }
         return false;
+    }
+
+    @Override public String toString() {
+        lock.readLock().lock();
+        try {
+            return super.toString() + delegates;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
 }

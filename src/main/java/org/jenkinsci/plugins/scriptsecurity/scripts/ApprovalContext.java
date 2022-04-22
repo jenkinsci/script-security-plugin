@@ -27,7 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import hudson.model.Item;
 import hudson.model.User;
 import hudson.security.ACL;
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 

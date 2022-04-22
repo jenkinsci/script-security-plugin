@@ -37,10 +37,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Random;
+import java.util.Set;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.StaticMethodSignature;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -97,13 +99,51 @@ public class StaticWhitelistTest {
 
 
         for (EnumeratingWhitelist.Signature sig : sigs) {
+            if (KNOWN_GOOD_SIGNATURES.contains(sig)) {
+                continue;
+            }
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
             } catch (ClassNotFoundException x) {
-                System.err.println("Cannot check validity of `" + sig + "` due to " + x);
+                // Wrapping exception to include the full signature in the error message.
+                throw new Exception("Unable to verify existence of " + sig, x);
             }
         }
     }
+
+    /**
+     * A set of signatures that are well-formed, but for which {@link Signature#exists} may throw an exception depending
+     * on the test environment.
+     */
+    private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
+            // From workflow-support, which is not a dependency of this plugin.
+            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild"),
+            // From groovy-cps, which is not a dependency of this plugin.
+            new StaticMethodSignature("com.cloudbees.groovy.cps.CpsDefaultGroovyMethods", "each",
+                    "java.util.Iterator", "groovy.lang.Closure"),
+            // Overrides CharSequence.isEmpty in Java 15+.
+            new MethodSignature(String.class, "isEmpty"),
+            // Does not exist until Java 15.
+            new MethodSignature(CharSequence.class, "isEmpty"),
+            // Override the corresponding RandomGenerator methods in Java 17+.
+            new MethodSignature(Random.class, "nextBoolean"),
+            new MethodSignature(Random.class, "nextBytes", byte[].class),
+            new MethodSignature(Random.class, "nextDouble"),
+            new MethodSignature(Random.class, "nextFloat"),
+            new MethodSignature(Random.class, "nextGaussian"),
+            new MethodSignature(Random.class, "nextInt"),
+            new MethodSignature(Random.class, "nextInt", int.class),
+            new MethodSignature(Random.class, "nextLong"),
+            // Do not exist until Java 17.
+            new MethodSignature("java.util.random.RandomGenerator", "nextBoolean"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextBytes", "byte[]"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextDouble"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextFloat"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextGaussian"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt", "int"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong")
+    ));
 
     @Test public void sanity() throws Exception {
         sanity(StaticWhitelist.class.getResource("blacklist"));

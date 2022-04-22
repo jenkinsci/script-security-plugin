@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
 import groovy.lang.GString;
+import groovy.lang.Grab;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
@@ -37,9 +38,11 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
+import groovy.transform.ASTTest;
 import hudson.Functions;
 import hudson.util.IOUtils;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -75,14 +78,13 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
-import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
+import org.kohsuke.groovy.sandbox.impl.Checker.SuperConstructorWrapper;
+import org.kohsuke.groovy.sandbox.impl.Checker.ThisConstructorWrapper;
 
 public class SandboxInterceptorTest {
 
     @Rule public ErrorCollector errors = new ErrorCollector();
-
-    @Rule public ExpectedException thrown = ExpectedException.none();
 
     @Test public void genericWhitelist() throws Exception {
         assertEvaluate(new GenericWhitelist(), 3, "'foo bar baz'.split(' ').length");
@@ -843,30 +845,41 @@ public class SandboxInterceptorTest {
     @Issue("SECURITY-1266")
     @Test
     public void blockedASTTransformsASTTest() throws Exception {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-
-        thrown.expect(MultipleCompilationErrorsException.class);
-        thrown.expectMessage("Annotation ASTTest cannot be used in the sandbox");
-
-        shell.parse("import groovy.transform.*\n" +
-                "@ASTTest(value={ assert true })\n" +
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.transform.ASTTest(value={ throw new Exception('ASTTest should not have been executed!') })\n" +
                 "@Field int x\n");
     }
 
     @Issue("SECURITY-1266")
     @Test
     public void blockedASTTransformsGrab() throws Exception {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        thrown.expect(MultipleCompilationErrorsException.class);
-        thrown.expectMessage("Annotation Grab cannot be used in the sandbox");
-
-        shell.parse("@Grab(group='foo', module='bar', version='1.0')\n" +
+        assertAnnotationBlocked(Grab.class,
+                "@groovy.lang.Grab(group='foo', module='bar', version='1.0')\n" +
                 "def foo\n");
     }
 
     private static Object evaluate(Whitelist whitelist, String script) {
-        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        Object actual = GroovySandbox.run(shell, script, whitelist);
+        CompilerConfiguration cc = GroovySandbox.createSecureCompilerConfiguration();
+        GroovyShell shell = new GroovyShell(cc);
+        /* TODO: This duplicates code in SecureGroovyScript and CpsGroovyShell. I think we could create a new method
+           in GroovySandbox with a signature like `public static void setGroovyClassLoader(GroovyShell, ClassLoader)`
+           that sets the loader field after wrapping the passed loader in CleanGroovyClassLoader, and then have
+           SecureGroovyScript call that method to avoid duplication. To also avoid the duplication in CpsGroovyShell,
+           I think we'd also need to introduce a new subtype of GroovyShell that automatically called that method in the
+           constructor (might need to tweak the memory leak fixes in workflow-cps to be able to use it from CpsGroovyShell).
+           We could also add a method like the following to GroovySandbox and recommend downstream users use it instead
+           of directly instantiating GroovyShell: `public static GroovyShell prepareSecureGroovyShell(ClassLoader, Binding, CompilerConfiguration)`.
+        */
+        try {
+            Field loaderF = GroovyShell.class.getDeclaredField("loader");
+            loaderF.setAccessible(true);
+            ClassLoader loader = GroovyShell.class.getClassLoader();
+            ClassLoader memoryProtectedLoader = new SecureGroovyScript.CleanGroovyClassLoader(GroovySandbox.createSecureClassLoader(loader), cc);
+            loaderF.set(shell, memoryProtectedLoader);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new AssertionError("Groovy class loader fields have changed", e);
+        }
+        Object actual = new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }
@@ -1182,5 +1195,253 @@ public class SandboxInterceptorTest {
                 "method java.lang.Runtime halt int",
                 "Runtime r = Runtime.getRuntime();\n" +
                         "r.halt(1)");
+    }
+
+    @Issue("JENKINS-56682")
+    @Test
+    public void scriptInitializersAtFieldSyntax() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 3,
+                "import groovy.transform.Field\n" +
+                "@Field static int foo = 1\n" +
+                "@Field int bar = foo + 1\n" +
+                "@Field int baz = bar + 1\n" +
+                "baz");
+    }
+
+    @Issue("JENKINS-56682")
+    @Test
+    public void scriptInitializersClassSyntax() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 2,
+                "class MyScript extends Script {\n" +
+                "  { MyScript.foo++ }\n" + // The instance initializer seems to be context sensitive, if placed below the field it is treated as a closure...
+                "  static { MyScript.foo++ }\n" +
+                "  static int foo = 0\n" +
+                "  def run() { MyScript.foo }\n" +
+                "}\n");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockMethodNameInMethodCalls() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "1.({ Jenkins.getInstance(); 'toString' }())()");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockPropertyNameInAssignment() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class Test { def x = 0 }\n" +
+                "def t = new Test()\n" +
+                "t.({ Jenkins.getInstance(); 'x' }()) = 1\n");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockPropertyNameInPrefixPostfixExpressions() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class Test { def x = 0 }\n" +
+                "def t = new Test()\n" +
+                "t.({ Jenkins.getInstance(); 'x' }())++\n");
+    }
+
+    @Issue("SECURITY-1538")
+    @Test public void blockSubexpressionsInPrefixPostfixExpressions() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "++({ Jenkins.getInstance(); 1 }())\n");
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "({ Jenkins.getInstance(); 1 }())++\n");
+    }
+
+    @Issue("SECURITY-1579")
+    @Test public void blockInitialExpressionsInConstructorsCallingSuper() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "class B {}\n" +
+                "class A extends B {\n" +
+                "  A(x = Jenkins.getInstance()) {\n" +
+                "    super()\n" +
+                "  }\n" +
+                "}\n" +
+                "new A()\n");
+    }
+
+    @Issue("SECURITY-1658")
+    @Test public void blockInitialExpressionsInClosures() throws Exception {
+        assertRejected(new GenericWhitelist(), "staticMethod jenkins.model.Jenkins getInstance",
+                "import jenkins.model.Jenkins\n" +
+                "({ j = Jenkins.getInstance() -> true })()\n");
+    }
+
+    @Issue("SECURITY-1713")
+    @Test
+    public void blockIllegalAnnotationsOnImports() throws Exception {
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.transform.ASTTest(value={\n" +
+                "  throw new Exception('ASTTest should not have been executed!')\n" +
+                "})\n" +
+                "import java.lang.Object\n");
+    }
+
+    @Issue("SECURITY-1713")
+    @Test
+    public void blockIllegalAnnotationsInAnnotations() throws Exception {
+        assertAnnotationBlocked(ASTTest.class,
+                "@groovy.lang.Category(value = {\n" +
+                "  @groovy.transform.ASTTest(value = {\n" +
+                "    throw new Exception('ASTTest should not have been executed!')\n" +
+                "  })\n" +
+                "  Object\n" +
+                "})\n" +
+                "class Foo { }\n");
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockDirectCallsToSyntheticConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass { }\n" +
+                    "new Subclass(null)");
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass()"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockMisinterceptedCallsToSyntheticConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass {\n" +
+                    "  Subclass() { def x = 1 }\n" +
+                    "  Subclass(Subclass s) { def x = 1 }\n" +
+                    "}\n" +
+                    "new Subclass(null)"); // Intercepted as a call to the second constructor before SECURITY-1754, but actually calls synthetic constructor.
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass(), public Subclass(Subclass)"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockCallsToSyntheticConstructorsViaOtherConstructors() throws Exception {
+        try {
+             // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+            evaluate(new GenericWhitelist(),
+                    "class Superclass { }\n" +
+                    "class Subclass extends Superclass {\n" +
+                    "  Subclass() { }\n" +
+                    "  Subclass(int x, int y) { this(null) }\n" + // Calls synthetic constructor
+                    "}\n" +
+                    "new Subclass(1, 2)");
+            fail("Script should have failed");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo(
+                    "Rejecting illegal call to synthetic constructor: private Subclass(org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper). " +
+                    "Perhaps you meant to use one of these constructors instead: public Subclass(), public Subclass(int,int)"));
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void blockConstructorWrappersFromBeingUsedDirectly() throws Exception {
+        for (Class<?> syntheticParamType : new Class<?>[] { SuperConstructorWrapper.class, ThisConstructorWrapper.class }) {
+            // Not ok, instantiating any of the wrappers would allow attackers to bypass the fix.
+            assertRejected(new GenericWhitelist(), "new " + syntheticParamType.getName() + " java.lang.Object[]",
+                    "new " + syntheticParamType.getCanonicalName() + "(null)");
+            // The wrapper's constructors are permanently blacklisted
+            assertRejected(new BlanketWhitelist(), "new " + syntheticParamType.getName() + " java.lang.Object[]",
+                     "new " + syntheticParamType.getCanonicalName() + "(null)");
+        }
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void allowCheckedCallsToSyntheticConstructors() throws Exception {
+        // Ok, super call is intercepted via Checker.checkedSuperConstructor.
+        assertEvaluate(new GenericWhitelist(), "Subclass",
+                "class Superclass { }\n" +
+                "class Subclass extends Superclass { }\n" +
+                "new Subclass().class.simpleName");
+        // Ok, this call is intercepted via Checker.checkedThisConstructor.
+        assertEvaluate(new GenericWhitelist(), "Subclass",
+                "class Subclass {\n" +
+                "  Subclass() { this(1) }\n" +
+                "  Subclass(int x) { }\n" +
+                "}\n" +
+                "new Subclass().class.simpleName");
+    }
+
+    @Issue("SECURITY-1754")
+    @Test public void groovyInterceptable() throws Throwable {
+        assertRejected(new GenericWhitelist(), "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
+                "class Test implements GroovyInterceptable {\n" +
+                "  def hello() { 'world' }\n" +
+                "  def invokeMethod(String name, Object args) { 'goodbye' }\n" +
+                "}\n" +
+                "new Test().hello()\n");
+        // Property access is not affected by GroovyInterceptable.
+        assertEvaluate(new GenericWhitelist(), "world",
+                "class Test implements GroovyInterceptable {\n" +
+                "  def hello = 'world'\n" +
+                "  def invokeMethod(String name, Object args) { 'goodbye' }\n" +
+                "}\n" +
+                "new Test().hello\n");
+    }
+
+    @Issue("SECURITY-2020")
+    @Test public void unsafeReturnValue() throws Throwable {
+        try {
+            Object result = evaluate(new GenericWhitelist(),
+                    "class Test {\n" +
+                    "  @Override public String toString() {\n" +
+                    "    jenkins.model.Jenkins.get().setSystemMessage('Hello, world!')\n" +
+                    "    'test'\n" +
+                    "  }\n" +
+                    "}\n" + 
+                    "new Test()");
+            // Test.equals and Test.getClass are inherited and not sandbox-transformed, so they can be called outside of the sandbox.
+            assertFalse(result.equals(new Object()));
+            assertThat(result.getClass().getSimpleName(), equalTo("Test"));
+            // Test.toString is defined in the sandbox, so it cannot be called outside of the sandbox.
+            result.toString();
+            fail("Test.toString should throw a SecurityException");
+        } catch (SecurityException e) {
+            assertThat(e.getMessage(), equalTo("Rejecting unsandboxed static method call: jenkins.model.Jenkins.get()"));
+        }
+    }
+
+    /**
+     * Checks that the annotation is blocked from being used in the provided script whether it is imported or used via
+     * fully-qualified class name.
+     * @param annotation The annotation that will be checked.
+     * @param script The script to check. It should use the annotation via a fully-qualified class name.
+     */
+    private void assertAnnotationBlocked(Class annotation, String script) {
+        assertAnnotationBlockedInternal(annotation, script);
+        assertAnnotationBlockedInternal(annotation,
+                "import " + annotation.getCanonicalName() + "\n" +
+                script.replaceAll(annotation.getName(), annotation.getSimpleName()));
+    }
+
+    private void assertAnnotationBlockedInternal(Class annotation, String script) {
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        try {
+            shell.parse(script);
+            fail("Compilation should have failed");
+        } catch (Exception e) {
+            assertThat(e, instanceOf(MultipleCompilationErrorsException.class));
+            assertThat(e.getMessage(), anyOf(
+                    containsString("Annotation " + annotation.getName() + " cannot be used in the sandbox"),
+                    containsString("Annotation " + annotation.getSimpleName() + " cannot be used in the sandbox")));
+        }
     }
 }

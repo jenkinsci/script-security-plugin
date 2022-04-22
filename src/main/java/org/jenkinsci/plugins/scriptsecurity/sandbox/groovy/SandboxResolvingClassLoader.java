@@ -1,15 +1,12 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.base.Optional;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import groovy.lang.GroovyShell;
 import java.net.URL;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,12 +20,12 @@ import java.util.logging.Logger;
  * @see <a href="https://issues.jenkins-ci.org/browse/JENKINS-23784">JENKINS-23784</a>
  */
 class SandboxResolvingClassLoader extends ClassLoader {
-    
+
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
 
-    private static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
+    static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
 
-    private static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
+    static final LoadingCache<ClassLoader, Cache<String, Optional<URL>>> parentResourceCache = makeParentCache(false);
 
     SandboxResolvingClassLoader(ClassLoader parent) {
         super(parent);
@@ -41,7 +38,7 @@ class SandboxResolvingClassLoader extends ClassLoader {
      * This value is non-null, not a legitimate return value
      * (no script should be trying to load this implementation detail), and strongly held.
      */
-    private static final Class<?> CLASS_NOT_FOUND = Unused.class;
+    static final Class<?> CLASS_NOT_FOUND = Unused.class;
     private static final class Unused {}
 
     @Override protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -73,42 +70,45 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     @Override public URL getResource(String name) {
         ClassLoader parentLoader = getParent();
-        return load(parentResourceCache, name, parentLoader, () -> Optional.fromNullable(parentLoader.getResource(name))).orNull();
+        return load(parentResourceCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name))).orElse(null);
     }
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
     private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
-        try {
-            return cache.getUnchecked(parentLoader).get(name, () -> {
-                Thread t = Thread.currentThread();
-                String origName = t.getName();
-                t.setName(origName + " loading " + name);
-                long start = System.nanoTime(); // http://stackoverflow.com/q/19052316/12916
-                try {
-                    return supplier.get();
-                } finally {
-                    t.setName(origName);
-                    long ms = (System.nanoTime() - start) / 1000000;
-                    if (ms > 1000) {
-                        LOGGER.log(Level.INFO, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
-                    }
+        Cache<String, T> classCache = cache.get(parentLoader);
+        assert classCache != null; // Never null, see makeParentCache, but we need the assertion to convince SpotBugs.
+        // itemName is ignored but caffeine requires a function<String, T>
+        return classCache.get(name, (String itemName) -> {
+            Thread t = Thread.currentThread();
+            String origName = t.getName();
+            t.setName(origName + " loading " + name);
+            long start = System.nanoTime(); // http://stackoverflow.com/q/19052316/12916
+            try {
+                return supplier.get();
+            } finally {
+                t.setName(origName);
+                long ms = (System.nanoTime() - start) / 1000000;
+                if (ms > 1000) {
+                    LOGGER.log(Level.INFO, "took {0}ms to load/not load {1} from {2}", new Object[] {ms, name, parentLoader});
                 }
-            });
-        } catch (ExecutionException x) {
-            throw new UncheckedExecutionException(x); // should not be possible anyway
-        }
-    }
-
-    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValues) {
-        CacheBuilder<Object, Object> builder = CacheBuilder.newBuilder().weakKeys();
-        if (weakValues) {
-            builder = builder.weakValues();
-        }
-        return builder.build(new CacheLoader<ClassLoader, Cache<String, T>>() {
-            @Override public Cache<String, T> load(ClassLoader parentLoader) {
-                return CacheBuilder.newBuilder()./* allow new plugins to be used, and clean up memory */expireAfterWrite(15, TimeUnit.MINUTES).build();
             }
         });
     }
 
+    private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValuesInnerCache) {
+        // The outer cache has weak keys, so that we do not leak class loaders, but strong values, because the
+        // inner caches are only referenced by the outer cache internally.
+        Caffeine<Object, Object> outerBuilder = Caffeine.newBuilder().recordStats().weakKeys();
+        // The inner cache has strong keys, since they are just strings, and expires entries 15 minutes after they are
+        // added to the cache, so that classes defined by dynamically installed plugins become available even if there
+        // were negative cache hits prior to the installation (ideally this would be done with a listener). The values
+        // for the inner cache may be weak if needed, for example parentClassCache uses weak values to avoid leaking
+        // classes and their loaders.
+        Caffeine<Object, Object> innerBuilder = Caffeine.newBuilder().recordStats().expireAfterWrite(Duration.ofMinutes(15));
+        if (weakValuesInnerCache) {
+            innerBuilder.weakValues();
+        }
+
+        return outerBuilder.build(parentLoader -> innerBuilder.build());
+    }
 }

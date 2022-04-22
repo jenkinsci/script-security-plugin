@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -32,11 +33,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.lang.ClassUtils;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A whitelist based on listing signatures and searching them. Lists of signatures should not change
@@ -184,7 +184,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return permitsStaticFieldGet(field);
     }
 
-    public static @Nonnull String getName(@Nonnull Class<?> c) {
+    public static @NonNull String getName(@NonNull Class<?> c) {
         Class<?> e = c.getComponentType();
         if (e == null) {
             return c.getName();
@@ -193,7 +193,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
     }
 
-    public static @Nonnull String getName(@CheckForNull Object o) {
+    public static @NonNull String getName(@CheckForNull Object o) {
         return o == null ? "null" : getName(o.getClass());
     }
 
@@ -217,8 +217,35 @@ public abstract class EnumeratingWhitelist extends Whitelist {
             return toString().hashCode();
         }
         abstract boolean exists() throws Exception;
-        final Class<?> type(String name) throws Exception {
-            return ClassUtils.getClass(name);
+        /** opposite of {@link #getName(Class)} */
+        static final Class<?> type(String name) throws Exception {
+            // ClassUtils.getClass is too lax: permits Outer.Inner where we require Outer$Inner.
+            if (name.endsWith("[]")) {
+                // https://stackoverflow.com/q/1679421/12916; TODO Java 12+ use Class.arrayType
+                return Array.newInstance(type(name.substring(0, name.length() - 2)), 0).getClass();
+            }
+            switch (name) {
+            case "boolean":
+                return boolean.class;
+            case "char":
+                return char.class;
+            case "byte":
+                return byte.class;
+            case "short":
+                return short.class;
+            case "int":
+                return int.class;
+            case "long":
+                return long.class;
+            case "float":
+                return float.class;
+            case "double":
+                return double.class;
+            case "void":
+                return void.class;
+            default:
+                return Class.forName(name);
+            }
         }
         final Class<?>[] types(String[] names) throws Exception {
             Class<?>[] r = new Class<?>[names.length];
@@ -250,44 +277,44 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     /** Canonical name for a field access. */
-    static String canonicalFieldString(@Nonnull Field field) {
+    static String canonicalFieldString(@NonNull Field field) {
         return getName(field.getDeclaringClass()) + ' ' + field.getName();
     }
 
     /** Canonical name for a method call. */
-    static String canonicalMethodString(@Nonnull Method method) {
+    static String canonicalMethodString(@NonNull Method method) {
         return joinWithSpaces(new StringBuilder(getName(method.getDeclaringClass())).append(' ').append(method.getName()), argumentTypes(method.getParameterTypes())).toString();
     }
 
     /** Canonical name for a constructor call. */
-    static String canonicalConstructorString(@Nonnull Constructor cons) {
+    static String canonicalConstructorString(@NonNull Constructor cons) {
         return joinWithSpaces(new StringBuilder(getName(cons.getDeclaringClass())), argumentTypes(cons.getParameterTypes())).toString();
     }
 
-    static String canonicalMethodSig(@Nonnull Method method) {
+    static String canonicalMethodSig(@NonNull Method method) {
         return "method "+canonicalMethodString(method);
     }
 
-    static String canonicalStaticMethodSig(@Nonnull Method method) {
+    static String canonicalStaticMethodSig(@NonNull Method method) {
         return "staticMethod "+canonicalMethodString(method);
     }
 
-    static String canonicalConstructorSig(@Nonnull Constructor cons) {
+    static String canonicalConstructorSig(@NonNull Constructor cons) {
         return "new "+canonicalConstructorString(cons);
     }
 
-    static String canonicalFieldSig(@Nonnull Field field) {
+    static String canonicalFieldSig(@NonNull Field field) {
         return "field "+canonicalFieldString(field);
     }
 
-    static String canonicalStaticFieldSig(@Nonnull Field field) {
+    static String canonicalStaticFieldSig(@NonNull Field field) {
         return "staticField "+canonicalFieldString(field);
     }
 
     public static class MethodSignature extends Signature {
         final String receiverType, method;
         final String[] argumentTypes;
-        public MethodSignature(String receiverType, String method, String[] argumentTypes) {
+        public MethodSignature(String receiverType, String method, String... argumentTypes) {
             this.receiverType = receiverType;
             this.method = method;
             this.argumentTypes = argumentTypes.clone();
@@ -333,7 +360,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     static class StaticMethodSignature extends MethodSignature {
-        StaticMethodSignature(String receiverType, String method, String[] argumentTypes) {
+        StaticMethodSignature(String receiverType, String method, String... argumentTypes) {
             super(receiverType, method, argumentTypes);
         }
         @Override public String toString() {

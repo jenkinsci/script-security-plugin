@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
@@ -77,7 +78,7 @@ public class SecureGroovyScriptTest {
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
     /**
-     * Basic approval test where the user doesn't have RUN_SCRIPTS privs but has unchecked
+     * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
      */
     @Test public void basicApproval() throws Exception {
@@ -98,13 +99,17 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
 
         // The fact that the user doesn't have RUN_SCRIPT privs means sandbox mode should be on by default.
         // We need to switch it off to force it into approval.
-        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) config.getInputsByName("_.sandbox").get(0);
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
         assertEquals(true, sandboxRB.isChecked()); // should be checked
         sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
 
@@ -124,7 +129,9 @@ public class SecureGroovyScriptTest {
         r.assertLogContains(UnapprovedUsageException.class.getName(), r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
         page = wc.getPage(p, "configure");
         config = page.getFormByName("config");
-        script = config.getTextAreaByName("_.script");
+        scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        script = scripts.get(scripts.size() - 1);
         groovy = "build.externalizableId.toUpperCase()";
         script.setText(groovy);
         r.submit(config);
@@ -143,14 +150,13 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has RUN_SCRIPTS privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode.
      */
-    @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("devel");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -165,7 +171,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
@@ -174,10 +182,10 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user has RUN_SCRIPTS privs => should default to non sandboxed
+        // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has RUN_SCRIPTS privs, the script should not have ended up pending approval
+        // Because it has ADMINISTER privs, the script should not have ended up pending approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
         assertEquals(0, pendingScripts.size());
 
@@ -186,9 +194,9 @@ public class SecureGroovyScriptTest {
     }
 
     /**
-     * Test where the user doesn't have RUN_SCRIPTS privs, default to sandbox mode.
+     * Test where the user doesn't have ADMINISTER privs, default to sandbox mode.
      */
-    @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_without_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -206,7 +214,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
@@ -215,7 +225,7 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user doesn't have RUN_SCRIPTS privs => should default to sandboxed mode
+        // The user doesn't have ADMINISTER privs => should default to sandboxed mode
         assertTrue(publisher.getScript().isSandbox());
 
         // When sandboxed, only approved classpath entries are allowed so doesn't get added to pending approvals list.
@@ -675,7 +685,6 @@ public class SecureGroovyScriptTest {
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
         mockStrategy.grant(Jenkins.READ).everywhere().to("approver");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("approver");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("approver");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -721,7 +730,7 @@ public class SecureGroovyScriptTest {
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved
+        // If configured by a user with ADMINISTER, the classpath is automatically approved
         {
             r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
             
@@ -738,7 +747,7 @@ public class SecureGroovyScriptTest {
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
         
-        // If configured by a user without RUN_SCRIPTS, approval is requested
+        // If configured by a user without ADMINISTER, approval is requested
         {
             r.submit(wcDevel.getPage(p, "configure").getFormByName("config"));
             
@@ -750,7 +759,7 @@ public class SecureGroovyScriptTest {
             // don't remove pending classpaths.
         }
         
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved, and removed from approval request.
+        // If configured by a user with ADMINISTER, the classpath is automatically approved, and removed from approval request.
         {
             assertNotEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
@@ -993,4 +1002,82 @@ public class SecureGroovyScriptTest {
         r.assertLogContains("staticMethod jenkins.model.Jenkins getInstance", b);
     }
 
+    @Issue("JENKINS-56682")
+    @Test
+    public void testScriptAtFieldInitializers() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "import groovy.transform.Field\n" +
+                "@Field foo = 1\n" +
+                "@Field bar = foo + 1\n" + // evaluated during GroovyShell.parse
+                "if (bar != 2) {\n" +
+                "  throw new Exception('oops')\n" +
+                "}\n", true, null)));
+        r.buildAndAssertSuccess(p);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockLhsInMethodPointerExpression() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "({" +
+                "  System.getProperties()\n" +
+                "  1" +
+                "}().&toString)()", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("staticMethod java.lang.System getProperties", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockRhsInMethodPointerExpression() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "1.&(System.getProperty('sandboxTransformsMethodPointerRhs'))()", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("staticMethod java.lang.System getProperty java.lang.String", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
+        // See additional info on this test case in `SandboxTransformerTest.sandboxWillNotCastNonStandardCollections()` over in groovy-sandbox.
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "def i = 0\n" +
+                "(({-> if(i) {\n" +
+                "    return ['secret.txt'] as Object[]\n" +
+                "  } else {\n" +
+                "    i = 1\n" +
+                "    return null\n" +
+                "  }\n" +
+                "} as Collection) as File) as Object[]", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        // Before the security fix, fails with FileNotFoundException, bypassing the sandbox!
+        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockCastingSafeUserDefinedImplementationsOfCollection() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "({-> return ['secret.txt'] as Object[]} as Collection) as File", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        // Before the security fix, fails because `new File(String)` is not whitelisted, so not a problem, but we have
+        // no good way to distinguish this case from the one in blockCastingUnsafeUserDefinedImplementationsOfCollection.
+        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+    }
+
+    @Issue("SECURITY-1465")
+    @Test public void blockEnumConstants() throws Exception {
+        FreeStyleProject p1 = r.createFreeStyleProject();
+        p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "jenkins.YesNoMaybe.MAYBE", true, null)));
+        FreeStyleBuild b1 = r.assertBuildStatus(Result.FAILURE, p1.scheduleBuild2(0));
+        r.assertLogContains("staticField jenkins.YesNoMaybe MAYBE", b1);
+
+        FreeStyleProject p2 = r.createFreeStyleProject();
+        p2.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "if ((jenkins.YesNoMaybe.class as Object[]).size() != 3) throw new Exception('blocked enum access')", true, null)));
+        FreeStyleBuild b2 = r.assertBuildStatus(Result.FAILURE, p2.scheduleBuild2(0));
+        r.assertLogContains("staticField jenkins.YesNoMaybe YES", b2);
+    }
 }
