@@ -66,6 +66,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
@@ -699,6 +700,27 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // Jelly, implementation
     public synchronized String[] getAclApprovedSignatures() {
         return aclApprovedSignatures.toArray(new String[aclApprovedSignatures.size()]);
+    }
+
+    @DataBoundSetter
+    public synchronized void setApprovedScriptHashes(String[] scriptHashes) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        approvedScriptHashes.clear();
+        Pattern sha1Pattern = Pattern.compile("[a-fA-F0-9]{40}");
+        for (String scriptHash : scriptHashes) {
+            if (scriptHash != null && sha1Pattern.matcher(scriptHash).matches()) {
+                approvedScriptHashes.add(scriptHash);
+            } else {
+                LOG.warning(() -> "Ignoring malformed script hash: " + scriptHash);
+            }
+        }
+        save();
+        reconfigure();
+    }
+
+    @Restricted(NoExternalUse.class) // Jelly, implementation
+    public synchronized String[] getApprovedScriptHashes() {
+        return approvedScriptHashes.toArray(new String[approvedScriptHashes.size()]);
     }
 
     @Restricted(NoExternalUse.class) // implementation
