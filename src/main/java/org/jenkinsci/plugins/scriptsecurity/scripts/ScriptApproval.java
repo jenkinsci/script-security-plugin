@@ -729,7 +729,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             try {
                 reconfigure();
             } catch (IOException e) {
-                LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + e.getMessage() + "'");
+                LOG.log(Level.SEVERE, e.getMessage() + " in scriptApproval.xml");
             }
         }
 
@@ -818,8 +818,15 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         approvedSignatures.add(signature);
-        save();
-        return reconfigure();
+        try {
+            return reconfigure();
+        } catch (IOException e) {
+            approvedSignatures.remove(signature);
+            LOG.log(Level.SEVERE, e.getMessage());
+            throw e;
+        } finally {
+            save();
+        }
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
@@ -827,8 +834,15 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         aclApprovedSignatures.add(signature);
-        save();
-        return reconfigure();
+        try {
+            return reconfigure();
+        } catch (IOException e) {
+            aclApprovedSignatures.remove(signature);
+            LOG.log(Level.SEVERE, e.getMessage());
+            throw e;
+        } finally {
+            save();
+        }
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
