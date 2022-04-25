@@ -266,8 +266,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     @SuppressFBWarnings(value = "OS_OPEN_STREAM", justification = "https://sourceforge.net/p/findbugs/bugs/786/")
     private static Set<String> loadBlacklist() throws IOException {
-        try (InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist")) {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.US_ASCII));
+        try (InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist"); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.US_ASCII); BufferedReader br = new BufferedReader(isr)) {
             Set<String> blacklist = new HashSet<>();
             String line;
             while ((line = br.readLine()) != null) {
