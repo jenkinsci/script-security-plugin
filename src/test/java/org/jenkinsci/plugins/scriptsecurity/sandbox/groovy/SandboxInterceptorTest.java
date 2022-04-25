@@ -1406,8 +1406,7 @@ public class SandboxInterceptorTest {
 
     private void assertAnnotationBlockedInternal(Class annotation, String script) {
         GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        final Exception e = assertThrows(Exception.class, () -> shell.parse(script));
-        assertThat(e, instanceOf(MultipleCompilationErrorsException.class));
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class, () -> shell.parse(script));
         assertThat(e.getMessage(), anyOf(
                 containsString("Annotation " + annotation.getName() + " cannot be used in the sandbox"),
                 containsString("Annotation " + annotation.getSimpleName() + " cannot be used in the sandbox")));
