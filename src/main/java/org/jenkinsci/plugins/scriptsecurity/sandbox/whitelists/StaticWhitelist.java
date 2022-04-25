@@ -199,8 +199,8 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     public static StaticWhitelist from(URL definition) throws IOException {
-        try (InputStream is = definition.openStream()) {
-            return new StaticWhitelist(new InputStreamReader(is, StandardCharsets.UTF_8));
+        try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            return new StaticWhitelist(isr);
         }
     }
 
