@@ -459,7 +459,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         @RequirePOST
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
             FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
-                    new GroovyClassLoader(Jenkins.getInstance().getPluginManager().uberClassLoader));
+                    new GroovyClassLoader(Jenkins.get().getPluginManager().uberClassLoader));
             if (validationResult.kind != FormValidation.Kind.OK) {
                 return validationResult;
             }

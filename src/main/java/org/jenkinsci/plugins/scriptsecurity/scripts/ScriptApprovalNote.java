@@ -66,7 +66,7 @@ public class ScriptApprovalNote extends ConsoleNote<Object> {
 
     @Override
     public ConsoleAnnotator<Object> annotate(Object context, MarkupText text, int charPos) {
-        if (Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+        if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             String url = ScriptApproval.get().getUrlName();
             StaplerRequest req = Stapler.getCurrentRequest();
             if (req != null) {
@@ -74,7 +74,7 @@ public class ScriptApprovalNote extends ConsoleNote<Object> {
                 url = req.getContextPath() + "/" + url;
             } else {
                 // otherwise presumably this is rendered for e-mails and other non-HTTP stuff
-                url = Jenkins.getInstance().getRootUrl() + url;
+                url = Jenkins.get().getRootUrl() + url;
             }
             text.addMarkup(charPos, charPos + length, "<a href='" + url + "'>", "</a>");
         }

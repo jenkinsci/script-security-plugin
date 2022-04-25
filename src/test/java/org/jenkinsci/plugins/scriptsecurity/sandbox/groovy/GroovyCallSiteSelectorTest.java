@@ -100,7 +100,7 @@ public class GroovyCallSiteSelectorTest {
 
     @Issue("JENKINS-38908")
     @Test public void main() throws Exception {
-        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding());
+        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
         assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
         assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
@@ -128,14 +128,11 @@ public class GroovyCallSiteSelectorTest {
     @Test
     public void varargsFailureCases() throws Exception {
         // If there's a partial match, we should get a ClassCastException
-        try {
-            assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
-                    new Object[]{new BooleanParameterValue("someBool", true), "x"}));
-        } catch (Exception e) {
-            assertTrue(e instanceof ClassCastException);
-            assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
-                    e.getMessage());
-        }
+        final ClassCastException e = assertThrows(ClassCastException.class,
+                () -> assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
+                        new Object[]{new BooleanParameterValue("someBool", true), "x"})));
+        assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
+                e.getMessage());
         // If it's a complete non-match, we just shouldn't get a constructor.
         assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
     }

@@ -59,8 +59,16 @@ import org.apache.tools.ant.taskdefs.Expand;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Rule;
@@ -234,12 +242,9 @@ public class SecureGroovyScriptTest {
         assertEquals(0, pendingScripts.size());
 
         // We didn't add the approved classpath so ...
-        try {
-            ScriptApproval.get().using(groovy, GroovyLanguage.get());
-            fail("Expected UnapprovedUsageException");
-        } catch (UnapprovedUsageException e) {
-            assertEquals("script not yet approved for use", e.getMessage());
-        }
+        final UnapprovedUsageException e = assertThrows(UnapprovedUsageException.class,
+                () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        assertEquals("script not yet approved for use", e.getMessage());
     }
 
     private List<File> getAllJarFiles() throws URISyntaxException {
@@ -809,12 +814,9 @@ public class SecureGroovyScriptTest {
         assertNotSame(Checker.class, a.loadClass(Checker.class.getName()));
 
         SecureGroovyScript sgs = new SecureGroovyScript("System.gc()", true, null);
-        try {
-            sgs.configuringWithKeyItem().evaluate(a, new Binding());
-            fail("Expecting a rejection");
-        } catch (RejectedAccessException e) {
-            assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
-        }
+        final RejectedAccessException e = assertThrows(RejectedAccessException.class,
+                () -> sgs.configuringWithKeyItem().evaluate(a, new Binding()));
+        assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
     }
     
     @Issue("SECURITY-1186")
