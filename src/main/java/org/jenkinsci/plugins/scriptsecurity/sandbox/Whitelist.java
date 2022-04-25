@@ -95,6 +95,6 @@ public abstract class Whitelist implements ExtensionPoint {
         }
         return all;
     }
-    private static final Map<Jenkins,Whitelist> allByJenkins = new WeakHashMap<Jenkins,Whitelist>();
+    private static final Map<Jenkins,Whitelist> allByJenkins = new WeakHashMap<>();
 
 }

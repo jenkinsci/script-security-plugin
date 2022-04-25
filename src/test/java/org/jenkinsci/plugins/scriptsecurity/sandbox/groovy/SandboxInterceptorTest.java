@@ -328,7 +328,7 @@ public class SandboxInterceptorTest {
     }
 
     public static final class Dynamic extends GroovyObjectSupport {
-        private final Map<String,Object> values = new HashMap<String,Object>();
+        private final Map<String,Object> values = new HashMap<>();
         @Override public Object getProperty(String n) {
             return values.get(n);
         }
@@ -573,11 +573,9 @@ public class SandboxInterceptorTest {
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
         final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
-        assertEquals("goodbye cruel world", GroovySandbox.runInSandbox(new Callable<String>() {
-            @Override public String call() throws Exception {
-                return t.make(new HashMap<String,Object>(Collections.singletonMap("aspect", "CRUEL"))).toString();
-            }
-        }, new ProxyWhitelist(new StaticWhitelist("method java.lang.String toLowerCase"), new GenericWhitelist())));
+        assertEquals("goodbye cruel world", GroovySandbox.runInSandbox(() ->
+                        t.make(new HashMap<String, Object>(Collections.singletonMap("aspect", "CRUEL"))).toString(),
+                new ProxyWhitelist(new StaticWhitelist("method java.lang.String toLowerCase"), new GenericWhitelist())));
     }
 
     @Test public void selfProperties() throws Exception {

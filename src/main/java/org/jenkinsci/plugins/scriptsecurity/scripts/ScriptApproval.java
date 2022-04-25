@@ -166,10 +166,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
     
     /** All scripts which are already approved, via {@link #hash}. */
-    private final TreeSet<String> approvedScriptHashes = new TreeSet<String>();
+    private final TreeSet<String> approvedScriptHashes = new TreeSet<>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
-    private final TreeSet<String> approvedSignatures = new TreeSet<String>();
+    private final TreeSet<String> approvedSignatures = new TreeSet<>();
 
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
     private /*final*/ TreeSet<String> aclApprovedSignatures;
@@ -321,9 +321,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
     }
 
-    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
+    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<>();
 
-    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<>();
 
     private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
 
@@ -346,13 +346,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         load();
         /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
-            aclApprovedSignatures = new TreeSet<String>();
+            aclApprovedSignatures = new TreeSet<>();
         }
         if (approvedClasspathEntries == null) {
-            approvedClasspathEntries = new TreeSet<ApprovedClasspathEntry>();
+            approvedClasspathEntries = new TreeSet<>();
         }
         if (pendingClasspathEntries == null) {
-            pendingClasspathEntries = new TreeSet<PendingClasspathEntry>();
+            pendingClasspathEntries = new TreeSet<>();
         }
         // Check for loaded class directories
         boolean changed = false;
@@ -385,9 +385,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             digest.update((byte) ':');
             digest.update(script.getBytes("UTF-8"));
             return Util.toHexString(digest.digest());
-        } catch (NoSuchAlgorithmException x) {
-            throw new AssertionError(x);
-        } catch (UnsupportedEncodingException x) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException x) {
             throw new AssertionError(x);
         }
     }
@@ -442,12 +440,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             } else {
                 String key = context.getKey();
                 if (key != null) {
-                    Iterator<PendingScript> it = pendingScripts.iterator();
-                    while (it.hasNext()) {
-                        if (key.equals(it.next().getContext().getKey())) {
-                            it.remove();
-                        }
-                    }
+                    pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
                 pendingScripts.add(new PendingScript(script, language, context));
             }
@@ -688,7 +681,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
     public synchronized String[] getDangerousApprovedSignatures() {
-        List<String> dangerous = new ArrayList<String>();
+        List<String> dangerous = new ArrayList<>();
         for (String sig : approvedSignatures) {
             if (StaticWhitelist.isBlacklisted(sig)) {
                 dangerous.add(sig);
@@ -873,23 +866,15 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
-        ArrayList<ApprovedClasspathEntry> r = new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
-        Collections.sort(r, new Comparator<ApprovedClasspathEntry>() {
-            @Override public int compare(ApprovedClasspathEntry o1, ApprovedClasspathEntry o2) {
-                return o1.url.toString().compareTo(o2.url.toString());
-            }
-        });
+        ArrayList<ApprovedClasspathEntry> r = new ArrayList<>(approvedClasspathEntries);
+        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
-        List<PendingClasspathEntry> r = new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
-        Collections.sort(r, new Comparator<PendingClasspathEntry>() {
-            @Override public int compare(PendingClasspathEntry o1, PendingClasspathEntry o2) {
-                return o1.url.toString().compareTo(o2.url.toString());
-            }
-        });
+        List<PendingClasspathEntry> r = new ArrayList<>(pendingClasspathEntries);
+        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 

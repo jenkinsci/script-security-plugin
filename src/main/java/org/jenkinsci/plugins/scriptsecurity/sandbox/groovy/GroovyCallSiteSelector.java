@@ -268,7 +268,7 @@ class GroovyCallSiteSelector {
     }
 
     private static Set<Class<?>> types(@NonNull Object o) {
-        Set<Class<?>> types = new LinkedHashSet<Class<?>>();
+        Set<Class<?>> types = new LinkedHashSet<>();
         visitTypes(types, o.getClass());
         return types;
     }

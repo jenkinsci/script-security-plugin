@@ -334,7 +334,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         ClassLoader memoryProtectedLoader = null;
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
-            List<URL> urlList = new ArrayList<URL>(cp.size());
+            List<URL> urlList = new ArrayList<>(cp.size());
             
             for (ClasspathEntry entry : cp) {
                 ScriptApproval.get().using(entry);
@@ -380,7 +380,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         } finally {
             try {
                 if (canDoCleanup) {
-                    cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+                    cleanUpLoader(memoryProtectedLoader, new HashSet<>(), new HashSet<>());
                 }
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING, "failed to clean up memory " , x);

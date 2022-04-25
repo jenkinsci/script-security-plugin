@@ -57,7 +57,7 @@ public class StaticWhitelistTest {
 
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
-        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
+        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<>();
         InputStream is = definition.openStream();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
@@ -73,7 +73,7 @@ public class StaticWhitelistTest {
             is.close();
         }
 
-        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<EnumeratingWhitelist.Signature>(sigs.size());
+        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<>(sigs.size());
         boolean hasDupes = false;
         for (EnumeratingWhitelist.Signature sig : sigs) {
             if (!existingSigs.add(sig)) {
@@ -83,7 +83,7 @@ public class StaticWhitelistTest {
         }
         Assert.assertFalse("Whitelist contains duplicate entries, and this is not allowed!  Please see list above.", hasDupes);
 
-        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<EnumeratingWhitelist.Signature>(sigs);
+        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<>(sigs);
         Collections.sort(sorted);
 
         boolean isUnsorted = false;

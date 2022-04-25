@@ -57,7 +57,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<String, Boolean>();  // Not private to facilitate testing
+    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<>();  // Not private to facilitate testing
 
     @SafeVarargs
     private final void cacheSignatureList(List<Signature> ...sigs) {
@@ -83,7 +83,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
     final void clearCache() {
         this.permittedCache.clear();
-        this.permittedCache = new ConcurrentHashMap<String, Boolean>();
+        this.permittedCache = new ConcurrentHashMap<>();
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
