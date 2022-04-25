@@ -47,11 +47,7 @@ final class Manager {
     Manager(JenkinsRule rule) throws Exception {
         this.wc = rule.createWebClient();
         // click "OK" for all confirms.
-        wc.setConfirmHandler(new ConfirmHandler() {
-            public boolean handleConfirm(Page page, String message) {
-                return true;
-            }
-        });
+        wc.setConfirmHandler((ConfirmHandler) (page, message) -> true);
         this.page = wc.goTo(ScriptApproval.get().getUrlName());
     }
 
@@ -77,7 +73,7 @@ final class Manager {
     }
 
     <T extends Approvable<T>> Element<T> found(T entry, String id) {
-        return new Element(entry, assertFound(entry, id));
+        return new Element<>(entry, assertFound(entry, id));
     }
 
     final class Element<T extends Approvable<T>> {

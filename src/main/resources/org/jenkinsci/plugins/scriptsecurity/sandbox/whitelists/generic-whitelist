@@ -825,6 +825,7 @@ staticMethod java.util.regex.Pattern quote java.lang.String
 method java.util.regex.Pattern split java.lang.CharSequence
 method java.util.regex.Pattern split java.lang.CharSequence int
 method net.sf.json.JSON isArray
+method net.sf.json.JSON isEmpty
 method net.sf.json.JSON size
 
 

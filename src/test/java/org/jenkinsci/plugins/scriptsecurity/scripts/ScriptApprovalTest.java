@@ -159,15 +159,20 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertEquals(0, sa.getDangerousApprovedSignatures().length);
     }
 
-    @Issue("JENKINS-57563")
-    @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance'
+    @Issue({"JENKINS-57563", "JENKINS-62708"})
+    @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance' and a script printing all labels
     @Test
     public void upgradeSmokes() throws Exception {
+        configureSecurity();
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("println(jenkins.model.Jenkins.instance.getLabels())", false, null)));
         r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException: "
                         + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
                 r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
     }
 

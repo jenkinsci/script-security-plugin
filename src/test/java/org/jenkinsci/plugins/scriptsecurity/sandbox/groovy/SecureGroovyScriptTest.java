@@ -256,7 +256,7 @@ public class SecureGroovyScriptTest {
         ds.setIncludes(new String[]{ "*.jar" });
         ds.scan();
         
-        List<File> ret = new ArrayList<File>();
+        List<File> ret = new ArrayList<>();
         
         for (String relpath: ds.getIncludedFiles()) {
             ret.add(new File(testClassDir, relpath));
@@ -267,7 +267,7 @@ public class SecureGroovyScriptTest {
 
     private List<File> copy2TempDir(Iterable<File> files) throws IOException {
         final File tempDir = tmpFolderRule.newFolder();
-        final List copies = new ArrayList<File>();
+        final List<File> copies = new ArrayList<>();
         for (File f: files) {
             final File copy = new File(tempDir, f.getName());
             FileUtils.copyFile(f, copy);
@@ -277,7 +277,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<ClasspathEntry> files2entries(Iterable<File> files) throws IOException {
-        final List entries = new ArrayList<ClasspathEntry>();
+        final List<ClasspathEntry> entries = new ArrayList<>();
         for (File f: files) {
             entries.add(new ClasspathEntry(f.toURI().toURL().toExternalForm()));
         }
@@ -285,7 +285,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllUpdatedJarFiles() throws URISyntaxException {
-        String testClassPath = String.format(StringUtils.join(getClass().getName().split("\\."), "/"));
+        String testClassPath = StringUtils.join(getClass().getName().split("\\."), "/");
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         File updatedDir = new File(testClassDir, "updated");
@@ -295,7 +295,7 @@ public class SecureGroovyScriptTest {
         ds.setIncludes(new String[]{ "*.jar" });
         ds.scan();
         
-        List<File> ret = new ArrayList<File>();
+        List<File> ret = new ArrayList<>();
         
         for (String relpath: ds.getIncludedFiles()) {
             ret.add(new File(updatedDir, relpath));
@@ -305,7 +305,7 @@ public class SecureGroovyScriptTest {
     }
 
     @Test public void testClasspathConfiguration() throws Exception {
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -331,7 +331,7 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -408,7 +408,7 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             String path = jarfile.getAbsolutePath();
             classpath.add(new ClasspathEntry(path));
@@ -501,7 +501,7 @@ public class SecureGroovyScriptTest {
             FileUtils.copyFileToDirectory(jarfile, tmpDir);
         }
         
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: tmpDir.listFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -587,7 +587,7 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         classpath.add(new ClasspathEntry(tmpDir.getAbsolutePath()));
         
         final String testingDisplayName = "TESTDISPLAYNAME";
@@ -704,7 +704,7 @@ public class SecureGroovyScriptTest {
         wcApprover.login("approver");
         
         
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));

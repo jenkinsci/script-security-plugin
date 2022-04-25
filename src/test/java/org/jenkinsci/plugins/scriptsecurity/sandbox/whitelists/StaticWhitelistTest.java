@@ -70,7 +70,7 @@ public class StaticWhitelistTest {
             }
         }
 
-        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<EnumeratingWhitelist.Signature>(sigs.size());
+        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<>(sigs.size());
         boolean hasDupes = false;
         for (EnumeratingWhitelist.Signature sig : sigs) {
             if (!existingSigs.add(sig)) {
@@ -80,7 +80,7 @@ public class StaticWhitelistTest {
         }
         Assert.assertFalse("Whitelist contains duplicate entries, and this is not allowed!  Please see list above.", hasDupes);
 
-        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<EnumeratingWhitelist.Signature>(sigs);
+        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<>(sigs);
         Collections.sort(sorted);
 
         boolean isUnsorted = false;

@@ -108,7 +108,7 @@ public class EnumeratingWhitelistTest {
     public void canonicalNaming() throws Exception {
         Method m = Fancy.class.getMethod("m", Object[].class);
         Method staticM = Fancy.class.getMethod("staticM", Object.class);
-        Constructor con = Fancy.class.getConstructor(null);
+        Constructor<Fancy> con = Fancy.class.getConstructor(null);
         Field f = Fancy.class.getField("myF");
         Field staticF = Fancy.class.getField("myStaticF");
 
@@ -132,7 +132,7 @@ public class EnumeratingWhitelistTest {
 
         Method m = Fancy.class.getMethod("m", Object[].class);
         Method staticM = Fancy.class.getMethod("staticM", Object.class);
-        Constructor con = Fancy.class.getConstructor(null);
+        Constructor<Fancy> con = Fancy.class.getConstructor(null);
         Field f = Fancy.class.getField("myF");
         Field staticF = Fancy.class.getField("myStaticF");
 

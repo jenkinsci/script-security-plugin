@@ -19,7 +19,7 @@ staticMethod hudson.model.User get java.lang.String boolean
 staticMethod hudson.model.User get java.lang.String boolean java.util.Map
 staticMethod hudson.model.User getAll
 
-# Raw file operations could be used to compromise the Jenkins master.
+# Raw file operations could be used to compromise the Jenkins controller.
 staticMethod java.io.File createTempFile java.lang.String java.lang.String
 staticMethod java.io.File createTempFile java.lang.String java.lang.String java.io.File
 new java.io.File java.lang.String
