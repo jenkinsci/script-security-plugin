@@ -695,7 +695,7 @@ public class SandboxInterceptorTest {
     }
 
     @Test public void ambiguousOverloads() {
-        assertThrows(GroovyRuntimeException.class,
+        assertThrows("Ambiguous overload is an error in Groovy 2", GroovyRuntimeException.class,
                 () -> evaluate(new AnnotatedWhitelist(), Ambiguity.class.getName() + ".m(null)"));
     }
 
