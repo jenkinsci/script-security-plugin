@@ -30,10 +30,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import hudson.Extension;
 import hudson.PluginManager;
-import hudson.model.AbstractDescribableImpl;
-import hudson.model.Descriptor;
-import hudson.model.Item;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
@@ -62,11 +59,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
-import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
-import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
+import org.jenkinsci.plugins.scriptsecurity.scripts.*;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -374,7 +367,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     memoryProtectedLoader = new CleanGroovyClassLoader(loader);
                     loaderF.set(sh, memoryProtectedLoader);
                 }
-                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+                Run run = (Run) binding.getVariable("build");
+                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get(), run));
             }
 
         } finally {
