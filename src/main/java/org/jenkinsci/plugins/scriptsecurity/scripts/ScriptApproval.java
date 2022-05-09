@@ -483,7 +483,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
-            ScriptListener.fireScriptFromConsoleEvent(script, run);
+            ScriptListener.fireScriptFromPipelineEvent(script, run);
             return script;
         }
         String hash = hash(script, language.getName());
@@ -491,7 +491,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
             throw new UnapprovedUsageException(hash);
         }
-        ScriptListener.fireScriptFromConsoleEvent(script, run);
+        ScriptListener.fireScriptFromPipelineEvent(script, run);
         return script;
     }
     // Only for testing
