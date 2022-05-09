@@ -21,7 +21,7 @@ public interface ScriptListener extends ExtensionPoint {
     void onScriptFromPipeline(String script, Run run);
 
     /**
-     * Fires the {@link #onScriptFromPipeline(String, Run)} event to track the usage of the script console.
+     * Fires the {@link #onScriptFromPipeline(String, Run)} event to track the usage of groovy scripts running outside the sandbox.
      *
      * @see org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript#evaluate(ClassLoader, groovy.lang.Binding, hudson.model.TaskListener)
      * @param script The Groovy script that is excecuted.
