@@ -16,7 +16,7 @@ public interface ScriptListener extends ExtensionPoint {
      *
      * @see org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript#evaluate(ClassLoader, groovy.lang.Binding, hudson.model.TaskListener)
      * @param script The Groovy script that is excecuted.
-     * @param run The run calling the Groovy script.
+     * @param run The run calling the Groovy script. May be null.
      */
     void onScriptFromPipeline(String script, Run run);
 

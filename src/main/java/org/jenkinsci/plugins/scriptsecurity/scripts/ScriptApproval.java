@@ -479,7 +479,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return {@code script}, for convenience
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
-    public synchronized String using(@NonNull String script, @NonNull Language language, @NonNull Run run) throws UnapprovedUsageException {
+    public synchronized String using(@NonNull String script, @NonNull Language language, Run run) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
