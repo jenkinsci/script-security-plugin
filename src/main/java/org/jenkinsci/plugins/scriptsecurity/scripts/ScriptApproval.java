@@ -455,35 +455,26 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param script a possibly unapproved script
      * @param language the language in which it is written
      * @return {@code script}, for convenience
-     * @throws UnapprovedUsageException in case it has not yet been approved
+     * @throws UnapprovedUsageException in case it has not yet been approve
+     * @deprecated Use {@link #using(String, Language, String)}.
      */
+    @Deprecated
     public synchronized String using(@NonNull String script, @NonNull Language language) throws UnapprovedUsageException {
-        if (script.length() == 0) {
-            // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
-            // and in many cases there is some sensible behavior for an emoty script which we want to permit.
-            return script;
-        }
-        String hash = hash(script, language.getName());
-        if (!approvedScriptHashes.contains(hash)) {
-            // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
-            throw new UnapprovedUsageException(hash);
-        }
-
-        return script;
+        return using(script, language, "N/A");
     }
     /**
      * Called when a script is about to be used (evaluated).
      * @param script a possibly unapproved script
      * @param language the language in which it is written
-     * @param run the run executing the groovy script.
+     * @param origin A descriptive, trackable identifier of the entity running the script.
      * @return {@code script}, for convenience
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
-    public synchronized String using(@NonNull String script, @NonNull Language language, Run run) throws UnapprovedUsageException {
+    public synchronized String using(@NonNull String script, @NonNull Language language, String origin) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
-            ScriptListener.fireScriptFromPipelineEvent(script, run);
+            ScriptListener.fireScriptEvent(script, origin);
             return script;
         }
         String hash = hash(script, language.getName());
@@ -491,7 +482,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
             throw new UnapprovedUsageException(hash);
         }
-        ScriptListener.fireScriptFromPipelineEvent(script, run);
+        ScriptListener.fireScriptEvent(script, origin);
         return script;
     }
     // Only for testing

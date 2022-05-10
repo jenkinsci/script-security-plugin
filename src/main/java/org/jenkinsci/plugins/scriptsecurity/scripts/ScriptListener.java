@@ -15,19 +15,19 @@ public interface ScriptListener extends ExtensionPoint {
      * Called when a groovy script is executed in a pipeline outside of a sandbox.
      *
      * @see org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript#evaluate(ClassLoader, groovy.lang.Binding, hudson.model.TaskListener)
-     * @param script The Groovy script that is excecuted.
-     * @param run The run calling the Groovy script. May be null.
+     * @param script The Groovy script that is executed.
+     * @param origin A descriptive, trackable identifier of the entity running the script.
      */
-    void onScriptFromPipeline(String script, Run run);
+    void onScript(String script, String origin);
 
     /**
-     * Fires the {@link #onScriptFromPipeline(String, Run)} event to track the usage of groovy scripts running outside the sandbox.
+     * Fires the {@link #onScript(String, String)} event to track the usage of groovy scripts running outside the sandbox.
      *
      * @see org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript#evaluate(ClassLoader, groovy.lang.Binding, hudson.model.TaskListener)
      * @param script The Groovy script that is excecuted.
-     * @param run The run calling the Groovy script.
+     * @param origin A descriptive, trackable identifier of the entity running the script.
      */
-    static void fireScriptFromPipelineEvent(String script, Run run) {
-        Listeners.notify(ScriptListener.class, true, listener -> listener.onScriptFromPipeline(script, run));
+    static void fireScriptEvent(String script, String origin) {
+        Listeners.notify(ScriptListener.class, true, listener -> listener.onScript(script, origin));
     }
 }

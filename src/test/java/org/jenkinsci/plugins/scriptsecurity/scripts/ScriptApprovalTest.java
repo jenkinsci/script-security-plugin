@@ -222,7 +222,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
         @Override
         Script use() {
-            assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+            assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get(), "Testing"));
             return this;
         }
 

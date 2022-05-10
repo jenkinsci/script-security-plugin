@@ -375,8 +375,15 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     memoryProtectedLoader = new CleanGroovyClassLoader(loader);
                     loaderF.set(sh, memoryProtectedLoader);
                 }
-                Run run = (Run) binding.getVariable("build");
-                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get(), run));
+                String origin = "UNKNOWN";
+                if (binding.hasVariable("build")) {
+                    Run run = (Run) binding.getVariable("build");
+                    origin = run.getFullDisplayName();
+                } else {
+                    LOGGER.log(Level.INFO, "Could not determine origin of the groovy script - missing implementation. Please open an issue for this!");
+                }
+
+                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get(), origin));
             }
 
         } finally {
