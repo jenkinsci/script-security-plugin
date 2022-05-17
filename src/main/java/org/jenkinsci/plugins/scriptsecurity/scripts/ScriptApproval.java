@@ -27,8 +27,10 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import hudson.model.Run;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
+import jenkins.model.ScriptListener;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.jelly.Script;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -475,6 +477,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
             ScriptListener.fireScriptEvent(script, origin);
+
             return script;
         }
         String hash = hash(script, language.getName());
