@@ -24,13 +24,11 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import hudson.model.Run;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.ScriptListener;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.commons.jelly.Script;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -57,7 +55,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
