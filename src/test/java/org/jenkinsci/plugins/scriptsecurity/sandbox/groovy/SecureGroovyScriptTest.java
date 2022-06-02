@@ -68,7 +68,6 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.Rule;
@@ -118,7 +117,7 @@ public class SecureGroovyScriptTest {
         List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
         HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
-        assertEquals(true, sandboxRB.isChecked()); // should be checked
+        assertTrue(sandboxRB.isChecked()); // should be checked
         sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
 
         r.submit(config);

@@ -13,7 +13,6 @@ import static io.jenkins.plugins.casc.misc.Util.getSecurityRoot;
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class JcascTest {
 
@@ -24,10 +23,10 @@ public class JcascTest {
     @Test
     public void smokeTestEntry() throws Exception {
         String[] approved = ScriptApproval.get().getApprovedSignatures();
-        assertTrue(approved.length == 1);
+        assertEquals(1, approved.length);
         assertEquals(approved[0], "method java.net.URI getHost");
         String[] approvedScriptHashes = ScriptApproval.get().getApprovedScriptHashes();
-        assertTrue(approvedScriptHashes.length == 1);
+        assertEquals(1, approvedScriptHashes.length);
         assertEquals(approvedScriptHashes[0], "fccae58c5762bdd15daca97318e9d74333203106");
     }
 

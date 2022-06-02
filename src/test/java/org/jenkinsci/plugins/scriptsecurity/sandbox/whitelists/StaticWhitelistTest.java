@@ -58,7 +58,7 @@ public class StaticWhitelistTest {
 
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
-        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
+        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<>();
         try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8); BufferedReader br = new BufferedReader(isr)) {
             String line;
             while ((line = br.readLine()) != null) {

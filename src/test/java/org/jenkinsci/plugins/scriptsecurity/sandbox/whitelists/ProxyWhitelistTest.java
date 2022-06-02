@@ -51,7 +51,7 @@ public class ProxyWhitelistTest {
         pw1.reset(Collections.singleton(new StaticWhitelist(new StringReader("method java.lang.String length\nmethod java.lang.Object hashCode"))));
         assertTrue(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
         assertTrue(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
-        pw1.reset(Collections.<Whitelist>emptySet());
+        pw1.reset(Collections.emptySet());
         assertFalse(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
         assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
     }
@@ -60,7 +60,7 @@ public class ProxyWhitelistTest {
         ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")));
         ProxyWhitelist pw2 = new ProxyWhitelist(pw1);
         assertTrue(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
-        pw1.reset(Collections.<Whitelist>emptySet());
+        pw1.reset(Collections.emptySet());
         assertFalse(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
     }
 

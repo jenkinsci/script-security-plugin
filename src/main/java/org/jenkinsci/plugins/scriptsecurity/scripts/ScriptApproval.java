@@ -50,8 +50,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -299,9 +299,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         
         PendingClasspathEntry(@NonNull String hash, @NonNull URL url, @NonNull ApprovalContext context) {
             super(context);
-            /**
-             * hash should be stored as files located at the classpath can be modified.
-             */
+             // hash should be stored as files located at the classpath can be modified.
             this.hash = hash;
             this.url = url;
         }
@@ -324,9 +322,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
         
         public static @NonNull PendingClasspathEntry searchKeyFor(@NonNull String hash) {
-            final PendingClasspathEntry entry = new PendingClasspathEntry(hash, 
-                    SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
-            return entry;
+            return new PendingClasspathEntry(hash, SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
         }
     }
 
@@ -390,11 +386,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     private static String hash(String script, String language) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            digest.update(language.getBytes("UTF-8"));
+            digest.update(language.getBytes(StandardCharsets.UTF_8));
             digest.update((byte) ':');
-            digest.update(script.getBytes("UTF-8"));
+            digest.update(script.getBytes(StandardCharsets.UTF_8));
             return Util.toHexString(digest.digest());
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException x) {
+        } catch (NoSuchAlgorithmException x) {
             throw new AssertionError(x);
         }
     }
@@ -404,8 +400,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * Package visibility to be used in tests.
      */
     static String hashClasspathEntry(URL entry) throws IOException {
-        InputStream is = entry.openStream();
-        try {
+        try (InputStream is = entry.openStream()) {
             DigestInputStream input = null;
             try {
                 MessageDigest digest = MessageDigest.getInstance("SHA-1");
@@ -422,8 +417,6 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                     input.close();
                 }
             }
-        } finally {
-            is.close();
         }
     }
 
@@ -718,7 +711,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                 goodSignatures.add(signature);
             } catch (IOException e) {
                 LOG.warning("Ignoring malformed signature: " + signature
-                        + " (Occurred exception: " + e.toString() + ")");
+                        + " (Occurred exception: " + e + ")");
             }
         }
         approvedSignatures.addAll(goodSignatures);
@@ -919,14 +912,14 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
         ArrayList<ApprovedClasspathEntry> r = new ArrayList<>(approvedClasspathEntries);
-        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
+        r.sort(Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
         List<PendingClasspathEntry> r = new ArrayList<>(pendingClasspathEntries);
-        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
+        r.sort(Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
