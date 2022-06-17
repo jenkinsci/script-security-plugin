@@ -31,7 +31,9 @@ method groovy.lang.Closure ncurry int java.lang.Object
 method groovy.lang.Closure ncurry int java.lang.Object[]
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
+new groovy.lang.EmptyRange java.lang.Comparable
 method groovy.lang.GString plus java.lang.String
+new groovy.lang.IntRange boolean int int
 method groovy.lang.Range getFrom
 method groovy.lang.Range getTo
 method groovy.lang.Range step int
@@ -299,6 +301,9 @@ method java.lang.Throwable getMessage
 method java.lang.Throwable printStackTrace java.io.PrintStream
 method java.lang.Throwable printStackTrace java.io.PrintWriter
 method java.math.BigDecimal multiply java.math.BigDecimal
+method java.math.BigDecimal negate
+method java.math.BigInteger negate
+method java.math.BigInteger not
 new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
@@ -1067,7 +1072,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.So
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number java.lang.CharSequence
@@ -1115,7 +1123,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Lo
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Number java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigDecimal java.lang.Integer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigInteger java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
@@ -1248,7 +1259,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimil
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarCollection java.util.Collection int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarMap java.util.Map
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter bitwiseNegate java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
@@ -1258,10 +1268,10 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThanEq
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotIdentical java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter createRange java.lang.Object java.lang.Object boolean
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter isCase java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods bitwiseNegate java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods center java.lang.CharSequence java.lang.Number
@@ -1311,6 +1321,8 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods minus java.lang.Str
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods minus java.lang.String java.util.regex.Pattern
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods multiply java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods multiply java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods next java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods next java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods normalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods normalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.CharSequence java.lang.Number
@@ -1321,6 +1333,8 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods previous java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods previous java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
