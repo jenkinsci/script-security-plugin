@@ -848,9 +848,11 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getTimeString java.ut
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Calendar java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date int
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.sql.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods plus java.util.Date int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.sql.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods putAt java.util.Calendar int int
@@ -869,6 +871,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map 
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asImmutable java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.util.BitSet
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int boolean
@@ -1271,6 +1277,7 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.la
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter isCase java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods bitwiseNegate java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods bitwiseNegate java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.String
