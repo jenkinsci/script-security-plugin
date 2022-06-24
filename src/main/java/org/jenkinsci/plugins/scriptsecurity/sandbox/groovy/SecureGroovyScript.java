@@ -397,7 +397,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 String origin = "UNKNOWN";
                 if (binding.hasVariable("build")) {
                     Run run = (Run) binding.getVariable("build");
-                    origin = run.getFullDisplayName();
+
+                    origin = String.format("build '%s'", run.getExternalizableId());
                 } else {
                     LOGGER.log(Level.INFO, "Could not determine origin of the groovy script - missing implementation. Please open an issue for this!");
                 }
