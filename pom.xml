@@ -16,7 +16,8 @@
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.355-SNAPSHOT</jenkins.version>
+    <!-- TODO https://github.com/jenkinsci/jenkins/pull/6539 -->
+    <jenkins.version>2.366-rc32795.df5b_49c75b_0e</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
   <licenses>
