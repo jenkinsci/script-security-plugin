@@ -267,6 +267,7 @@ method java.lang.String split java.lang.String
 method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
 method java.lang.String startsWith java.lang.String int
+method java.lang.String stripIndent
 method java.lang.String substring int
 method java.lang.String substring int int
 method java.lang.String toCharArray

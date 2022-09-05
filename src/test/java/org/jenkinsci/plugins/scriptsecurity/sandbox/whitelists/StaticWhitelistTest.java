@@ -120,8 +120,9 @@ public class StaticWhitelistTest {
                     "java.util.Iterator", "groovy.lang.Closure"),
             // Overrides CharSequence.isEmpty in Java 15+.
             new MethodSignature(String.class, "isEmpty"),
-            // Does not exist until Java 15.
+            // Do not exist until Java 15.
             new MethodSignature(CharSequence.class, "isEmpty"),
+            new MethodSignature(String.class, "stripIndent"),
             // Override the corresponding RandomGenerator methods in Java 17+.
             new MethodSignature(Random.class, "nextBoolean"),
             new MethodSignature(Random.class, "nextBytes", byte[].class),
