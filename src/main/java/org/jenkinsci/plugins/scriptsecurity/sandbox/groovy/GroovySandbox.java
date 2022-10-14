@@ -26,20 +26,28 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.grape.GrabAnnotationTransformation;
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
+import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.ExtensionList;
 import hudson.model.RootAction;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.cert.Certificate;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +57,8 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.Types;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -58,6 +68,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApprovalNote;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
+import org.kohsuke.groovy.sandbox.impl.Checker;
 
 /**
  * Allows Groovy scripts (including Groovy Templates) to be run inside a sandbox.
@@ -143,6 +154,17 @@ public final class GroovySandbox {
     @FunctionalInterface
     public interface Scope extends AutoCloseable {
 
+        /**
+         * Variant of {@link GroovyShell#parse(String)} that intercepts potentially unsafe calls when the script is created.
+         *
+         * <p>{@link GroovySandbox#runScript(GroovyShell, String)} should be used instead of this method in most cases.
+         */
+        default Script parse(GroovyShell shell, GroovyCodeSource codeSource) {
+            Class<?> scriptClass = shell.getClassLoader().parseClass(codeSource, false);
+            Script script = checkedCreateScript(scriptClass, shell.getContext());
+            return script;
+        }
+
         @Override void close();
 
     }
@@ -150,17 +172,89 @@ public final class GroovySandbox {
     /**
      * Compiles and runs a script within the sandbox.
      * @param shell the shell to be used; see {@link #createSecureCompilerConfiguration} and similar methods
-     * @param script the script to run
+     * @param scriptText the script to run
      * @return the return value of the script
      */
-    public Object runScript(@NonNull GroovyShell shell, @NonNull String script) {
+    public Object runScript(@NonNull GroovyShell shell, @NonNull String scriptText) {
         GroovySandbox derived = new GroovySandbox().
             withApprovalContext(context).
             withTaskListener(listener).
             withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(shell.getClassLoader()), whitelist()));
         try (Scope scope = derived.enter()) {
-            return shell.parse(script).run();
+            // GroovyShell does not expose any public APIs that allow us to access the generated Script class before InvokerHelper.createScript is called.
+            String scriptFileName = "Script0.groovy";
+            try {
+                Method generateScriptName = shell.getClass().getDeclaredMethod("generateScriptName");
+                generateScriptName.setAccessible(true); // Method is protected.
+                scriptFileName = (String) generateScriptName.invoke(shell);
+            } catch (ReflectiveOperationException e) {
+                LOGGER.log(Level.WARNING, null, e);
+            }
+            GroovyCodeSource codeSource = new GroovyCodeSource(scriptText, scriptFileName, DEFAULT_CODE_BASE);
+            Script script = scope.parse(shell, codeSource);
+            return script.run();
         }
+    }
+
+    /**
+     * Variant of {@link InvokerHelper#createScript} that intercepts potentially unsafe reflective behaviors.
+     *
+     * <p>{@link GroovySandbox#runScript(GroovyShell, String)} or {@link Scope#parse} should be used instead of this method in most cases.
+     *
+     * @see InvokerHelper#createScript
+     */
+    private static Script checkedCreateScript(Class<?> scriptClass, Binding context) {
+        Script script;
+        try {
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                try {
+                    script = InvokerHelper.newScript(scriptClass, context);
+                } catch (InvocationTargetException e) {
+                    throw e.getCause(); // Typically RejectedAccessException.
+                }
+            } else {
+                // TODO: Could we just throw a SecurityException instead and tell users to extend Script or not have a
+                // class definition as the only top-level content in their script?
+                final GroovyObject object = (GroovyObject) scriptClass.newInstance();
+                // it could just be a class, so let's wrap it in a Script
+                // wrapper; though the bindings will be ignored
+                script = new Script(context) {
+                    public Object run() {
+                        Object[] argsToPass = new Object[0];
+                        try {
+                            Object args = getProperty("args");
+                            if (args instanceof String[]) {
+                                argsToPass = (String[])args;
+                            }
+                        } catch (MissingPropertyException e) {
+                            // They'll get empty args since none exist in the context.
+                        }
+                        try {
+                            Checker.checkedCall(object, false, false, "main", argsToPass);
+                        } catch (Throwable t) {
+                            throw new GroovyRuntimeException(t);
+                        }
+                        return null;
+                    }
+                };
+                Map variables = context.getVariables();
+                for (Object o : variables.entrySet()) {
+                    Map.Entry entry = (Map.Entry) o;
+                    String key = entry.getKey().toString();
+                    // assume underscore variables are for the wrapper script
+                    try {
+                        Checker.checkedSetProperty(key.startsWith("_") ? script : object, key, true, false, Types.ASSIGN, entry.getValue());
+                    } catch (MissingPropertyException e) {
+                        // Swallow MissingPropertyException to match Groovy behavior in this case.
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            throw new GroovyRuntimeException(
+                    "Failed to create Script instance for class: "
+                            + scriptClass + ". Reason: " + e, e);
+        }
+        return script;
     }
 
     /**

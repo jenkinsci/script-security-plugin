@@ -46,6 +46,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public final class TestGroovyRecorder extends Recorder {
 
     private final SecureGroovyScript script;
+    private transient Binding binding;
 
     @DataBoundConstructor public TestGroovyRecorder(SecureGroovyScript script) {
         this.script = script.configuringWithKeyItem();
@@ -54,10 +55,16 @@ public final class TestGroovyRecorder extends Recorder {
     public SecureGroovyScript getScript() {
         return script;
     }
-    
+
+    public void setBinding(Binding binding) {
+        this.binding = binding;
+    }
+
     @Override public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         try {
-            Binding binding = new Binding();
+            if (binding == null) {
+                binding = new Binding();
+            }
             binding.setVariable("build", build);
             build.setDescription(String.valueOf(script.evaluate(Jenkins.get().getPluginManager().uberClassLoader, binding, listener)));
         } catch (Exception x) {
