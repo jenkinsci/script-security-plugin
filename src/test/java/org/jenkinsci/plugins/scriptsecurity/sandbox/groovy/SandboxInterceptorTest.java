@@ -911,6 +911,8 @@ public class SandboxInterceptorTest {
             // GroovyRuntimeException.
             if (x.getCause() instanceof RejectedAccessException) {
                 errors.checkThat(x.getMessage(), ((RejectedAccessException)x.getCause()).getSignature(), is(expectedSignature));
+            } else {
+                errors.addError(x);
             }
         } catch (RejectedAccessException x) {
             errors.checkThat(x.getMessage(), x.getSignature(), is(expectedSignature));
