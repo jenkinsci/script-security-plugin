@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -1650,6 +1651,53 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "class Test { }; new Test() as Boolean");
         assertEvaluate(new GenericWhitelist(), false, "class Test { }; new Test() { boolean asBoolean() { false } } as Boolean");
         assertEvaluate(new GenericWhitelist(), true, "('a' =~ '.*') as Boolean");
+    }
+
+    @Test
+    public void accessStaticMembersViaInstance() throws Throwable {
+        String fqcn = HasStaticMembers.class.getName();
+        // Make sure that we report the correct signature in RejectedAccessException.
+        assertRejected(new AnnotatedWhitelist(), "staticField " + fqcn + " FOO", "def o = new " + fqcn + "(); o.FOO");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " getBAR", "def o = new " + fqcn + "(); o.BAR");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " isBAZ", "def o = new " + fqcn + "(); o.BAZ");
+        assertRejected(new AnnotatedWhitelist(), "staticField " + fqcn + " FOO", "def o = new " + fqcn + "(); o.FOO = 1");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " setBAR int", "def o = new " + fqcn + "(); o.BAR = 2");
+        assertRejected(new AnnotatedWhitelist(), "staticField " + fqcn + " FOO", "def o = new " + fqcn + "(); o.@FOO");
+        assertRejected(new AnnotatedWhitelist(), "staticField " + fqcn + " FOO", "def o = new " + fqcn + "(); o.@FOO = 1");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " method", "def o = new " + fqcn + "(); o.method()");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " getAt int", "def o = new " + fqcn + "(); o[0]");
+        assertRejected(new AnnotatedWhitelist(), "staticMethod " + fqcn + " putAt int java.lang.Object", "def o = new " + fqcn + "(); o[0] = null");
+        // Make sure that we check for the correct signature in allowlists.
+        assertEvaluate(HasStaticMembers.allowlist("staticField " + fqcn + " FOO"), 1,
+                "def o = new " + fqcn + "(); o.FOO = o.FOO");
+        assertEvaluate(HasStaticMembers.allowlist("staticField " + fqcn + " FOO"), 1,
+                "def o = new " + fqcn + "(); o.@FOO = o.@FOO");
+        assertEvaluate(HasStaticMembers.allowlist("staticMethod " + fqcn + " getBAR", "staticMethod " + fqcn + " setBAR int"), 2,
+                "def o = new " + fqcn + "(); o.BAR = o.BAR");
+        assertEvaluate(HasStaticMembers.allowlist("staticMethod " + fqcn + " isBAZ"), true,
+                "def o = new " + fqcn + "(); o.BAZ");
+        assertEvaluate(HasStaticMembers.allowlist("staticMethod " + fqcn + " method"), 3,
+                "def o = new " + fqcn + "(); o.method()");
+        assertEvaluate(HasStaticMembers.allowlist("staticMethod " + fqcn + " getAt int", "staticMethod " + fqcn + " putAt int java.lang.Object"), 3,
+                "def o = new " + fqcn + "(); o[0] = o[3]");
+    }
+
+    public static class HasStaticMembers {
+        @Whitelisted public HasStaticMembers() { }
+        public static int FOO = 1; // Groovy will access the field directly
+        public static int BAR = 2; // Groovy will access the field via getBAR and setBAR
+        public static int getBAR() { return BAR; }
+        public static void setBAR(int BAR) { HasStaticMembers.BAR = BAR; }
+        public static boolean BAZ = true; // Groovy will read the field via isBAZ
+        public static boolean isBAZ() { return BAZ; }
+        public static int method() { return 3; }
+        public static int getAt(int index) { return index; }
+        public static void putAt(int index, Object value) { }
+        public static Whitelist allowlist(String... signatures) throws Exception {
+            List<String> signaturesList = new ArrayList<>(Arrays.asList(signatures));
+            signaturesList.add("new " + HasStaticMembers.class.getName());
+            return new StaticWhitelist(signaturesList);
+        }
     }
 
     /**
