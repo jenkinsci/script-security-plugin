@@ -88,8 +88,8 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
 
         final Manager manager = new Manager(r);
 
-        for (int i = 0; i < entries.length; i++) {
-            entries[i].pending(manager);
+        for (Approvable<?> entry : entries) {
+            entry.pending(manager);
         }
 
         entries[0].pending(manager).approve().approved(manager);

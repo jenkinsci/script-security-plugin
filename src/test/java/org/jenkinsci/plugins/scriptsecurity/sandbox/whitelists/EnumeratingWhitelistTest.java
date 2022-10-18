@@ -57,11 +57,14 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.FieldSignature(C.class, "other").matches(f));
     }
 
-    @Test public void getName() {
+    @Test public void getName() throws Exception {
         assertEquals("java.lang.Object", EnumeratingWhitelist.getName(Object.class));
         assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
         assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
         assertEquals(EnumeratingWhitelistTest.class.getName() + "$C", EnumeratingWhitelist.getName(C.class));
+        for (Class<?> c : new Class<?>[] {String.class, Map.Entry.class, int.class, String[].class, Map.Entry[].class, int[].class, String[][].class, Map.Entry[][].class, int[][].class}) {
+            assertEquals(c, EnumeratingWhitelist.Signature.type(EnumeratingWhitelist.getName(c)));
+        }
     }
 
     @Test public void methodExists() throws Exception {
@@ -75,6 +78,9 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.MethodSignature(LinkedHashMap.class, "size").exists());
         assertFalse(new EnumeratingWhitelist.MethodSignature(HashMap.class, "size").exists());
         assertTrue(new EnumeratingWhitelist.MethodSignature(Map.class, "size").exists());
+        assertTrue(new EnumeratingWhitelist.MethodSignature(Map.Entry.class, "getKey").exists());
+        assertTrue(new EnumeratingWhitelist.MethodSignature("java.util.Map$Entry", "getKey").exists());
+        assertThrows(ClassNotFoundException.class, new EnumeratingWhitelist.MethodSignature("java.util.Map.Entry", "getKey")::exists);
     }
 
     @Test
@@ -103,7 +109,7 @@ public class EnumeratingWhitelistTest {
     public void canonicalNaming() throws Exception {
         Method m = Fancy.class.getMethod("m", Object[].class);
         Method staticM = Fancy.class.getMethod("staticM", Object.class);
-        Constructor con = Fancy.class.getConstructor(null);
+        Constructor<Fancy> con = Fancy.class.getConstructor(null);
         Field f = Fancy.class.getField("myF");
         Field staticF = Fancy.class.getField("myStaticF");
 
@@ -127,7 +133,7 @@ public class EnumeratingWhitelistTest {
 
         Method m = Fancy.class.getMethod("m", Object[].class);
         Method staticM = Fancy.class.getMethod("staticM", Object.class);
-        Constructor con = Fancy.class.getConstructor(null);
+        Constructor<Fancy> con = Fancy.class.getConstructor(null);
         Field f = Fancy.class.getField("myF");
         Field staticF = Fancy.class.getField("myStaticF");
 

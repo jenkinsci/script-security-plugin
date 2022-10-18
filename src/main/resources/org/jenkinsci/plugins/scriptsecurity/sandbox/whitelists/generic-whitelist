@@ -31,12 +31,15 @@ method groovy.lang.Closure ncurry int java.lang.Object
 method groovy.lang.Closure ncurry int java.lang.Object[]
 method groovy.lang.Closure setDelegate java.lang.Object
 method groovy.lang.Closure setResolveStrategy int
+new groovy.lang.EmptyRange java.lang.Comparable
 method groovy.lang.GString plus java.lang.String
+new groovy.lang.IntRange boolean int int
 method groovy.lang.Range getFrom
 method groovy.lang.Range getTo
 method groovy.lang.Range step int
 method groovy.lang.Range step int groovy.lang.Closure
 method groovy.lang.Script getBinding
+staticMethod groovy.xml.XmlUtil escapeXml java.lang.String
 
 method java.io.Flushable flush
 # Useful to show stacktrace to the user.
@@ -61,6 +64,49 @@ method java.io.Writer write int
 method java.io.Writer write java.lang.String
 method java.io.Writer write java.lang.String int int
 
+method java.lang.AbstractStringBuilder append boolean
+method java.lang.AbstractStringBuilder append char[]
+method java.lang.AbstractStringBuilder append char[] int int
+method java.lang.AbstractStringBuilder append double
+method java.lang.AbstractStringBuilder append float
+method java.lang.AbstractStringBuilder append int
+method java.lang.AbstractStringBuilder append java.lang.Object
+method java.lang.AbstractStringBuilder append java.lang.String
+method java.lang.AbstractStringBuilder append java.lang.StringBuffer
+method java.lang.AbstractStringBuilder append long
+method java.lang.AbstractStringBuilder appendCodePoint int
+method java.lang.AbstractStringBuilder capacity
+method java.lang.AbstractStringBuilder codePointAt int
+method java.lang.AbstractStringBuilder codePointBefore int
+method java.lang.AbstractStringBuilder codePointCount int int
+method java.lang.AbstractStringBuilder delete int int
+method java.lang.AbstractStringBuilder deleteCharAt int
+method java.lang.AbstractStringBuilder ensureCapacity int
+method java.lang.AbstractStringBuilder getChars int int char[] int
+method java.lang.AbstractStringBuilder indexOf java.lang.String
+method java.lang.AbstractStringBuilder indexOf java.lang.String int
+method java.lang.AbstractStringBuilder insert int boolean
+method java.lang.AbstractStringBuilder insert int char
+method java.lang.AbstractStringBuilder insert int char[]
+method java.lang.AbstractStringBuilder insert int char[] int int
+method java.lang.AbstractStringBuilder insert int double
+method java.lang.AbstractStringBuilder insert int float
+method java.lang.AbstractStringBuilder insert int int
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence
+method java.lang.AbstractStringBuilder insert int java.lang.CharSequence int int
+method java.lang.AbstractStringBuilder insert int java.lang.Object
+method java.lang.AbstractStringBuilder insert int java.lang.String
+method java.lang.AbstractStringBuilder insert int long
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String
+method java.lang.AbstractStringBuilder lastIndexOf java.lang.String int
+method java.lang.AbstractStringBuilder offsetByCodePoints int int
+method java.lang.AbstractStringBuilder replace int int java.lang.String
+method java.lang.AbstractStringBuilder reverse
+method java.lang.AbstractStringBuilder setCharAt int char
+method java.lang.AbstractStringBuilder setLength int
+method java.lang.AbstractStringBuilder substring int
+method java.lang.AbstractStringBuilder substring int int
+method java.lang.AbstractStringBuilder trimToSize
 method java.lang.Appendable append char
 method java.lang.Appendable append java.lang.CharSequence
 method java.lang.Appendable append java.lang.CharSequence int int
@@ -71,7 +117,9 @@ staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
+method java.lang.CharSequence isEmpty
 method java.lang.CharSequence length
+method java.lang.CharSequence subSequence int int
 method java.lang.Class getName
 method java.lang.Class getSimpleName
 method java.lang.Class isInstance java.lang.Object
@@ -87,6 +135,40 @@ staticMethod java.lang.Integer parseInt java.lang.String int
 staticMethod java.lang.Integer toString int int
 staticMethod java.lang.Integer valueOf java.lang.String
 method java.lang.Iterable iterator
+staticField java.lang.Math E
+staticMethod java.lang.Math IEEEremainder double double
+staticField java.lang.Math PI
+staticMethod java.lang.Math abs double
+staticMethod java.lang.Math abs float
+staticMethod java.lang.Math abs int
+staticMethod java.lang.Math abs long
+staticMethod java.lang.Math acos double
+staticMethod java.lang.Math addExact int int
+staticMethod java.lang.Math addExact long long
+staticMethod java.lang.Math asin double
+staticMethod java.lang.Math atan double
+staticMethod java.lang.Math atan2 double double
+staticMethod java.lang.Math cbrt double
+staticMethod java.lang.Math ceil double
+staticMethod java.lang.Math copySign double double
+staticMethod java.lang.Math copySign float float
+staticMethod java.lang.Math cos double
+staticMethod java.lang.Math cosh double
+staticMethod java.lang.Math exp double
+staticMethod java.lang.Math expm1 double
+staticMethod java.lang.Math floor double
+staticMethod java.lang.Math floorDiv int int
+staticMethod java.lang.Math floorDiv long long
+staticMethod java.lang.Math floorMod int int
+staticMethod java.lang.Math floorMod long long
+staticMethod java.lang.Math getExponent double
+staticMethod java.lang.Math getExponent float
+staticMethod java.lang.Math hypot double double
+staticMethod java.lang.Math incrementExact int
+staticMethod java.lang.Math incrementExact long
+staticMethod java.lang.Math log double
+staticMethod java.lang.Math log10 double
+staticMethod java.lang.Math log1p double
 staticMethod java.lang.Math max double double
 staticMethod java.lang.Math max float float
 staticMethod java.lang.Math max int int
@@ -95,6 +177,37 @@ staticMethod java.lang.Math min double double
 staticMethod java.lang.Math min float float
 staticMethod java.lang.Math min int int
 staticMethod java.lang.Math min long long
+staticMethod java.lang.Math multiplyExact int int
+staticMethod java.lang.Math multiplyExact long long
+staticMethod java.lang.Math negateExact int
+staticMethod java.lang.Math negateExact long
+staticMethod java.lang.Math nextAfter double double
+staticMethod java.lang.Math nextAfter float double
+staticMethod java.lang.Math nextDown double
+staticMethod java.lang.Math nextDown float
+staticMethod java.lang.Math nextUp double
+staticMethod java.lang.Math nextUp float
+staticMethod java.lang.Math pow double double
+staticMethod java.lang.Math random
+staticMethod java.lang.Math rint double
+staticMethod java.lang.Math round double
+staticMethod java.lang.Math round float
+staticMethod java.lang.Math scalb double int
+staticMethod java.lang.Math scalb float int
+staticMethod java.lang.Math signum double
+staticMethod java.lang.Math signum float
+staticMethod java.lang.Math sin double
+staticMethod java.lang.Math sinh double
+staticMethod java.lang.Math sqrt double
+staticMethod java.lang.Math subtractExact int int
+staticMethod java.lang.Math subtractExact long long
+staticMethod java.lang.Math tan double
+staticMethod java.lang.Math tanh double
+staticMethod java.lang.Math toDegrees double
+staticMethod java.lang.Math toIntExact long
+staticMethod java.lang.Math toRadians double
+staticMethod java.lang.Math ulp double
+staticMethod java.lang.Math ulp float
 method java.lang.Number byteValue
 method java.lang.Number doubleValue
 method java.lang.Number floatValue
@@ -106,21 +219,48 @@ method java.lang.Object equals java.lang.Object
 method java.lang.Object getClass
 method java.lang.Object hashCode
 method java.lang.Object toString
+new java.lang.String
+staticField java.lang.String CASE_INSENSITIVE_ORDER
+new java.lang.String byte[]
+new java.lang.String byte[] int int
+new java.lang.String byte[] int int java.lang.String
+new java.lang.String byte[] int int java.nio.charset.Charset
+new java.lang.String byte[] java.lang.String
+new java.lang.String byte[] java.nio.charset.Charset
+new java.lang.String char[]
+new java.lang.String char[] int int
+method java.lang.String codePointAt int
+method java.lang.String codePointBefore int
+method java.lang.String concat java.lang.String
 method java.lang.String contains java.lang.CharSequence
+method java.lang.String contentEquals java.lang.CharSequence
+method java.lang.String contentEquals java.lang.StringBuffer
 method java.lang.String endsWith java.lang.String
 method java.lang.String equalsIgnoreCase java.lang.String
 staticMethod java.lang.String format java.lang.String java.lang.Object[]
 staticMethod java.lang.String format java.util.Locale java.lang.String java.lang.Object[]
+method java.lang.String getBytes
+method java.lang.String getBytes java.lang.String
+method java.lang.String getChars int int char[] int
 method java.lang.String indexOf int
 method java.lang.String indexOf int int
 method java.lang.String indexOf java.lang.String
 method java.lang.String indexOf java.lang.String int
+new java.lang.String int[] int int
 method java.lang.String isEmpty
+new java.lang.String java.lang.String
+new java.lang.String java.lang.StringBuffer
+new java.lang.String java.lang.StringBuilder
+staticMethod java.lang.String join java.lang.CharSequence java.lang.CharSequence[]
+staticMethod java.lang.String join java.lang.CharSequence java.lang.Iterable
 method java.lang.String lastIndexOf int
 method java.lang.String lastIndexOf int int
 method java.lang.String lastIndexOf java.lang.String
 method java.lang.String lastIndexOf java.lang.String int
 method java.lang.String matches java.lang.String
+method java.lang.String offsetByCodePoints int int
+method java.lang.String regionMatches boolean int java.lang.String int int
+method java.lang.String regionMatches int java.lang.String int int
 method java.lang.String replace char char
 method java.lang.String replace java.lang.CharSequence java.lang.CharSequence
 method java.lang.String replaceAll java.lang.String java.lang.String
@@ -128,24 +268,54 @@ method java.lang.String replaceFirst java.lang.String java.lang.String
 method java.lang.String split java.lang.String
 method java.lang.String split java.lang.String int
 method java.lang.String startsWith java.lang.String
+method java.lang.String startsWith java.lang.String int
+method java.lang.String stripIndent
 method java.lang.String substring int
 method java.lang.String substring int int
+method java.lang.String toCharArray
 method java.lang.String toLowerCase
 method java.lang.String toLowerCase java.util.Locale
 method java.lang.String toUpperCase
 method java.lang.String toUpperCase java.util.Locale
 method java.lang.String trim
+staticMethod java.lang.String valueOf boolean
+staticMethod java.lang.String valueOf char
+staticMethod java.lang.String valueOf char[]
+staticMethod java.lang.String valueOf char[] int int
+staticMethod java.lang.String valueOf double
+staticMethod java.lang.String valueOf float
+staticMethod java.lang.String valueOf int
 staticMethod java.lang.String valueOf java.lang.Object
+staticMethod java.lang.String valueOf long
+new java.lang.StringBuffer
+new java.lang.StringBuffer int
+new java.lang.StringBuffer java.lang.CharSequence
+new java.lang.StringBuffer java.lang.String
+new java.lang.StringBuilder
+new java.lang.StringBuilder int
+new java.lang.StringBuilder java.lang.CharSequence
+new java.lang.StringBuilder java.lang.String
 staticMethod java.lang.System currentTimeMillis
+staticMethod java.lang.System identityHashCode java.lang.Object
 method java.lang.Throwable getCause
 method java.lang.Throwable getMessage
 method java.lang.Throwable printStackTrace java.io.PrintStream
 method java.lang.Throwable printStackTrace java.io.PrintWriter
 method java.math.BigDecimal multiply java.math.BigDecimal
+method java.math.BigDecimal negate
+method java.math.BigInteger negate
+method java.math.BigInteger not
 new java.net.MalformedURLException java.lang.String
 new java.net.URL java.lang.String
 staticMethod java.net.URLDecoder decode java.lang.String java.lang.String
 staticMethod java.net.URLEncoder encode java.lang.String java.lang.String
+staticMethod java.nio.charset.Charset forName java.lang.String
+staticField java.nio.charset.StandardCharsets ISO_8859_1
+staticField java.nio.charset.StandardCharsets US_ASCII
+staticField java.nio.charset.StandardCharsets UTF_16
+staticField java.nio.charset.StandardCharsets UTF_16BE
+staticField java.nio.charset.StandardCharsets UTF_16LE
+staticField java.nio.charset.StandardCharsets UTF_8
 staticField java.text.DateFormat AM_PM_FIELD
 staticField java.text.DateFormat DATE_FIELD
 staticField java.text.DateFormat DAY_OF_WEEK_FIELD
@@ -316,9 +486,46 @@ staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
 staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
+staticField java.time.temporal.ChronoUnit CENTURIES
+staticField java.time.temporal.ChronoUnit DAYS
+staticField java.time.temporal.ChronoUnit DECADES
+staticField java.time.temporal.ChronoUnit ERAS
+staticField java.time.temporal.ChronoUnit FOREVER
+staticField java.time.temporal.ChronoUnit HALF_DAYS
+staticField java.time.temporal.ChronoUnit HOURS
+staticField java.time.temporal.ChronoUnit MICROS
+staticField java.time.temporal.ChronoUnit MILLENNIA
+staticField java.time.temporal.ChronoUnit MILLIS
+staticField java.time.temporal.ChronoUnit MINUTES
+staticField java.time.temporal.ChronoUnit MONTHS
+staticField java.time.temporal.ChronoUnit NANOS
+staticField java.time.temporal.ChronoUnit SECONDS
+staticField java.time.temporal.ChronoUnit WEEKS
+staticField java.time.temporal.ChronoUnit YEARS
+method java.time.temporal.TemporalUnit addTo java.time.temporal.Temporal long
+method java.time.temporal.TemporalUnit between java.time.temporal.Temporal java.time.temporal.Temporal
+method java.time.temporal.TemporalUnit getDuration
+method java.time.temporal.TemporalUnit isDateBased
+method java.time.temporal.TemporalUnit isDurationEstimated
+method java.time.temporal.TemporalUnit isSupportedBy java.time.temporal.Temporal
+method java.time.temporal.TemporalUnit isTimeBased
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
+staticMethod java.util.Base64 getDecoder
+staticMethod java.util.Base64 getEncoder
+staticMethod java.util.Base64 getMimeDecoder
+staticMethod java.util.Base64 getMimeEncoder
+staticMethod java.util.Base64 getMimeEncoder int byte[]
+staticMethod java.util.Base64 getUrlDecoder
+staticMethod java.util.Base64 getUrlEncoder
+method java.util.Base64$Decoder decode byte[]
+method java.util.Base64$Decoder decode byte[] byte[]
+method java.util.Base64$Decoder decode java.lang.String
+method java.util.Base64$Encoder encode byte[]
+method java.util.Base64$Encoder encode byte[] byte[]
+method java.util.Base64$Encoder encodeToString byte[]
+method java.util.Base64$Encoder withoutPadding
 staticField java.util.Calendar ALL_STYLES
 staticField java.util.Calendar AM
 staticField java.util.Calendar AM_PM
@@ -502,6 +709,8 @@ method java.util.Date setTime long
 method java.util.Date setYear int
 method java.util.Date toGMTString
 method java.util.Date toLocaleString
+new java.util.HashMap
+new java.util.HashMap java.util.Map
 new java.util.HashSet
 new java.util.HashSet java.util.Collection
 method java.util.Iterator hasNext
@@ -563,11 +772,22 @@ method java.util.Random nextInt
 method java.util.Random nextInt int
 method java.util.Random nextLong
 staticMethod java.util.TimeZone getTimeZone java.lang.String
+new java.util.TreeMap
 new java.util.TreeSet
 staticMethod java.util.UUID randomUUID
 method java.util.concurrent.Callable call
 staticField java.util.concurrent.TimeUnit HOURS
+staticField java.util.concurrent.TimeUnit MILLISECONDS
 staticField java.util.concurrent.TimeUnit MINUTES
+staticField java.util.concurrent.TimeUnit SECONDS
+method java.util.random.RandomGenerator nextBoolean
+method java.util.random.RandomGenerator nextBytes byte[]
+method java.util.random.RandomGenerator nextDouble
+method java.util.random.RandomGenerator nextFloat
+method java.util.random.RandomGenerator nextGaussian
+method java.util.random.RandomGenerator nextInt
+method java.util.random.RandomGenerator nextInt int
+method java.util.random.RandomGenerator nextLong
 method java.util.regex.MatchResult end
 method java.util.regex.MatchResult end int
 method java.util.regex.MatchResult group
@@ -611,6 +831,7 @@ staticMethod java.util.regex.Pattern quote java.lang.String
 method java.util.regex.Pattern split java.lang.CharSequence
 method java.util.regex.Pattern split java.lang.CharSequence int
 method net.sf.json.JSON isArray
+method net.sf.json.JSON isEmpty
 method net.sf.json.JSON size
 
 
@@ -628,9 +849,11 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods getTimeString java.ut
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Calendar java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date int
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods minus java.util.Date java.util.Date
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.sql.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods next java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods plus java.util.Date int
+staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.sql.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Calendar
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods previous java.util.Date
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods putAt java.util.Calendar int int
@@ -642,12 +865,34 @@ staticMethod org.codehaus.groovy.runtime.DateGroovyMethods upto java.util.Calend
 staticMethod org.codehaus.groovy.runtime.DateGroovyMethods upto java.util.Date java.util.Date groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods abs java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods addAll java.util.Collection java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods and java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Iterable groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.lang.Object groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods any java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean boolean[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean byte[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean char[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean double[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean float[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean int[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Character
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.lang.Object[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.util.Collection
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.util.Enumeration
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.util.Iterator
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean java.util.regex.Matcher
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean long[]
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asBoolean short[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods asImmutable java.util.Map
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods bitwiseNegate java.util.BitSet
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods collate java.lang.Iterable int boolean
@@ -851,7 +1096,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.So
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.util.SortedSet java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods multiply java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods next java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods or java.lang.Boolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods padLeft java.lang.CharSequence java.lang.Number java.lang.CharSequence
@@ -899,7 +1147,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Lo
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.lang.Number java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigDecimal java.lang.Integer
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods power java.math.BigInteger java.lang.Integer
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.Character
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.Number
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods previous java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods push java.util.List java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.Map java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
@@ -941,6 +1192,7 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Ite
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Iterator java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods sort java.util.Map java.util.Comparator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods split java.util.List groovy.lang.Closure
@@ -965,7 +1217,9 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods take java.util.Lis
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods takeRight java.lang.Iterable int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods takeRight java.util.List int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods times java.lang.Number groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toDouble java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList boolean[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList byte[]
@@ -1029,7 +1283,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimil
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarCollection java.util.Collection int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimilarMap java.util.Map
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter bitwiseNegate java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object
@@ -1039,10 +1292,13 @@ staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareLessThanEq
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareNotIdentical java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareTo java.lang.Object java.lang.Object
-staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter createRange java.lang.Object java.lang.Object boolean
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter findRegex java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter isCase java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter matchRegex java.lang.Object java.lang.Object
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods asBoolean java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods asBoolean java.util.regex.Matcher
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods bitwiseNegate java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods bitwiseNegate java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods capitalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods center java.lang.CharSequence java.lang.Number
@@ -1057,6 +1313,7 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods drop java.lang.Char
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods dropWhile java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods eachMatch java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods endsWithAny java.lang.CharSequence java.lang.CharSequence[]
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods expand java.lang.String
@@ -1091,6 +1348,8 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods minus java.lang.Str
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods minus java.lang.String java.util.regex.Pattern
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods multiply java.lang.CharSequence java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods multiply java.lang.String java.lang.Number
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods next java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods next java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods normalize java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods normalize java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padLeft java.lang.CharSequence java.lang.Number
@@ -1101,6 +1360,8 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.CharSequence java.lang.Number java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods padRight java.lang.String java.lang.Number java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods previous java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods previous java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
@@ -1112,12 +1373,18 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.l
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods startsWithAny java.lang.CharSequence java.lang.CharSequence[]
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toBoolean java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toDouble java.lang.String
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSequence java.lang.CharSequence java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpandLine java.lang.CharSequence int
 
-# Currently called indirectly from Builder.sandboxCast; cf. comment in SandboxInvokerTest.typeCoercion:
+# No longer needed except for Pipelines serialized before groovy-cps changes for SECURITY-2824, so wait for most users to update and then remove it.
 staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCast java.lang.Class java.lang.Object boolean boolean boolean

@@ -24,10 +24,13 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
+import jenkins.util.SystemProperties;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -45,7 +48,6 @@ import hudson.util.FormValidation;
 import hudson.util.XStream2;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -54,7 +56,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -66,8 +67,9 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import java.util.regex.Pattern;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.acegisecurity.context.SecurityContext;
@@ -84,6 +86,10 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 @Symbol("scriptApproval")
 @Extension
 public class ScriptApproval extends GlobalConfiguration implements RootAction {
+
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
+    public static /* non-final */ boolean ADMIN_AUTO_APPROVAL_ENABLED =
+            SystemProperties.getBoolean(ScriptApproval.class.getName() + ".ADMIN_AUTO_APPROVAL_ENABLED");
 
     private static final Logger LOG = Logger.getLogger(ScriptApproval.class.getName());
 
@@ -103,7 +109,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Override
     protected XmlFile getConfigFile() {
-        return new XmlFile(XSTREAM2, new File(Jenkins.getInstance().getRootDir(),getUrlName() + ".xml"));
+        return new XmlFile(XSTREAM2, new File(Jenkins.get().getRootDir(),getUrlName() + ".xml"));
     }
 
     @Override
@@ -112,7 +118,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /** Gets the singleton instance. */
-    public static @Nonnull ScriptApproval get() {
+    public static @NonNull ScriptApproval get() {
         ScriptApproval instance = ExtensionList.lookup(RootAction.class).get(ScriptApproval.class);
         if (instance == null) {
             throw new IllegalStateException("maybe need to rebuild plugin?");
@@ -165,10 +171,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
     
     /** All scripts which are already approved, via {@link #hash}. */
-    private final TreeSet<String> approvedScriptHashes = new TreeSet<String>();
+    private final TreeSet<String> approvedScriptHashes = new TreeSet<>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
-    private final TreeSet<String> approvedSignatures = new TreeSet<String>();
+    private final TreeSet<String> approvedSignatures = new TreeSet<>();
 
     /** All sandbox signatures which are already whitelisted for ACL-only use, in {@link StaticWhitelist} format. */
     private /*final*/ TreeSet<String> aclApprovedSignatures;
@@ -180,19 +186,23 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         approvedClasspathEntries.add(acp);
     }
 
+    public boolean isScriptApproved(String script, Language language) {
+        return this.isScriptHashApproved(hash(script, language.getName()));
+    }
+
     @Restricted(NoExternalUse.class) // for use from Jelly
     public static abstract class PendingThing {
 
         /** @deprecated only used from historical records */
         @Deprecated private String user;
         
-        private @Nonnull ApprovalContext context;
+        private @NonNull ApprovalContext context;
 
-        PendingThing(@Nonnull ApprovalContext context) {
+        PendingThing(@NonNull ApprovalContext context) {
             this.context = context;
         }
 
-        public @Nonnull ApprovalContext getContext() {
+        public @NonNull ApprovalContext getContext() {
             return context;
         }
 
@@ -210,7 +220,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public static final class PendingScript extends PendingThing {
         public final String script;
         private final String language;
-        PendingScript(@Nonnull String script, @Nonnull Language language, @Nonnull ApprovalContext context) {
+        PendingScript(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
             super(context);
             this.script = script;
             this.language = language.getName();
@@ -246,7 +256,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public static final class PendingSignature extends PendingThing {
         public final String signature;
         public final boolean dangerous;
-        PendingSignature(@Nonnull String signature, boolean dangerous, @Nonnull ApprovalContext context) {
+        PendingSignature(@NonNull String signature, boolean dangerous, @NonNull ApprovalContext context) {
             super(context);
             this.signature = signature;
             this.dangerous = dangerous;
@@ -287,7 +297,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             }
         }
         
-        PendingClasspathEntry(@Nonnull String hash, @Nonnull URL url, @Nonnull ApprovalContext context) {
+        PendingClasspathEntry(@NonNull String hash, @NonNull URL url, @NonNull ApprovalContext context) {
             super(context);
             /**
              * hash should be stored as files located at the classpath can be modified.
@@ -296,11 +306,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             this.url = url;
         }
         
-        public @Nonnull String getHash() {
+        public @NonNull String getHash() {
             return hash;
         }
         
-        public @Nonnull URL getURL() {
+        public @NonNull URL getURL() {
             return url;
         }
         @Override public int hashCode() {
@@ -313,21 +323,21 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             return hash.compareTo(o.hash);
         }
         
-        public static @Nonnull PendingClasspathEntry searchKeyFor(@Nonnull String hash) {
+        public static @NonNull PendingClasspathEntry searchKeyFor(@NonNull String hash) {
             final PendingClasspathEntry entry = new PendingClasspathEntry(hash, 
                     SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
             return entry;
         }
     }
 
-    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<PendingScript>();
+    private final LinkedHashSet<PendingScript> pendingScripts = new LinkedHashSet<>();
 
-    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<PendingSignature>();
+    private final LinkedHashSet<PendingSignature> pendingSignatures = new LinkedHashSet<>();
 
     private /*final*/ TreeSet<PendingClasspathEntry> pendingClasspathEntries;
 
     @CheckForNull
-    private PendingClasspathEntry getPendingClasspathEntry(@Nonnull String hash) {
+    private PendingClasspathEntry getPendingClasspathEntry(@NonNull String hash) {
         PendingClasspathEntry e = pendingClasspathEntries.floor(PendingClasspathEntry.searchKeyFor(hash));
         if (e != null && e.hash.equals(hash)) {
             return e;
@@ -345,13 +355,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         load();
         /* can be null when upgraded from old versions.*/
         if (aclApprovedSignatures == null) {
-            aclApprovedSignatures = new TreeSet<String>();
+            aclApprovedSignatures = new TreeSet<>();
         }
         if (approvedClasspathEntries == null) {
-            approvedClasspathEntries = new TreeSet<ApprovedClasspathEntry>();
+            approvedClasspathEntries = new TreeSet<>();
         }
         if (pendingClasspathEntries == null) {
-            pendingClasspathEntries = new TreeSet<PendingClasspathEntry>();
+            pendingClasspathEntries = new TreeSet<>();
         }
         // Check for loaded class directories
         boolean changed = false;
@@ -384,9 +394,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             digest.update((byte) ':');
             digest.update(script.getBytes("UTF-8"));
             return Util.toHexString(digest.digest());
-        } catch (NoSuchAlgorithmException x) {
-            throw new AssertionError(x);
-        } catch (UnsupportedEncodingException x) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException x) {
             throw new AssertionError(x);
         }
     }
@@ -425,28 +433,27 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * It should also be called from a {@code readResolve} method (which may then simply return {@code this}),
      * so that administrators can for example POST to {@code config.xml} and have their scripts be considered approved.
      * <p>If the script has already been approved, this does nothing.
-     * Otherwise, if this user has the {@link Jenkins#RUN_SCRIPTS} permission (and is not {@link ACL#SYSTEM}), or Jenkins is running without security, it is added to the approved list.
+     * Otherwise, if this user has the {@link Jenkins#ADMINISTER} permission (and is not {@link ACL#SYSTEM})
+     * and a corresponding flag is set to {@code true}, or Jenkins is running without security, it is added to the approved list.
      * Otherwise, it is added to the pending list.
      * @param script the text of a possibly novel script
      * @param language the language in which it is written
      * @param context any additional information about how where or by whom this is being configured
+     * @param approveIfAdmin indicates whether script should be approved if current user has admin permissions
      * @return {@code script}, for convenience
-     * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized String configuring(@Nonnull String script, @Nonnull Language language, @Nonnull ApprovalContext context) {
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
         final String hash = hash(script, language.getName());
         if (!approvedScriptHashes.contains(hash)) {
-            if (!Jenkins.getInstance().isUseSecurity() || Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS)) {
+            if (!Jenkins.get().isUseSecurity() || 
+                    ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER)) 
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
                 approvedScriptHashes.add(hash);
+                removePendingScript(hash);
             } else {
                 String key = context.getKey();
                 if (key != null) {
-                    Iterator<PendingScript> it = pendingScripts.iterator();
-                    while (it.hasNext()) {
-                        if (key.equals(it.next().getContext().getKey())) {
-                            it.remove();
-                        }
-                    }
+                    pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
                 pendingScripts.add(new PendingScript(script, language, context));
             }
@@ -456,13 +463,21 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /**
+     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean)} instead
+     */
+    @Deprecated
+    public String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
+        return this.configuring(script, language, context, false);
+    }
+
+    /**
      * Called when a script is about to be used (evaluated).
      * @param script a possibly unapproved script
      * @param language the language in which it is written
      * @return {@code script}, for convenience
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
-    public synchronized String using(@Nonnull String script, @Nonnull Language language) throws UnapprovedUsageException {
+    public synchronized String using(@NonNull String script, @NonNull Language language) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
@@ -483,12 +498,12 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     /**
      * Called when configuring a classpath entry.
-     * Usage is similar to {@link #configuring(String, Language, ApprovalContext)}.
+     * Usage is similar to {@link #configuring(String, Language, ApprovalContext, boolean)}.
      * @param entry entry to be configured
      * @param context any additional information
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized void configuring(@Nonnull ClasspathEntry entry, @Nonnull ApprovalContext context) {
+    public synchronized void configuring(@NonNull ClasspathEntry entry, @NonNull ApprovalContext context) {
         // In order to try to minimize changes for existing class directories that could be saved
         // - Class directories are ignored here (issuing a warning)
         // - When trying to use them, the job will fail
@@ -513,8 +528,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (!approvedClasspathEntries.contains(acp)) {
             boolean shouldSave = false;
             PendingClasspathEntry pcp = new PendingClasspathEntry(hash, url, context);
-            if (!Jenkins.getInstance().isUseSecurity() || (Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS))) {
-                LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with RUN_SCRIPTS permission.", new Object[] {url, hash});
+            if (!Jenkins.get().isUseSecurity() ||
+                    ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !StringUtils.equals(entry.getOldPath(), entry.getPath())))) {
+                LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, hash});
                 pendingClasspathEntries.remove(pcp);
                 approvedClasspathEntries.add(acp);
                 shouldSave = true;
@@ -531,29 +548,24 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
     
     /**
-     * Like {@link #checking(String, Language)} but for classpath entries.
+     * Like {@link #checking(String, Language, boolean)} but for classpath entries.
+     * However, this method does not actually check whether the classpath entry is approved, 
+     * because it would have to connect to the URL and download the contents, 
+     * which may be unsafe if this is called via a web method by an unprivileged user
      * (This is automatic if use {@link ClasspathEntry} as a configuration element.)
      * @param entry the classpath entry to verify
      * @return whether it will be approved
      * @throws IllegalStateException {@link Jenkins} instance is not ready
      */
-    public synchronized FormValidation checking(@Nonnull ClasspathEntry entry) {
+    public synchronized FormValidation checking(@NonNull ClasspathEntry entry) {
         //TODO: better error propagation
         if (entry.isClassDirectory()) {
             return FormValidation.error(Messages.ClasspathEntry_path_noDirsAllowed());
         }
-        URL url = entry.getURL();
-        try {
-            if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url))) {
-                return FormValidation.error(Messages.ClasspathEntry_path_notApproved());
-            } else {
-                return FormValidation.ok();
-            }
-        } catch (FileNotFoundException x) {
-            return FormValidation.error(Messages.ClasspathEntry_path_notExists());
-        } catch (IOException x) {
-            return FormValidation.error(x, "Could not verify: " + url); // TODO NO18N
-        }
+        // We intentionally do not call hashClasspathEntry because that method downloads the contents
+        // of the URL in order to hash it, making it an attractive DoS vector, and we do not have enough
+        // context here to be able to easily perform an appropriate permission check.
+        return FormValidation.ok();
     }
     
     /**
@@ -563,7 +575,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @throws IOException when failed to the entry is inaccessible
      * @throws UnapprovedClasspathException when the entry is not approved
      */
-    public synchronized void using(@Nonnull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
+    public synchronized void using(@NonNull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
         URL url = entry.getURL();
         String hash = hashClasspathEntry(url);
         
@@ -590,13 +602,47 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * To be used from form validation, in a {@code doCheckFieldName} method.
      * @param script a possibly unapproved script
      * @param language the language in which it is written
-     * @return a warning in case the script is not yet approved and this user lacks {@link Jenkins#RUN_SCRIPTS}, else {@link FormValidation#ok()}
+     * @param willBeApproved whether script is going to be approved after configuration is saved
+     * @return a warning indicating that admin approval will be needed in case current user does not have
+     *          {@link Jenkins#ADMINISTER} permission; a warning indicating that script is not yet approved if user has such
+     *          permission and {@code willBeApproved} is false; a message indicating that script will be approved if user
+     *          has such permission and {@code willBeApproved} is true; nothing if script is empty; a corresponding message
+     *          if script is approved
      */
-    public synchronized FormValidation checking(@Nonnull String script, @Nonnull Language language) {
-        if (!Jenkins.getInstance().hasPermission(Jenkins.RUN_SCRIPTS) && !approvedScriptHashes.contains(hash(script, language.getName()))) {
-            return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used.");
-        } else {
+    public synchronized FormValidation checking(@NonNull String script, @NonNull Language language, boolean willBeApproved) {
+        if (StringUtils.isEmpty(script)) {
             return FormValidation.ok();
+        }
+        if (approvedScriptHashes.contains(hash(script, language.getName()))) {
+            return FormValidation.okWithMarkup("The script is already approved");
+        }
+
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+            return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used");
+        } else {
+            if (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED) {
+                return FormValidation.ok("The script has not yet been approved, but it will be approved on save");
+            }
+
+            return FormValidation.okWithMarkup("The script is not approved and will not be approved on save. " +
+                    "Modify the script to approve it on save, or approve it explicitly on the " +
+                    "<a target='blank' href='"+ Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "'>Script Approval Configuration</a> page");
+        }
+    }
+
+    /**
+     * @deprecated Use {@link #checking(String, Language, boolean)} instead
+     */
+    @Deprecated
+    public synchronized FormValidation checking(@NonNull String script, @NonNull Language language) {
+        return this.checking(script, language, false);
+    }
+
+    synchronized boolean isClasspathEntryApproved(URL url) {
+        try {
+            return approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url));
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -608,7 +654,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param language the language in which it is written
      * @return {@code script}, for convenience
      */
-    public synchronized String preapprove(@Nonnull String script, @Nonnull Language language) {
+    public synchronized String preapprove(@NonNull String script, @NonNull Language language) {
         approvedScriptHashes.add(hash(script, language.getName()));
         return script;
     }
@@ -634,7 +680,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @deprecated Unnecessary if using {@link GroovySandbox#enter}.
      */
     @Deprecated
-    public synchronized RejectedAccessException accessRejected(@Nonnull RejectedAccessException x, @Nonnull ApprovalContext context) {
+    public synchronized RejectedAccessException accessRejected(@NonNull RejectedAccessException x, @NonNull ApprovalContext context) {
         String signature = x.getSignature();
         if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             save();
@@ -645,7 +691,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     private static final ThreadLocal<Stack<Consumer<RejectedAccessException>>> callbacks = ThreadLocal.withInitial(Stack::new);
 
     @Restricted(NoExternalUse.class)
-    public static void maybeRegister(@Nonnull RejectedAccessException x) {
+    public static void maybeRegister(@NonNull RejectedAccessException x) {
         for (Consumer<RejectedAccessException> callback : callbacks.get()) {
             callback.accept(x);
         }
@@ -663,7 +709,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @DataBoundSetter
     public synchronized void setApprovedSignatures(String[] signatures) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedSignatures.clear();
         List<String> goodSignatures = new ArrayList<>(signatures.length);
         for (String signature : signatures) {
@@ -687,7 +733,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // Jelly, implementation
     public synchronized String[] getDangerousApprovedSignatures() {
-        List<String> dangerous = new ArrayList<String>();
+        List<String> dangerous = new ArrayList<>();
         for (String sig : approvedSignatures) {
             if (StaticWhitelist.isBlacklisted(sig)) {
                 dangerous.add(sig);
@@ -699,6 +745,27 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // Jelly, implementation
     public synchronized String[] getAclApprovedSignatures() {
         return aclApprovedSignatures.toArray(new String[aclApprovedSignatures.size()]);
+    }
+
+    @DataBoundSetter
+    public synchronized void setApprovedScriptHashes(String[] scriptHashes) throws IOException {
+        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        approvedScriptHashes.clear();
+        Pattern sha1Pattern = Pattern.compile("[a-fA-F0-9]{40}");
+        for (String scriptHash : scriptHashes) {
+            if (scriptHash != null && sha1Pattern.matcher(scriptHash).matches()) {
+                approvedScriptHashes.add(scriptHash);
+            } else {
+                LOG.warning(() -> "Ignoring malformed script hash: " + scriptHash);
+            }
+        }
+        save();
+        reconfigure();
+    }
+
+    @Restricted(NoExternalUse.class) // Jelly, tests, implementation
+    public synchronized String[] getApprovedScriptHashes() {
+        return approvedScriptHashes.toArray(new String[approvedScriptHashes.size()]);
     }
 
     @Restricted(NoExternalUse.class) // implementation
@@ -735,7 +802,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public void approveScript(String hash) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         synchronized (this) {
             approvedScriptHashes.add(hash);
             removePendingScript(hash);
@@ -753,13 +820,13 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void denyScript(String hash) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedScriptHashes.remove(hash);
         removePendingScript(hash);
         save();
     }
 
-    private synchronized void removePendingScript(String hash) {
+    synchronized void removePendingScript(String hash) {
         Iterator<PendingScript> it = pendingScripts.iterator();
         while (it.hasNext()) {
             if (it.next().getHash().equals(hash)) {
@@ -771,7 +838,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void clearApprovedScripts() throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedScriptHashes.clear();
         save();
     }
@@ -793,7 +860,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] approveSignature(String signature) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         approvedSignatures.add(signature);
         save();
@@ -802,7 +869,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] aclApproveSignature(String signature) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         aclApprovedSignatures.add(signature);
         save();
@@ -811,7 +878,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void denySignature(String signature) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         pendingSignatures.remove(new PendingSignature(signature, false, ApprovalContext.create()));
         save();
     }
@@ -819,7 +886,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     // TODO nicer would be to allow the user to actually edit the list directly (with syntax checks)
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] clearApprovedSignatures() throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedSignatures.clear();
         aclApprovedSignatures.clear();
         save();
@@ -829,7 +896,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized String[][] clearDangerousApprovedSignatures() throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
         Iterator<String> it = approvedSignatures.iterator();
         while (it.hasNext()) {
@@ -851,23 +918,15 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
-        ArrayList<ApprovedClasspathEntry> r = new ArrayList<ApprovedClasspathEntry>(approvedClasspathEntries);
-        Collections.sort(r, new Comparator<ApprovedClasspathEntry>() {
-            @Override public int compare(ApprovedClasspathEntry o1, ApprovedClasspathEntry o2) {
-                return o1.url.toString().compareTo(o2.url.toString());
-            }
-        });
+        ArrayList<ApprovedClasspathEntry> r = new ArrayList<>(approvedClasspathEntries);
+        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
-        List<PendingClasspathEntry> r = new ArrayList<PendingClasspathEntry>(pendingClasspathEntries);
-        Collections.sort(r, new Comparator<PendingClasspathEntry>() {
-            @Override public int compare(PendingClasspathEntry o1, PendingClasspathEntry o2) {
-                return o1.url.toString().compareTo(o2.url.toString());
-            }
-        });
+        List<PendingClasspathEntry> r = new ArrayList<>(pendingClasspathEntries);
+        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
@@ -888,7 +947,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON approveClasspathEntry(String hash) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         URL url = null;
         synchronized (this) {
             final PendingClasspathEntry cp = getPendingClasspathEntry(hash);
@@ -915,7 +974,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON denyClasspathEntry(String hash) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         PendingClasspathEntry cp = getPendingClasspathEntry(hash);
         if (cp != null) {
             pendingClasspathEntries.remove(cp);
@@ -927,7 +986,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public JSON denyApprovedClasspathEntry(String hash) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         if (approvedClasspathEntries.remove(new ApprovedClasspathEntry(hash, null))) {
             save();
         }
@@ -937,7 +996,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
     public synchronized JSON clearApprovedClasspathEntries() throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedClasspathEntries.clear();
         save();
         return getClasspathRenderInfo();

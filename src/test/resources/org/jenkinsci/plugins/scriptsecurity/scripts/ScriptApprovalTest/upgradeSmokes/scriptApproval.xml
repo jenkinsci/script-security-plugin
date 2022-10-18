@@ -1,6 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <scriptApproval plugin="script-security@1.24">
-  <approvedScriptHashes/>
+  <approvedScriptHashes>
+    <string>fccae58c5762bdd15daca97318e9d74333203106</string>
+  </approvedScriptHashes>
   <approvedSignatures>
     <string>staticMethod jenkins.model.Jenkins getInstance</string>
   </approvedSignatures>

@@ -34,6 +34,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import static java.util.Arrays.asList;
@@ -41,7 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -68,11 +69,11 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
             "new org.kohsuke.groovy.sandbox.impl.Checker$ThisConstructorWrapper java.lang.Object[]"
     };
 
-    final List<MethodSignature> methodSignatures = new ArrayList<MethodSignature>();
-    final List<NewSignature> newSignatures = new ArrayList<NewSignature>();
-    final List<MethodSignature> staticMethodSignatures = new ArrayList<MethodSignature>();
-    final List<FieldSignature> fieldSignatures = new ArrayList<FieldSignature>();
-    final List<FieldSignature> staticFieldSignatures = new ArrayList<FieldSignature>();
+    final List<MethodSignature> methodSignatures = new ArrayList<>();
+    final List<NewSignature> newSignatures = new ArrayList<>();
+    final List<MethodSignature> staticMethodSignatures = new ArrayList<>();
+    final List<FieldSignature> fieldSignatures = new ArrayList<>();
+    final List<FieldSignature> staticFieldSignatures = new ArrayList<>();
 
     public StaticWhitelist(Reader definition) throws IOException {
         BufferedReader br = new BufferedReader(definition);
@@ -100,7 +101,7 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @param line Line to filter.
      * @return {@code null} if the like must be skipped or the content to process if not.
      */
-    static @CheckForNull String filter(@Nonnull String line) {
+    static @CheckForNull String filter(@NonNull String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#")) {
             return null;
@@ -111,46 +112,25 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     /**
      * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_METHODS}
      */
-    public static boolean isPermanentlyBlacklistedMethod(@Nonnull Method m) {
+    public static boolean isPermanentlyBlacklistedMethod(@NonNull Method m) {
         String signature = canonicalMethodSig(m);
-
-        for (String s : PERMANENTLY_BLACKLISTED_METHODS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-
-        return false;
+        return asList(PERMANENTLY_BLACKLISTED_METHODS).contains(signature);
     }
 
     /**
      * Returns true if the given method is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_STATIC_METHODS}
      */
-    public static boolean isPermanentlyBlacklistedStaticMethod(@Nonnull Method m) {
+    public static boolean isPermanentlyBlacklistedStaticMethod(@NonNull Method m) {
         String signature = canonicalStaticMethodSig(m);
-
-        for (String s : PERMANENTLY_BLACKLISTED_STATIC_METHODS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-
-        return false;
+        return asList(PERMANENTLY_BLACKLISTED_STATIC_METHODS).contains(signature);
     }
 
     /**
      * Returns true if the given constructor is permanently blacklisted in {@link #PERMANENTLY_BLACKLISTED_CONSTRUCTORS}
      */
-    public static boolean isPermanentlyBlacklistedConstructor(@Nonnull Constructor c) {
+    public static boolean isPermanentlyBlacklistedConstructor(@NonNull Constructor c) {
         String signature = canonicalConstructorSig(c);
-
-        for (String s : PERMANENTLY_BLACKLISTED_CONSTRUCTORS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-
-        return false;
+        return asList(PERMANENTLY_BLACKLISTED_CONSTRUCTORS).contains(signature);
     }
 
     /**
@@ -159,35 +139,36 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @return the equivalent {@link Signature}
      * @throws IOException if the signature string could not be parsed.
      */
-    public static Signature parse(String line) throws IOException {
+    public static Signature parse(@NonNull String line) throws IOException {
         String[] toks = line.split(" ");
-        if (toks[0].equals("method")) {
-            if (toks.length < 3) {
+        switch (toks[0]) {
+            case "method":
+                if (toks.length < 3) {
+                    throw new IOException(line);
+                }
+                return new MethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
+            case "new":
+                if (toks.length < 2) {
+                    throw new IOException(line);
+                }
+                return new NewSignature(toks[1], Arrays.copyOfRange(toks, 2, toks.length));
+            case "staticMethod":
+                if (toks.length < 3) {
+                    throw new IOException(line);
+                }
+                return new StaticMethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
+            case "field":
+                if (toks.length != 3) {
+                    throw new IOException(line);
+                }
+                return new FieldSignature(toks[1], toks[2]);
+            case "staticField":
+                if (toks.length != 3) {
+                    throw new IOException(line);
+                }
+                return new StaticFieldSignature(toks[1], toks[2]);
+            default:
                 throw new IOException(line);
-            }
-            return new MethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
-        } else if (toks[0].equals("new")) {
-            if (toks.length < 2) {
-                throw new IOException(line);
-            }
-            return new NewSignature(toks[1], Arrays.copyOfRange(toks, 2, toks.length));
-        } else if (toks[0].equals("staticMethod")) {
-            if (toks.length < 3) {
-                throw new IOException(line);
-            }
-            return new StaticMethodSignature(toks[1], toks[2], Arrays.copyOfRange(toks, 3, toks.length));
-        } else if (toks[0].equals("field")) {
-            if (toks.length != 3) {
-                throw new IOException(line);
-            }
-            return new FieldSignature(toks[1], toks[2]);
-        } else if (toks[0].equals("staticField")) {
-            if (toks.length != 3) {
-                throw new IOException(line);
-            }
-            return new StaticFieldSignature(toks[1], toks[2]);
-        } else {
-            throw new IOException(line);
         }
     }
 
@@ -197,23 +178,9 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
      * @return true if the signature is permanently blacklisted, false otherwise.
      */
     public static boolean isPermanentlyBlacklisted(String signature) {
-        for (String s : PERMANENTLY_BLACKLISTED_METHODS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-        for (String s : PERMANENTLY_BLACKLISTED_STATIC_METHODS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-        for (String s : PERMANENTLY_BLACKLISTED_CONSTRUCTORS) {
-            if (s.equals(signature)) {
-                return true;
-            }
-        }
-
-        return false;
+        return asList(PERMANENTLY_BLACKLISTED_METHODS).contains(signature)
+                || asList(PERMANENTLY_BLACKLISTED_STATIC_METHODS).contains(signature)
+                || asList(PERMANENTLY_BLACKLISTED_CONSTRUCTORS).contains(signature);
     }
 
     private void add(String line) throws IOException {
@@ -232,11 +199,8 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     }
 
     public static StaticWhitelist from(URL definition) throws IOException {
-        InputStream is = definition.openStream();
-        try {
-            return new StaticWhitelist(new InputStreamReader(is, "UTF-8"));
-        } finally {
-            is.close();
+        try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
+            return new StaticWhitelist(isr);
         }
     }
 
@@ -260,31 +224,31 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         return staticFieldSignatures;
     }
 
-    public static RejectedAccessException rejectMethod(@Nonnull Method m) {
+    public static RejectedAccessException rejectMethod(@NonNull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectMethod(@Nonnull Method m, String info) {
+    public static RejectedAccessException rejectMethod(@NonNull Method m, String info) {
         assert (m.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("method", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes()), info));
     }
 
-    public static RejectedAccessException rejectNew(@Nonnull Constructor<?> c) {
+    public static RejectedAccessException rejectNew(@NonNull Constructor<?> c) {
         return blacklist(new RejectedAccessException("new", EnumeratingWhitelist.getName(c.getDeclaringClass()) + printArgumentTypes(c.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectStaticMethod(@Nonnull Method m) {
+    public static RejectedAccessException rejectStaticMethod(@NonNull Method m) {
         assert (m.getModifiers() & Modifier.STATIC) != 0;
         return blacklist(new RejectedAccessException("staticMethod", EnumeratingWhitelist.getName(m.getDeclaringClass()) + " " + m.getName() + printArgumentTypes(m.getParameterTypes())));
     }
 
-    public static RejectedAccessException rejectField(@Nonnull Field f) {
+    public static RejectedAccessException rejectField(@NonNull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) == 0;
         return blacklist(new RejectedAccessException("field", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }
 
-    public static RejectedAccessException rejectStaticField(@Nonnull Field f) {
+    public static RejectedAccessException rejectStaticField(@NonNull Field f) {
         assert (f.getModifiers() & Modifier.STATIC) != 0;
         return blacklist(new RejectedAccessException("staticField", EnumeratingWhitelist.getName(f.getDeclaringClass()) + " " + f.getName()));
     }
@@ -302,10 +266,8 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     @SuppressFBWarnings(value = "OS_OPEN_STREAM", justification = "https://sourceforge.net/p/findbugs/bugs/786/")
     private static Set<String> loadBlacklist() throws IOException {
-        InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist");
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, "US-ASCII"));
-            Set<String> blacklist = new HashSet<String>();
+        try (InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist"); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.US_ASCII); BufferedReader br = new BufferedReader(isr)) {
+            Set<String> blacklist = new HashSet<>();
             String line;
             while ((line = br.readLine()) != null) {
                 line = line.trim();
@@ -316,8 +278,6 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
                 blacklist.add(line);
             }
             return blacklist;
-        } finally {
-            is.close();
         }
     }
 

@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
@@ -57,9 +59,7 @@ public class StaticWhitelistTest {
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
         List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
-        InputStream is = definition.openStream();
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8); BufferedReader br = new BufferedReader(isr)) {
             String line;
             while ((line = br.readLine()) != null) {
                 line = StaticWhitelist.filter(line);
@@ -68,11 +68,9 @@ public class StaticWhitelistTest {
                 }
                 sigs.add(StaticWhitelist.parse(line));
             }
-        } finally {
-            is.close();
         }
 
-        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<EnumeratingWhitelist.Signature>(sigs.size());
+        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<>(sigs.size());
         boolean hasDupes = false;
         for (EnumeratingWhitelist.Signature sig : sigs) {
             if (!existingSigs.add(sig)) {
@@ -82,7 +80,7 @@ public class StaticWhitelistTest {
         }
         Assert.assertFalse("Whitelist contains duplicate entries, and this is not allowed!  Please see list above.", hasDupes);
 
-        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<EnumeratingWhitelist.Signature>(sigs);
+        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<>(sigs);
         Collections.sort(sorted);
 
         boolean isUnsorted = false;
@@ -98,26 +96,51 @@ public class StaticWhitelistTest {
 
 
         for (EnumeratingWhitelist.Signature sig : sigs) {
+            if (KNOWN_GOOD_SIGNATURES.contains(sig)) {
+                continue;
+            }
             try {
                 assertTrue(sig + " does not exist (or is an override)", sig.exists());
             } catch (ClassNotFoundException x) {
-                if (!KNOWN_GOOD_SIGNATURES.contains(sig)) {
-                    throw new Exception("Unable to verify existence of " + sig, x);
-                }
+                // Wrapping exception to include the full signature in the error message.
+                throw new Exception("Unable to verify existence of " + sig, x);
             }
         }
     }
 
     /**
-     * A set of signatures that are well-formed, but for which {@link Signature#exists} throws an exception because
-     * they involve types that are not available on the classpath when these tests run.
+     * A set of signatures that are well-formed, but for which {@link Signature#exists} may throw an exception depending
+     * on the test environment.
      */
     private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
-            // From blacklist
-            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild", new String[0]),
-            // From generic-whitelist
+            // From workflow-support, which is not a dependency of this plugin.
+            new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild"),
+            // From groovy-cps, which is not a dependency of this plugin.
             new StaticMethodSignature("com.cloudbees.groovy.cps.CpsDefaultGroovyMethods", "each",
-                    new String[] { "java.util.Iterator", "groovy.lang.Closure" })
+                    "java.util.Iterator", "groovy.lang.Closure"),
+            // Overrides CharSequence.isEmpty in Java 15+.
+            new MethodSignature(String.class, "isEmpty"),
+            // Do not exist until Java 15.
+            new MethodSignature(CharSequence.class, "isEmpty"),
+            new MethodSignature(String.class, "stripIndent"),
+            // Override the corresponding RandomGenerator methods in Java 17+.
+            new MethodSignature(Random.class, "nextBoolean"),
+            new MethodSignature(Random.class, "nextBytes", byte[].class),
+            new MethodSignature(Random.class, "nextDouble"),
+            new MethodSignature(Random.class, "nextFloat"),
+            new MethodSignature(Random.class, "nextGaussian"),
+            new MethodSignature(Random.class, "nextInt"),
+            new MethodSignature(Random.class, "nextInt", int.class),
+            new MethodSignature(Random.class, "nextLong"),
+            // Do not exist until Java 17.
+            new MethodSignature("java.util.random.RandomGenerator", "nextBoolean"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextBytes", "byte[]"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextDouble"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextFloat"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextGaussian"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextInt", "int"),
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong")
     ));
 
     @Test public void sanity() throws Exception {

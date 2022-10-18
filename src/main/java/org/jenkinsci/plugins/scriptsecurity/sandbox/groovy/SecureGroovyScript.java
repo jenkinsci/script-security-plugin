@@ -35,6 +35,7 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import io.jenkins.lib.versionnumber.JavaSpecificationVersion;
 
 import java.beans.Introspector;
 import java.io.Serializable;
@@ -55,9 +56,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -68,7 +70,10 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
@@ -83,20 +88,21 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroovyScript> implements Serializable {
  
     private static final long serialVersionUID = -4347442065624787928L;
-    private final @Nonnull String script;
+    private final @NonNull String script;
     private final boolean sandbox;
     private final @CheckForNull List<ClasspathEntry> classpath;
+    private transient String oldScript;
     private transient boolean calledConfiguring;
 
     static final Logger LOGGER = Logger.getLogger(SecureGroovyScript.class.getName());
 
-    @DataBoundConstructor public SecureGroovyScript(@Nonnull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
+    @DataBoundConstructor public SecureGroovyScript(@NonNull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
     }
 
-    @Deprecated public SecureGroovyScript(@Nonnull String script, boolean sandbox) {
+    @Deprecated public SecureGroovyScript(@NonNull String script, boolean sandbox) {
         this(script, sandbox, null);
     }
 
@@ -105,7 +111,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return this;
     }
 
-    public @Nonnull String getScript() {
+    public @NonNull String getScript() {
         return script;
     }
 
@@ -113,8 +119,22 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         return sandbox;
     }
 
-    public @Nonnull List<ClasspathEntry> getClasspath() {
+    public @NonNull List<ClasspathEntry> getClasspath() {
         return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
+    }
+
+    public String getOldScript() {
+        return oldScript;
+    }
+
+    @DataBoundSetter
+    public void setOldScript(String oldScript) {
+        this.oldScript = oldScript;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public boolean isScriptAutoApprovalEnabled() {
+        return ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
     }
 
     /**
@@ -125,7 +145,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     public SecureGroovyScript configuring(ApprovalContext context) {
         calledConfiguring = true;
         if (!sandbox) {
-            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context);
+            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context, !StringUtils.equals(this.oldScript, this.script));
         }
         for (ClasspathEntry entry : getClasspath()) {
             ScriptApproval.get().configuring(entry, context);
@@ -187,6 +207,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (encounteredClasses.add(clazz)) {
             LOGGER.log(Level.FINER, "found {0}", clazz.getName());
             Introspector.flushFromCaches(clazz);
+            cleanUpClassInfoCache(clazz);
             cleanUpGlobalClassSet(clazz);
             cleanUpClassHelperCache(clazz);
             cleanUpObjectStreamClassCaches(clazz);
@@ -196,7 +217,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     // TODO copied with modifications from CpsFlowExecution; need to find a way to share commonalities
 
-    private static void cleanUpGlobalClassValue(@Nonnull ClassLoader loader) throws Exception {
+    private static void cleanUpGlobalClassValue(@NonNull ClassLoader loader) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo");
         // TODO switch to MethodHandle for speed
         Field globalClassValueF = classInfoC.getDeclaredField("globalClassValue");
@@ -247,7 +268,46 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
-    private static void cleanUpGlobalClassSet(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpClassInfoCache(Class<?> clazz) {
+        JavaSpecificationVersion current = JavaSpecificationVersion.forCurrentJVM();
+        if (current.isNewerThan(new JavaSpecificationVersion("1.8"))
+                && current.isOlderThan(new JavaSpecificationVersion("16"))) {
+            try {
+                // TODO Work around JDK-8231454.
+                Class<?> classInfoC = Class.forName("com.sun.beans.introspect.ClassInfo");
+                Field cacheF = classInfoC.getDeclaredField("CACHE");
+                try {
+                    cacheF.setAccessible(true);
+                } catch (RuntimeException e) { // TODO Java 9+ InaccessibleObjectException
+                    /*
+                     * Not running with "--add-opens java.desktop/com.sun.beans.introspect=ALL-UNNAMED".
+                     * Until core adds this to its --add-opens configuration, and until that core
+                     * change is widely adopted, avoid unnecessary log spam and return early.
+                     */
+                    if (LOGGER.isLoggable(Level.FINER)) {
+                        LOGGER.log(Level.FINER, "Failed to clean up " + clazz.getName() + " from ClassInfo#CACHE. A metaspace leak may have occurred.", e);
+                    }
+                    return;
+                }
+                Object cache = cacheF.get(null);
+                Class<?> cacheC = Class.forName("com.sun.beans.util.Cache");
+                if (LOGGER.isLoggable(Level.FINER)) {
+                    LOGGER.log(Level.FINER, "Cleaning up " + clazz.getName() + " from ClassInfo#CACHE.");
+                }
+                Method removeM = cacheC.getMethod("remove", Object.class);
+                removeM.invoke(cache, clazz);
+            } catch (ReflectiveOperationException e) {
+                /*
+                 * Should never happen, but if it does, ensure the failure is isolated to this
+                 * method and does not prevent other cleanup logic from executing.
+                 */
+                LOGGER.log(Level.WARNING, "Failed to clean up " + clazz.getName() + " from ClassInfo#CACHE. A metaspace leak may have occurred.", e);
+            }
+        }
+    }
+
+
+    private static void cleanUpGlobalClassSet(@NonNull Class<?> clazz) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo"); // or just ClassInfo.class, but unclear whether this will always be there
         Field globalClassSetF = classInfoC.getDeclaredField("globalClassSet");
         globalClassSetF.setAccessible(true);
@@ -279,7 +339,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
-    private static void cleanUpClassHelperCache(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpClassHelperCache(@NonNull Class<?> clazz) throws Exception {
         Field classCacheF = Class.forName("org.codehaus.groovy.ast.ClassHelper$ClassHelperCache").getDeclaredField("classCache");
         classCacheF.setAccessible(true);
         Object classCache = classCacheF.get(null);
@@ -289,20 +349,23 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         classCache.getClass().getMethod("remove", Object.class).invoke(classCache, clazz);
     }
 
-    private static void cleanUpObjectStreamClassCaches(@Nonnull Class<?> clazz) throws Exception {
+    private static void cleanUpObjectStreamClassCaches(@NonNull Class<?> clazz) throws Exception {
         Class<?> cachesC = Class.forName("java.io.ObjectStreamClass$Caches");
         for (String cacheFName : new String[] {"localDescs", "reflectors"}) {
             Field cacheF = cachesC.getDeclaredField(cacheFName);
             cacheF.setAccessible(true);
-            ConcurrentMap<Reference<Class<?>>, ?> cache = (ConcurrentMap) cacheF.get(null);
-            Iterator<? extends Map.Entry<Reference<Class<?>>, ?>> iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                if (iterator.next().getKey().get() == clazz) {
-                    iterator.remove();
-                    if (LOGGER.isLoggable(Level.FINER)) {
-                      LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[] {clazz.getName(), cacheFName});
+            Object cache = cacheF.get(null);
+            if (cache instanceof ConcurrentMap) {
+                // Prior to JDK-8277072
+                Iterator<? extends Map.Entry<Reference<Class<?>>, ?>> iterator = ((ConcurrentMap) cache).entrySet().iterator();
+                while (iterator.hasNext()) {
+                    if (iterator.next().getKey().get() == clazz) {
+                        iterator.remove();
+                        if (LOGGER.isLoggable(Level.FINER)) {
+                            LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[]{clazz.getName(), cacheFName});
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -334,7 +397,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         ClassLoader memoryProtectedLoader = null;
         List<ClasspathEntry> cp = getClasspath();
         if (!cp.isEmpty()) {
-            List<URL> urlList = new ArrayList<URL>(cp.size());
+            List<URL> urlList = new ArrayList<>(cp.size());
             
             for (ClasspathEntry entry : cp) {
                 ScriptApproval.get().using(entry);
@@ -380,7 +443,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         } finally {
             try {
                 if (canDoCleanup) {
-                    cleanUpLoader(memoryProtectedLoader, new HashSet<ClassLoader>(), new HashSet<Class<?>>());
+                    cleanUpLoader(memoryProtectedLoader, new HashSet<>(), new HashSet<>());
                 }
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING, "failed to clean up memory " , x);
@@ -457,13 +520,13 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
         @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
         @RequirePOST
-        public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox) {
+        public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox, @QueryParameter String oldScript) {
             FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
-                    new GroovyClassLoader(Jenkins.getInstance().getPluginManager().uberClassLoader));
+                    new GroovyClassLoader(Jenkins.get().getPluginManager().uberClassLoader));
             if (validationResult.kind != FormValidation.Kind.OK) {
                 return validationResult;
             }
-            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get());
+            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get(), !StringUtils.equals(oldScript, value));
         }
 
     }

@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import org.apache.tools.ant.AntClassLoader;
@@ -47,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
@@ -58,13 +60,24 @@ import org.apache.tools.ant.taskdefs.Expand;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
@@ -72,12 +85,14 @@ import org.kohsuke.groovy.sandbox.impl.Checker;
 
 public class SecureGroovyScriptTest {
 
+    @ClassRule public static BuildWatcher WATCHER = new BuildWatcher();
+
     @Rule public JenkinsRule r = new JenkinsRule();
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
     /**
-     * Basic approval test where the user doesn't have RUN_SCRIPTS privs but has unchecked
+     * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
      */
     @Test public void basicApproval() throws Exception {
@@ -98,13 +113,17 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
 
         // The fact that the user doesn't have RUN_SCRIPT privs means sandbox mode should be on by default.
         // We need to switch it off to force it into approval.
-        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) config.getInputsByName("_.sandbox").get(0);
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
         assertEquals(true, sandboxRB.isChecked()); // should be checked
         sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
 
@@ -124,7 +143,9 @@ public class SecureGroovyScriptTest {
         r.assertLogContains(UnapprovedUsageException.class.getName(), r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
         page = wc.getPage(p, "configure");
         config = page.getFormByName("config");
-        script = config.getTextAreaByName("_.script");
+        scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        script = scripts.get(scripts.size() - 1);
         groovy = "build.externalizableId.toUpperCase()";
         script.setText(groovy);
         r.submit(config);
@@ -143,14 +164,13 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has RUN_SCRIPTS privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode.
      */
-    @Test public void testSandboxDefault_with_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("devel");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("devel");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -165,7 +185,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
@@ -174,10 +196,10 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user has RUN_SCRIPTS privs => should default to non sandboxed
+        // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has RUN_SCRIPTS privs, the script should not have ended up pending approval
+        // Because it has ADMINISTER privs, the script should not have ended up pending approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
         assertEquals(0, pendingScripts.size());
 
@@ -186,9 +208,9 @@ public class SecureGroovyScriptTest {
     }
 
     /**
-     * Test where the user doesn't have RUN_SCRIPTS privs, default to sandbox mode.
+     * Test where the user doesn't have ADMINISTER privs, default to sandbox mode.
      */
-    @Test public void testSandboxDefault_without_RUN_SCRIPTS_privs() throws Exception {
+    @Test public void testSandboxDefault_without_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -206,7 +228,9 @@ public class SecureGroovyScriptTest {
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
         page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
         wc.waitForBackgroundJavaScript(10000);
-        HtmlTextArea script = config.getTextAreaByName("_.script");
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
         r.submit(config);
@@ -215,7 +239,7 @@ public class SecureGroovyScriptTest {
         TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
         assertEquals(groovy, publisher.getScript().getScript());
 
-        // The user doesn't have RUN_SCRIPTS privs => should default to sandboxed mode
+        // The user doesn't have ADMINISTER privs => should default to sandboxed mode
         assertTrue(publisher.getScript().isSandbox());
 
         // When sandboxed, only approved classpath entries are allowed so doesn't get added to pending approvals list.
@@ -224,12 +248,9 @@ public class SecureGroovyScriptTest {
         assertEquals(0, pendingScripts.size());
 
         // We didn't add the approved classpath so ...
-        try {
-            ScriptApproval.get().using(groovy, GroovyLanguage.get());
-            fail("Expected UnapprovedUsageException");
-        } catch (UnapprovedUsageException e) {
-            assertEquals("script not yet approved for use", e.getMessage());
-        }
+        final UnapprovedUsageException e = assertThrows(UnapprovedUsageException.class,
+                () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        assertEquals("script not yet approved for use", e.getMessage());
     }
 
     private List<File> getAllJarFiles() throws URISyntaxException {
@@ -241,7 +262,7 @@ public class SecureGroovyScriptTest {
         ds.setIncludes(new String[]{ "*.jar" });
         ds.scan();
         
-        List<File> ret = new ArrayList<File>();
+        List<File> ret = new ArrayList<>();
         
         for (String relpath: ds.getIncludedFiles()) {
             ret.add(new File(testClassDir, relpath));
@@ -252,7 +273,7 @@ public class SecureGroovyScriptTest {
 
     private List<File> copy2TempDir(Iterable<File> files) throws IOException {
         final File tempDir = tmpFolderRule.newFolder();
-        final List copies = new ArrayList<File>();
+        final List<File> copies = new ArrayList<>();
         for (File f: files) {
             final File copy = new File(tempDir, f.getName());
             FileUtils.copyFile(f, copy);
@@ -262,7 +283,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<ClasspathEntry> files2entries(Iterable<File> files) throws IOException {
-        final List entries = new ArrayList<ClasspathEntry>();
+        final List<ClasspathEntry> entries = new ArrayList<>();
         for (File f: files) {
             entries.add(new ClasspathEntry(f.toURI().toURL().toExternalForm()));
         }
@@ -270,7 +291,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllUpdatedJarFiles() throws URISyntaxException {
-        String testClassPath = String.format(StringUtils.join(getClass().getName().split("\\."), "/"));
+        String testClassPath = StringUtils.join(getClass().getName().split("\\."), "/");
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         File updatedDir = new File(testClassDir, "updated");
@@ -280,7 +301,7 @@ public class SecureGroovyScriptTest {
         ds.setIncludes(new String[]{ "*.jar" });
         ds.scan();
         
-        List<File> ret = new ArrayList<File>();
+        List<File> ret = new ArrayList<>();
         
         for (String relpath: ds.getIncludedFiles()) {
             ret.add(new File(updatedDir, relpath));
@@ -290,7 +311,7 @@ public class SecureGroovyScriptTest {
     }
 
     @Test public void testClasspathConfiguration() throws Exception {
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -300,10 +321,10 @@ public class SecureGroovyScriptTest {
                 classpath
         ));
         TestGroovyRecorder recorder2 = r.configRoundtrip(recorder);
-        r.assertEqualDataBoundBeans(recorder, recorder2);
+        r.assertEqualBeans(recorder.getScript(), recorder2.getScript(), "script,sandbox,classpath");
         classpath.clear();
         recorder2 = r.configRoundtrip(recorder);
-        r.assertEqualDataBoundBeans(recorder, recorder2);
+        r.assertEqualBeans(recorder.getScript(), recorder2.getScript(), "script,sandbox,classpath");
     }
 
     @Test public void testClasspathInSandbox() throws Exception {
@@ -316,7 +337,7 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -393,7 +414,7 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             String path = jarfile.getAbsolutePath();
             classpath.add(new ClasspathEntry(path));
@@ -486,7 +507,7 @@ public class SecureGroovyScriptTest {
             FileUtils.copyFileToDirectory(jarfile, tmpDir);
         }
         
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: tmpDir.listFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
         }
@@ -572,7 +593,7 @@ public class SecureGroovyScriptTest {
             e.execute();
         }
         
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         classpath.add(new ClasspathEntry(tmpDir.getAbsolutePath()));
         
         final String testingDisplayName = "TESTDISPLAYNAME";
@@ -669,13 +690,12 @@ public class SecureGroovyScriptTest {
         }
     }
     
-    @Test public void testClasspathAutomaticApprove() throws Exception {
+    @Test public void testClasspathApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
         mockStrategy.grant(Jenkins.READ).everywhere().to("approver");
-        mockStrategy.grant(Jenkins.RUN_SCRIPTS).everywhere().to("approver");
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("approver");
         for (Permission p : Item.PERMISSIONS.getPermissions()) {
         		mockStrategy.grant(p).everywhere().to("devel");
@@ -683,14 +703,9 @@ public class SecureGroovyScriptTest {
         }
         r.jenkins.setAuthorizationStrategy(mockStrategy);
                
-        JenkinsRule.WebClient wcDevel = r.createWebClient();
-        wcDevel.login("devel");
+        JenkinsRule.WebClient wc = r.createWebClient();
         
-        JenkinsRule.WebClient wcApprover = r.createWebClient();
-        wcApprover.login("approver");
-        
-        
-        List<ClasspathEntry> classpath = new ArrayList<ClasspathEntry>();
+        List<ClasspathEntry> classpath = new ArrayList<>();
         
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
@@ -712,7 +727,7 @@ public class SecureGroovyScriptTest {
         // Deny classpath.
         {
             List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertNotEquals(0, pcps.size());
+            assertEquals(classpath.size(), pcps.size());
             for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
                 ScriptApproval.get().denyClasspathEntry(pcp.getHash());
             }
@@ -720,71 +735,240 @@ public class SecureGroovyScriptTest {
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
-        
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved
+
+        // If configured by a user with ADMINISTER, the classpath is approved if corresponding checkbox is set
         {
-            r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
+            wc.login("approver");
+            HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+            List<HtmlInput> checkboxes = config.getInputsByName("_.shouldBeApproved");
+            // Get the last one, because previous ones might be from Lockable Resources during PCT.
+            HtmlInput checkbox = checkboxes.get(checkboxes.size() - 1);
+            // there's only one classpath being configured, so we only set one checkbox
+            checkbox.setChecked(true);
+            r.submit(config);
             
             List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
             assertEquals(0, pcps.size());
             List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
-            assertNotEquals(0, acps.size());
+            assertEquals(classpath.size(), acps.size());
             
+            // cleaning up for next tests
             for(ScriptApproval.ApprovedClasspathEntry acp: acps) {
                 ScriptApproval.get().denyApprovedClasspathEntry(acp.getHash());
             }
-            
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
         }
-        
-        // If configured by a user without RUN_SCRIPTS, approval is requested
+
+        // If configured by a user with ADMINISTER, but approval checkbox is not set then approval is requested
         {
-            r.submit(wcDevel.getPage(p, "configure").getFormByName("config"));
+            wc.login("approver");
+            r.submit(wc.getPage(p, "configure").getFormByName("config"));
             
             List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertNotEquals(0, pcps.size());
+            assertEquals(classpath.size(), pcps.size());
             List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertEquals(0, acps.size());
-            
-            // don't remove pending classpaths.
-        }
-        
-        // If configured by a user with RUN_SCRIPTS, the classpath is automatically approved, and removed from approval request.
-        {
-            assertNotEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
-            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
-            
-            r.submit(wcApprover.getPage(p, "configure").getFormByName("config"));
-            
-            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertEquals(0, pcps.size());
-            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
-            assertNotEquals(0, acps.size());
-            
-            for(ScriptApproval.ApprovedClasspathEntry acp: acps) {
-                ScriptApproval.get().denyApprovedClasspathEntry(acp.getHash());
+
+            // cleaning up for next tests
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().denyClasspathEntry(pcp.getHash());
             }
-            
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+        }
+
+        // If configured by a user without ADMINISTER approval is requested
+        {
+            wc.login("devel");
+            r.submit(wc.getPage(p, "configure").getFormByName("config"));
+
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
+            assertEquals(classpath.size(), pcps.size());
+            List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
+            assertEquals(0, acps.size());
+
+            // cleaning up for next tests
+            for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                ScriptApproval.get().denyClasspathEntry(pcp.getHash());
+            }
+            assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+            assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+        }
+        
+        // If configured by a user without ADMINISTER while escape hatch in enabled approval is requested 
+        {
+            wc.login("devel");
+            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            try {
+                r.submit(wc.getPage(p, "configure").getFormByName("config"));
+
+                List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
+                assertEquals(classpath.size(), pcps.size());
+                List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
+                assertEquals(0, acps.size());
+
+                // cleaning up for next tests
+                for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
+                    ScriptApproval.get().denyClasspathEntry(pcp.getHash());
+                }
+                assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+                assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+            } finally {
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+            }
+        }
+
+        // If configured by a user with ADMINISTER while escape hatch in enabled approval happens upon save
+        {
+            wc.login("approver");
+            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            try {
+                r.submit(wc.getPage(p, "configure").getFormByName("config"));
+
+                List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
+                assertEquals(0, pcps.size());
+                List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
+                assertEquals(classpath.size(), acps.size());
+
+                // cleaning up for next tests
+                for(ScriptApproval.ApprovedClasspathEntry acp: acps) {
+                    ScriptApproval.get().denyApprovedClasspathEntry(acp.getHash());
+                }
+                assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
+                assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+            } finally {
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+            }
         }
         
         // If run with SYSTEM user, an approval is requested.
         {
             r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
-            
+
             List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
-            assertNotEquals(0, pcps.size());
+            assertEquals(classpath.size(), pcps.size());
             List<ScriptApproval.ApprovedClasspathEntry> acps = ScriptApproval.get().getApprovedClasspathEntries();
             assertEquals(0, acps.size());
-            
+
+            // cleaning up for next tests
             for(ScriptApproval.PendingClasspathEntry pcp: pcps) {
                 ScriptApproval.get().denyClasspathEntry(pcp.getHash());
             }
-            
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+        }
+    }
+
+    @Test @Issue("SECURITY-2450")
+    public void testScriptApproval() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        FreeStyleProject p = r.createFreeStyleProject();
+        String initialGroovyScript = "echo 'testScriptApproval'";
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                initialGroovyScript,
+                false,
+                new ArrayList<>()
+        )));
+
+        // clear all pending and approved scripts if there are any
+        {
+            ScriptApproval.get().preapproveAll();
+            ScriptApproval.get().clearApprovedScripts();
+
+            assertEquals(0, ScriptApproval.get().getPendingScripts().size());
+            assertEquals(0, ScriptApproval.get().getApprovedScriptHashes().length);
+        }
+
+        JenkinsRule.WebClient wc = r.createWebClient();
+        
+        // If configured by a user with ADMINISTER script is approved if edited by that user
+        {
+            wc.login("admin");
+            HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+            List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+            // Get the last one, because previous ones might be from Lockable Resources during PCT.
+            HtmlTextArea script = scripts.get(scripts.size() - 1);
+            String groovy = "echo 'testScriptApproval modified by admin'";
+            script.setText(groovy);
+            r.submit(config);
+
+            assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+            
+            // clean up for next tests
+            ScriptApproval.get().preapproveAll();
+            ScriptApproval.get().clearApprovedScripts();
+        }
+        
+        // If configured by a user without ADMINISTER approval is requested
+        {
+            wc.login("devel");
+            HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+            List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+            // Get the last one, because previous ones might be from Lockable Resources during PCT.
+            HtmlTextArea script = scripts.get(scripts.size() - 1);
+            String groovy = "echo 'testScriptApproval modified by devel'";
+            script.setText(groovy);
+            r.submit(config);
+
+            assertFalse(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+            assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+
+            // clean up for next tests
+            ScriptApproval.get().preapproveAll();
+            ScriptApproval.get().clearApprovedScripts();
+        }
+        
+        // If configured by a user with ADMINISTER while escape hatch is on script is approved upon save
+        {
+            wc.login("admin");
+            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            try {
+                HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+                List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+                // Get the last one, because previous ones might be from Lockable Resources during PCT.
+                HtmlTextArea script = scripts.get(scripts.size() - 1);
+                String currentScriptValue = script.getText();
+                r.submit(config);
+
+                assertTrue(ScriptApproval.get().isScriptApproved(currentScriptValue, GroovyLanguage.get()));
+
+                // clean up for next tests
+                ScriptApproval.get().preapproveAll();
+                ScriptApproval.get().clearApprovedScripts();
+            } finally {
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+            }
+        }
+
+        // If configured by a user without ADMINISTER while escape hatch is on script is not approved
+        {
+            wc.login("devel");
+            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            try {
+                r.submit(wc.getPage(p, "configure").getFormByName("config"));
+
+                assertFalse(ScriptApproval.get().isScriptApproved(initialGroovyScript, GroovyLanguage.get()));
+
+                // clean up for next tests
+                ScriptApproval.get().preapproveAll();
+                ScriptApproval.get().clearApprovedScripts();
+            } finally {
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+            }
         }
     }
 
@@ -800,12 +984,9 @@ public class SecureGroovyScriptTest {
         assertNotSame(Checker.class, a.loadClass(Checker.class.getName()));
 
         SecureGroovyScript sgs = new SecureGroovyScript("System.gc()", true, null);
-        try {
-            sgs.configuringWithKeyItem().evaluate(a, new Binding());
-            fail("Expecting a rejection");
-        } catch (RejectedAccessException e) {
-            assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
-        }
+        final RejectedAccessException e = assertThrows(RejectedAccessException.class,
+                () -> sgs.configuringWithKeyItem().evaluate(a, new Binding()));
+        assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
     }
     
     @Issue("SECURITY-1186")
@@ -860,7 +1041,7 @@ public class SecureGroovyScriptTest {
                 "import hudson.model.FreeStyleProject\n" +
                 "@ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
                 "@Field int x\n" +
-                "echo 'hello'\n", false).toString(), containsString("Annotation ASTTest cannot be used in the sandbox"));
+                "echo 'hello'\n", false, null).toString(), containsString("Annotation ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
@@ -869,7 +1050,7 @@ public class SecureGroovyScriptTest {
     @Test
     public void blockGrab() throws Exception {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("@Grab(group='foo', module='bar', version='1.0')\ndef foo\n", false).toString(),
+        assertThat(d.doCheckScript("@Grab(group='foo', module='bar', version='1.0')\ndef foo\n", false, null).toString(),
                 containsString("Annotation Grab cannot be used in the sandbox"));
     }
 
@@ -877,7 +1058,7 @@ public class SecureGroovyScriptTest {
     @Test
     public void blockGrapes() throws Exception {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("@Grapes([@Grab(group='foo', module='bar', version='1.0')])\ndef foo\n", false).toString(),
+        assertThat(d.doCheckScript("@Grapes([@Grab(group='foo', module='bar', version='1.0')])\ndef foo\n", false, null).toString(),
                 containsString("Annotation Grapes cannot be used in the sandbox"));
     }
 
@@ -885,7 +1066,7 @@ public class SecureGroovyScriptTest {
     @Test
     public void blockGrabConfig() throws Exception {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("@GrabConfig(autoDownload=false)\ndef foo\n", false).toString(),
+        assertThat(d.doCheckScript("@GrabConfig(autoDownload=false)\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabConfig cannot be used in the sandbox"));
     }
 
@@ -893,7 +1074,7 @@ public class SecureGroovyScriptTest {
     @Test
     public void blockGrabExclude() throws Exception {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("@GrabExclude(group='org.mortbay.jetty', module='jetty-util')\ndef foo\n", false).toString(),
+        assertThat(d.doCheckScript("@GrabExclude(group='org.mortbay.jetty', module='jetty-util')\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabExclude cannot be used in the sandbox"));
     }
 
@@ -901,7 +1082,7 @@ public class SecureGroovyScriptTest {
     @Test
     public void blockGrabResolver() throws Exception {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("@GrabResolver(name='restlet.org', root='http://maven.restlet.org')\ndef foo\n", false).toString(),
+        assertThat(d.doCheckScript("@GrabResolver(name='restlet.org', root='http://maven.restlet.org')\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabResolver cannot be used in the sandbox"));
     }
 
@@ -911,7 +1092,7 @@ public class SecureGroovyScriptTest {
         try {
             System.setProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS", "groovy.transform.Field,groovy.transform.Immutable");
             SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-            assertThat(d.doCheckScript("@Field\ndef foo\n", false).toString(),
+            assertThat(d.doCheckScript("@Field\ndef foo\n", false, null).toString(),
                     containsString("Annotation Field cannot be used in the sandbox"));
         } finally {
             System.clearProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS");
@@ -928,7 +1109,7 @@ public class SecureGroovyScriptTest {
                 "@AnnotationCollector([ASTTest]) @interface Lol {}\n" +
                 "@Lol(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
                 "@Field int x\n" +
-                "echo 'hello'\n", false).toString(), containsString("Annotation AnnotationCollector cannot be used in the sandbox"));
+                "echo 'hello'\n", false, null).toString(), containsString("Annotation AnnotationCollector cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
@@ -942,7 +1123,7 @@ public class SecureGroovyScriptTest {
                 "import hudson.model.FreeStyleProject\n" +
                 "@groovy.transform.ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
                 "@Field int x\n" +
-                "echo 'hello'\n", false).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+                "echo 'hello'\n", false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
@@ -956,7 +1137,7 @@ public class SecureGroovyScriptTest {
                 "import hudson.model.FreeStyleProject\n" +
                 "@lolwut(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
                 "int x\n" +
-                "echo 'hello'\n", false).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+                "echo 'hello'\n", false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
@@ -971,7 +1152,7 @@ public class SecureGroovyScriptTest {
                 "  public DoNotRunConstructor() {\n" +
                 "    assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\")\n" +
                 "  }\n" +
-                "}\n", false).toString(), containsString("OK"));
+                "}\n", false, null).toString(), containsString("OK"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
@@ -1070,5 +1251,38 @@ public class SecureGroovyScriptTest {
                 "if ((jenkins.YesNoMaybe.class as Object[]).size() != 3) throw new Exception('blocked enum access')", true, null)));
         FreeStyleBuild b2 = r.assertBuildStatus(Result.FAILURE, p2.scheduleBuild2(0));
         r.assertLogContains("staticField jenkins.YesNoMaybe YES", b2);
+    }
+
+    @Issue("SECURITY-2848")
+    @Test public void blockScriptClassesWithMainMethods() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test extends org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScriptTest$HasMainMethod { }", true, null);
+        p.getPublishersList().add(new TestGroovyRecorder(s));
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object (Test main)", b);
+        assertNull(r.jenkins.getSystemMessage());
+    }
+
+    @Issue("SECURITY-2824")
+    @Test public void blockCastingBindingValues() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test { File list }", true, null);
+        TestGroovyRecorder recorder = new TestGroovyRecorder(s);
+        Binding binding = new Binding();
+        binding.setProperty("list", Collections.singletonList("secret.key"));
+        recorder.setBinding(binding);
+        p.getPublishersList().add(recorder);
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("new java.io.File java.lang.String", b);
+    }
+
+    public static class HasMainMethod {
+        @Whitelisted
+        public HasMainMethod() { }
+        public static void main(String[] args) throws IOException {
+            Jenkins.get().setSystemMessage("SECURITY-2848");
+        }
     }
 }

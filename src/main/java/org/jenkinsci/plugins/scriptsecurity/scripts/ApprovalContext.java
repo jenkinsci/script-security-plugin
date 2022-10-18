@@ -27,7 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import hudson.model.Item;
 import hudson.model.User;
 import hudson.security.ACL;
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -92,7 +92,7 @@ public final class ApprovalContext {
      */
     public @CheckForNull Item getItem() {
         // TODO if getItemByFullName == null, we should removal the approval
-        return item != null ? Jenkins.getInstance().getItemByFullName(item) : null;
+        return item != null ? Jenkins.get().getItemByFullName(item) : null;
     }
 
     /**

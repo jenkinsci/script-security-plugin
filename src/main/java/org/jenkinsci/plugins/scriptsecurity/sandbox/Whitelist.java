@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -57,25 +57,25 @@ public abstract class Whitelist implements ExtensionPoint {
      * @param args zero or more arguments
      * @return true to allow the method to be called, false to reject it
      */
-    public abstract boolean permitsMethod(@Nonnull Method method, @Nonnull Object receiver, @Nonnull Object[] args);
+    public abstract boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args);
 
-    public abstract boolean permitsConstructor(@Nonnull Constructor<?> constructor, @Nonnull Object[] args);
+    public abstract boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args);
 
-    public abstract boolean permitsStaticMethod(@Nonnull Method method, @Nonnull Object[] args);
+    public abstract boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args);
 
-    public abstract boolean permitsFieldGet(@Nonnull Field field, @Nonnull Object receiver);
+    public abstract boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver);
 
-    public abstract boolean permitsFieldSet(@Nonnull Field field, @Nonnull Object receiver, @CheckForNull Object value);
+    public abstract boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, @CheckForNull Object value);
 
-    public abstract boolean permitsStaticFieldGet(@Nonnull Field field);
+    public abstract boolean permitsStaticFieldGet(@NonNull Field field);
 
-    public abstract boolean permitsStaticFieldSet(@Nonnull Field field, @CheckForNull Object value);
+    public abstract boolean permitsStaticFieldSet(@NonNull Field field, @CheckForNull Object value);
 
     /**
      * Checks for all whitelists registered as {@link Extension}s and aggregates them.
      * @return an aggregated default list
      */
-    public static synchronized @Nonnull Whitelist all() {
+    public static synchronized @NonNull Whitelist all() {
         Jenkins j = Jenkins.getInstanceOrNull();
         if (j == null) {
             LOGGER.log(Level.WARNING, "No Jenkins.instance", new Throwable("here"));
@@ -95,6 +95,6 @@ public abstract class Whitelist implements ExtensionPoint {
         }
         return all;
     }
-    private static final Map<Jenkins,Whitelist> allByJenkins = new WeakHashMap<Jenkins,Whitelist>();
+    private static final Map<Jenkins,Whitelist> allByJenkins = new WeakHashMap<>();
 
 }

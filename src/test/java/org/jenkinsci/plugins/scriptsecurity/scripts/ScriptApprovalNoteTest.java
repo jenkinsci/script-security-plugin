@@ -32,12 +32,15 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Result;
 import jenkins.model.Jenkins;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.junit.ClassRule;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
@@ -54,7 +57,7 @@ public class ScriptApprovalNoteTest {
     @Test public void smokes() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
-            grant(Jenkins.RUN_SCRIPTS, Jenkins.READ, Item.READ).everywhere().to("runScriptsUser").
+            grant(Jenkins.ADMINISTER, Jenkins.READ, Item.READ).everywhere().to("adminUser").
             grant(Jenkins.READ, Item.READ).everywhere().to("otherUser"));
         FreeStyleProject p = r.createFreeStyleProject("p");
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
@@ -64,8 +67,8 @@ public class ScriptApprovalNoteTest {
         
         JenkinsRule.WebClient wc = r.createWebClient();
 
-        wc.login("runScriptsUser");
-        // make sure we see the annotation for the RUN_SCRIPTS user.
+        wc.login("adminUser");
+        // make sure we see the annotation for the ADMINISTER user.
         HtmlPage rsp = wc.getPage(b, "console");
         assertEquals(1, DomNodeUtil.selectNodes(rsp, "//A[@href='" + r.contextPath + "/scriptApproval']").size());
 

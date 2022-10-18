@@ -26,29 +26,39 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.grape.GrabAnnotationTransformation;
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import static groovy.lang.GroovyShell.DEFAULT_CODE_BASE;
+import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import hudson.ExtensionList;
 import hudson.model.RootAction;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.cert.Certificate;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.Types;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -58,6 +68,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApprovalNote;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
+import org.kohsuke.groovy.sandbox.impl.Checker;
 
 /**
  * Allows Groovy scripts (including Groovy Templates) to be run inside a sandbox.
@@ -105,7 +116,7 @@ public final class GroovySandbox {
         return this;
     }
 
-    private @Nonnull Whitelist whitelist() {
+    private @NonNull Whitelist whitelist() {
         return whitelist != null ? whitelist : Whitelist.all();
     }
 
@@ -143,6 +154,17 @@ public final class GroovySandbox {
     @FunctionalInterface
     public interface Scope extends AutoCloseable {
 
+        /**
+         * Variant of {@link GroovyShell#parse(String)} that intercepts potentially unsafe calls when the script is created.
+         *
+         * <p>{@link GroovySandbox#runScript(GroovyShell, String)} should be used instead of this method in most cases.
+         */
+        default Script parse(GroovyShell shell, GroovyCodeSource codeSource) {
+            Class<?> scriptClass = shell.getClassLoader().parseClass(codeSource, false);
+            Script script = checkedCreateScript(scriptClass, shell.getContext());
+            return script;
+        }
+
         @Override void close();
 
     }
@@ -150,17 +172,89 @@ public final class GroovySandbox {
     /**
      * Compiles and runs a script within the sandbox.
      * @param shell the shell to be used; see {@link #createSecureCompilerConfiguration} and similar methods
-     * @param script the script to run
+     * @param scriptText the script to run
      * @return the return value of the script
      */
-    public Object runScript(@Nonnull GroovyShell shell, @Nonnull String script) {
+    public Object runScript(@NonNull GroovyShell shell, @NonNull String scriptText) {
         GroovySandbox derived = new GroovySandbox().
             withApprovalContext(context).
             withTaskListener(listener).
             withWhitelist(new ProxyWhitelist(new ClassLoaderWhitelist(shell.getClassLoader()), whitelist()));
         try (Scope scope = derived.enter()) {
-            return shell.parse(script).run();
+            // GroovyShell does not expose any public APIs that allow us to access the generated Script class before InvokerHelper.createScript is called.
+            String scriptFileName = "Script0.groovy";
+            try {
+                Method generateScriptName = shell.getClass().getDeclaredMethod("generateScriptName");
+                generateScriptName.setAccessible(true); // Method is protected.
+                scriptFileName = (String) generateScriptName.invoke(shell);
+            } catch (ReflectiveOperationException e) {
+                LOGGER.log(Level.WARNING, null, e);
+            }
+            GroovyCodeSource codeSource = new GroovyCodeSource(scriptText, scriptFileName, DEFAULT_CODE_BASE);
+            Script script = scope.parse(shell, codeSource);
+            return script.run();
         }
+    }
+
+    /**
+     * Variant of {@link InvokerHelper#createScript} that intercepts potentially unsafe reflective behaviors.
+     *
+     * <p>{@link GroovySandbox#runScript(GroovyShell, String)} or {@link Scope#parse} should be used instead of this method in most cases.
+     *
+     * @see InvokerHelper#createScript
+     */
+    private static Script checkedCreateScript(Class<?> scriptClass, Binding context) {
+        Script script;
+        try {
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                try {
+                    script = InvokerHelper.newScript(scriptClass, context);
+                } catch (InvocationTargetException e) {
+                    throw e.getCause(); // Typically RejectedAccessException.
+                }
+            } else {
+                // TODO: Could we just throw a SecurityException instead and tell users to extend Script or not have a
+                // class definition as the only top-level content in their script?
+                final GroovyObject object = (GroovyObject) scriptClass.newInstance();
+                // it could just be a class, so let's wrap it in a Script
+                // wrapper; though the bindings will be ignored
+                script = new Script(context) {
+                    public Object run() {
+                        Object[] argsToPass = new Object[0];
+                        try {
+                            Object args = getProperty("args");
+                            if (args instanceof String[]) {
+                                argsToPass = (String[])args;
+                            }
+                        } catch (MissingPropertyException e) {
+                            // They'll get empty args since none exist in the context.
+                        }
+                        try {
+                            Checker.checkedCall(object, false, false, "main", argsToPass);
+                        } catch (Throwable t) {
+                            throw new GroovyRuntimeException(t);
+                        }
+                        return null;
+                    }
+                };
+                Map variables = context.getVariables();
+                for (Object o : variables.entrySet()) {
+                    Map.Entry entry = (Map.Entry) o;
+                    String key = entry.getKey().toString();
+                    // assume underscore variables are for the wrapper script
+                    try {
+                        Checker.checkedSetProperty(key.startsWith("_") ? script : object, key, true, false, Types.ASSIGN, entry.getValue());
+                    } catch (MissingPropertyException e) {
+                        // Swallow MissingPropertyException to match Groovy behavior in this case.
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            throw new GroovyRuntimeException(
+                    "Failed to create Script instance for class: "
+                            + scriptClass + ". Reason: " + e, e);
+        }
+        return script;
     }
 
     /**
@@ -178,7 +272,7 @@ public final class GroovySandbox {
      *
      * @return a compiler configuration set up to use the sandbox
      */
-    public static @Nonnull CompilerConfiguration createSecureCompilerConfiguration() {
+    public static @NonNull CompilerConfiguration createSecureCompilerConfiguration() {
         CompilerConfiguration cc = createBaseCompilerConfiguration();
         cc.addCompilationCustomizers(new SandboxTransformer());
         return cc;
@@ -187,7 +281,7 @@ public final class GroovySandbox {
     /**
      * Prepares a compiler configuration that rejects certain AST transformations. Used by {@link #createSecureCompilerConfiguration()}.
      */
-    public static @Nonnull CompilerConfiguration createBaseCompilerConfiguration() {
+    public static @NonNull CompilerConfiguration createBaseCompilerConfiguration() {
         CompilerConfiguration cc = new CompilerConfiguration();
         cc.addCompilationCustomizers(new RejectASTTransformsCustomizer());
         cc.setDisabledGlobalASTTransformations(new HashSet<>(Collections.singletonList(GrabAnnotationTransformation.class.getName())));
@@ -200,7 +294,7 @@ public final class GroovySandbox {
      * See {@link #createSecureCompilerConfiguration()} for the discussion.
      */
     @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Should be managed by the caller.")
-    public static @Nonnull ClassLoader createSecureClassLoader(ClassLoader base) {
+    public static @NonNull ClassLoader createSecureClassLoader(ClassLoader base) {
         return new SandboxResolvingClassLoader(base);
     }
     
@@ -214,7 +308,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #enter}
      */
     @Deprecated
-    public static void runInSandbox(@Nonnull Runnable r, @Nonnull Whitelist whitelist) throws RejectedAccessException {
+    public static void runInSandbox(@NonNull Runnable r, @NonNull Whitelist whitelist) throws RejectedAccessException {
         try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             r.run();
         }
@@ -232,7 +326,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #enter}
      */
     @Deprecated
-    public static <V> V runInSandbox(@Nonnull Callable<V> c, @Nonnull Whitelist whitelist) throws Exception {
+    public static <V> V runInSandbox(@NonNull Callable<V> c, @NonNull Whitelist whitelist) throws Exception {
         try (Scope scope = new GroovySandbox().withWhitelist(whitelist).enter()) {
             return c.call();
         }
@@ -244,7 +338,7 @@ public final class GroovySandbox {
      * @deprecated insecure; use {@link #run(GroovyShell, String, Whitelist)} or {@link #runScript}
      */
     @Deprecated
-    public static Object run(@Nonnull Script script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+    public static Object run(@NonNull Script script, @NonNull final Whitelist whitelist) throws RejectedAccessException {
         LOGGER.log(Level.WARNING, null, new IllegalStateException(Messages.GroovySandbox_useOfInsecureRunOverload()));
         Whitelist wrapperWhitelist = new ProxyWhitelist(
                 new ClassLoaderWhitelist(script.getClass().getClassLoader()),
@@ -265,7 +359,7 @@ public final class GroovySandbox {
      * @deprecated use {@link #runScript}
      */
     @Deprecated
-    public static Object run(@Nonnull final GroovyShell shell, @Nonnull final String script, @Nonnull final Whitelist whitelist) throws RejectedAccessException {
+    public static Object run(@NonNull final GroovyShell shell, @NonNull final String script, @NonNull final Whitelist whitelist) throws RejectedAccessException {
         return new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
     }
 
@@ -276,7 +370,7 @@ public final class GroovySandbox {
      * @param classLoader The {@link GroovyClassLoader} to use during compilation.
      * @return The {@link FormValidation} for the compilation check.
      */
-    public static @Nonnull FormValidation checkScriptForCompilationErrors(String script, GroovyClassLoader classLoader) {
+    public static @NonNull FormValidation checkScriptForCompilationErrors(String script, GroovyClassLoader classLoader) {
         try {
             CompilationUnit cu = new CompilationUnit(
                     createSecureCompilerConfiguration(),

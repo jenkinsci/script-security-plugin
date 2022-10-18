@@ -24,13 +24,14 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.google.common.io.NullOutputStream;
 import groovy.lang.Binding;
 import groovy.lang.GString;
 import groovy.lang.Script;
 import hudson.EnvVars;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Hudson;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
+import org.apache.commons.io.output.NullOutputStream;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
@@ -59,7 +61,12 @@ public class GroovyCallSiteSelectorTest {
     }
 
     @Test public void overloads() throws Exception {
-        PrintWriter receiver = new PrintWriter(new NullOutputStream());
+        PrintWriter receiver = new PrintWriter(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                // Do nothing, we do not care
+            }
+        });
         assertEquals(PrintWriter.class.getMethod("print", Object.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {new Object()}));
         assertEquals(PrintWriter.class.getMethod("print", String.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {"message"}));
         assertEquals(PrintWriter.class.getMethod("print", int.class), GroovyCallSiteSelector.method(receiver, "print", new Object[] {42}));
@@ -93,7 +100,7 @@ public class GroovyCallSiteSelectorTest {
 
     @Issue("JENKINS-38908")
     @Test public void main() throws Exception {
-        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding());
+        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
         assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
         assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
@@ -121,14 +128,11 @@ public class GroovyCallSiteSelectorTest {
     @Test
     public void varargsFailureCases() throws Exception {
         // If there's a partial match, we should get a ClassCastException
-        try {
-            assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
-                    new Object[]{new BooleanParameterValue("someBool", true), "x"}));
-        } catch (Exception e) {
-            assertTrue(e instanceof ClassCastException);
-            assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
-                    e.getMessage());
-        }
+        final ClassCastException e = assertThrows(ClassCastException.class,
+                () -> assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
+                        new Object[]{new BooleanParameterValue("someBool", true), "x"})));
+        assertEquals("Cannot cast object 'x' with class 'java.lang.String' to class 'hudson.model.ParameterValue'",
+                e.getMessage());
         // If it's a complete non-match, we just shouldn't get a constructor.
         assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class, new Object[]{"a", "b"}));
     }
