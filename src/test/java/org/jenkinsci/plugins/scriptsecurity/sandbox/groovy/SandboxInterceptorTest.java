@@ -1653,6 +1653,7 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "('a' =~ '.*') as Boolean");
     }
 
+    @Issue("JENKINS-42214")
     @Test
     public void accessStaticMembersViaInstance() throws Throwable {
         String fqcn = HasStaticMembers.class.getName();
