@@ -62,7 +62,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.31-rc227.549f6a_a_e591b_</version> <!-- TODO: https://github.com/jenkinsci/groovy-sandbox/pull/94 -->
+      <version>1.31</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
