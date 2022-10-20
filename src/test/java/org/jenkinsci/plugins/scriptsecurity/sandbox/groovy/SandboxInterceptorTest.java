@@ -1653,6 +1653,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "('a' =~ '.*') as Boolean");
     }
 
+    @Test
+    public void staticAttributesAreNotShadowedByClassFields() throws Throwable {
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name = 'foo' }; MyClass.@name");
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name }; MyClass.@name = 'foo'");
+    }
+
     @Issue("JENKINS-42214")
     @Test
     public void accessStaticMembersViaInstance() throws Throwable {
