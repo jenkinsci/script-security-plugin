@@ -911,6 +911,8 @@ public class SandboxInterceptorTest {
             // GroovyRuntimeException.
             if (x.getCause() instanceof RejectedAccessException) {
                 errors.checkThat(x.getMessage(), ((RejectedAccessException)x.getCause()).getSignature(), is(expectedSignature));
+            } else {
+                errors.addError(x);
             }
         } catch (RejectedAccessException x) {
             errors.checkThat(x.getMessage(), x.getSignature(), is(expectedSignature));
@@ -1648,6 +1650,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "class Test { }; new Test() as Boolean");
         assertEvaluate(new GenericWhitelist(), false, "class Test { }; new Test() { boolean asBoolean() { false } } as Boolean");
         assertEvaluate(new GenericWhitelist(), true, "('a' =~ '.*') as Boolean");
+    }
+
+    @Test
+    public void staticAttributesAreNotShadowedByClassFields() throws Throwable {
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name = 'foo' }; MyClass.@name");
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name }; MyClass.@name = 'foo'");
     }
 
     /**

@@ -418,7 +418,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 Checker.preCheckedCast(field.getType(), value, false, false, false);
                 return super.onSetAttribute(invoker, receiver, attribute, value);
             } else {
-                throw StaticWhitelist.rejectField(field);
+                rejector = () -> StaticWhitelist.rejectField(field);
             }
         }
         if (receiver instanceof Class) {
