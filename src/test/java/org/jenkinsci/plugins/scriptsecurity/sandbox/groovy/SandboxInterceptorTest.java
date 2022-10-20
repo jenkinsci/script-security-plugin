@@ -1650,6 +1650,12 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "('a' =~ '.*') as Boolean");
     }
 
+    @Test
+    public void staticAttributesAreNotShadowedByClassFields() throws Throwable {
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name = 'foo' }; MyClass.@name");
+        assertEvaluate(new GenericWhitelist(), "foo", "class MyClass { static String name }; MyClass.@name = 'foo'");
+    }
+
     /**
      * Checks that the annotation is blocked from being used in the provided script whether it is imported or used via
      * fully-qualified class name.
