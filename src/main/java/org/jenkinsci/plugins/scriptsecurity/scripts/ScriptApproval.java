@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
+import jenkins.model.ScriptListener;
 import jenkins.util.SystemProperties;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -475,12 +476,27 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @param script a possibly unapproved script
      * @param language the language in which it is written
      * @return {@code script}, for convenience
+     * @throws UnapprovedUsageException in case it has not yet been approve
+     * @deprecated Use {@link #using(String, Language, String)}.
+     */
+    @Deprecated
+    public synchronized String using(@NonNull String script, @NonNull Language language) throws UnapprovedUsageException {
+        return using(script, language, "N/A");
+    }
+    /**
+     * Called when a script is about to be used (evaluated).
+     * @param script a possibly unapproved script
+     * @param language the language in which it is written
+     * @param origin A descriptive, trackable identifier of the entity running the script.
+     * @return {@code script}, for convenience
      * @throws UnapprovedUsageException in case it has not yet been approved
      */
-    public synchronized String using(@NonNull String script, @NonNull Language language) throws UnapprovedUsageException {
+    public synchronized String using(@NonNull String script, @NonNull Language language, String origin) throws UnapprovedUsageException {
         if (script.length() == 0) {
             // As a special case, always consider the empty script preapproved, as this is usually the default for new fields,
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
+            ScriptListener.fireScriptEvent(script, origin, null);
+
             return script;
         }
         String hash = hash(script, language.getName());
@@ -488,9 +504,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
             throw new UnapprovedUsageException(hash);
         }
+        ScriptListener.fireScriptEvent(script, origin, null);
         return script;
     }
-
     // Only for testing
     synchronized boolean isScriptHashApproved(String hash) {
         return approvedScriptHashes.contains(hash);
