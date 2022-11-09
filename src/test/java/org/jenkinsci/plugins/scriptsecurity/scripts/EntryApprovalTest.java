@@ -100,7 +100,7 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
             this.entry = entry;
             ScriptApproval.get().configuring(entry, ApprovalContext.create());
             // If configure is successful, calculate the hash
-            this.hash = ScriptApproval.hashClasspathEntry(entry.getURL());
+            this.hash = ScriptApproval.DEFAULT_HASHER.hashClasspathEntry(entry.getURL());
         }
 
         @Override
