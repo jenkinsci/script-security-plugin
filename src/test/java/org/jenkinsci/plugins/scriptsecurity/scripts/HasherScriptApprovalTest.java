@@ -133,13 +133,13 @@ public class HasherScriptApprovalTest {
             final ScriptApproval approval = ScriptApproval.get();
             assertEquals(2, approval.countDeprecatedApprovedClasspathHashes());
             URL url = getJar("org/apache/commons/lang3/StringUtils.class");
-            approval.using(new ClasspathEntry(url.getPath()));
+            approval.using(new ClasspathEntry(url.toString()));
             assertEquals(1, approval.countDeprecatedApprovedClasspathHashes());
             final Matcher<Iterable<? extends String>> logMatcher = containsInRelativeOrder(
                     containsString("A classpath is approved with an old hash algorithm. Converting now, "));
             assertThat(log.getMessages(), logMatcher);
             log.capture(1000);
-            approval.using(new ClasspathEntry(url.getPath())); //Using it again should not convert it again.
+            approval.using(new ClasspathEntry(url.toString())); //Using it again should not convert it again.
             assertThat(log.getMessages(), not(logMatcher));
             assertEquals(1, approval.countDeprecatedApprovedClasspathHashes());
         });
