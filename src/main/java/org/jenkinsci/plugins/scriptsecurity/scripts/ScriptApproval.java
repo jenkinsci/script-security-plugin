@@ -247,7 +247,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     static final Hasher DEFAULT_HASHER = Hasher.SHA512;
 
-    private static Thread convertDeprecatedApprovedClasspathEntriesThread = null;
+    private Thread convertDeprecatedApprovedClasspathEntriesThread = null;
 
     /** All scripts which are already approved, via {@link Hasher#hash(String, String)}. */
     private final TreeSet<String> approvedScriptHashes = new TreeSet<>();
