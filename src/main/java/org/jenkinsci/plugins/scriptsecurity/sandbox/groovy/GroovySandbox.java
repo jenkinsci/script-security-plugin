@@ -260,8 +260,8 @@ public final class GroovySandbox {
     /**
      * Prepares a compiler configuration the sandbox.
      *
-     * <h2>CAUTION</h2>
      * <p>
+     * <strong>CAUTION</strong>:
      * When creating {@link GroovyShell} with this {@link CompilerConfiguration},
      * you also have to use {@link #createSecureClassLoader(ClassLoader)} to wrap
      * a classloader of your choice into sandbox-aware one.
