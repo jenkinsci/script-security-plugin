@@ -444,9 +444,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         
         PendingClasspathEntry(@NonNull String hash, @NonNull URL url, @NonNull ApprovalContext context) {
             super(context);
-            /**
-             * hash should be stored as files located at the classpath can be modified.
-             */
+             // hash should be stored as files located at the classpath can be modified.
             this.hash = hash;
             this.url = url;
         }
@@ -469,9 +467,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
         
         public static @NonNull PendingClasspathEntry searchKeyFor(@NonNull String hash) {
-            final PendingClasspathEntry entry = new PendingClasspathEntry(hash, 
-                    SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
-            return entry;
+            return new PendingClasspathEntry(hash, SEARCH_APPROVAL_URL, SEARCH_APPROVAL_CONTEXT);
         }
     }
 
@@ -599,7 +595,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                             && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
                 approvedScriptHashes.add(result.newHash);
                 //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
-                removePendingScript(result.newHash); 
+                removePendingScript(result.newHash);
             } else {
                 String key = context.getKey();
                 if (key != null) {
@@ -869,7 +865,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                 goodSignatures.add(signature);
             } catch (IOException e) {
                 LOG.warning("Ignoring malformed signature: " + signature
-                        + " (Occurred exception: " + e.toString() + ")");
+                        + " (Occurred exception: " + e + ")");
             }
         }
         approvedSignatures.addAll(goodSignatures);
@@ -900,7 +896,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @DataBoundSetter
     public synchronized void setApprovedScriptHashes(String[] scriptHashes) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.clear();
         for (String scriptHash : scriptHashes) {
             if (StringUtils.isNotEmpty(scriptHash)) {
@@ -1159,14 +1155,14 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @Restricted(NoExternalUse.class)
     public synchronized List<ApprovedClasspathEntry> getApprovedClasspathEntries() {
         ArrayList<ApprovedClasspathEntry> r = new ArrayList<>(approvedClasspathEntries);
-        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
+        r.sort(Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 
     @Restricted(NoExternalUse.class)
     public synchronized List<PendingClasspathEntry> getPendingClasspathEntries() {
         List<PendingClasspathEntry> r = new ArrayList<>(pendingClasspathEntries);
-        Collections.sort(r, Comparator.comparing(o -> o.url.toString()));
+        r.sort(Comparator.comparing(o -> o.url.toString()));
         return r;
     }
 

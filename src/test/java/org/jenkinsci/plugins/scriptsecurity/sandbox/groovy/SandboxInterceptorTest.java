@@ -40,7 +40,6 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.transform.ASTTest;
 import hudson.Functions;
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
@@ -57,7 +56,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
@@ -70,12 +68,10 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -201,14 +197,14 @@ public class SandboxInterceptorTest {
         assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x = jenkins.model.Jenkins.instance}; new X().x");
         assertRejected(new ProxyWhitelist(), "staticMethod jenkins.model.Jenkins getInstance", "class X {Object x; {x = jenkins.model.Jenkins.instance}}; new X().x");
         try {
-            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x = jenkins.model.Jenkins.instance}; X.x"), is((Object) "should be rejected"));
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x = jenkins.model.Jenkins.instance}; X.x"), is("should be rejected"));
         } catch (ExceptionInInitializerError x) {
             errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
         } catch (Throwable t) {
             errors.addError(t);
         }
         try {
-            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x; static {x = jenkins.model.Jenkins.instance}}; X.x"), is((Object) "should be rejected"));
+            errors.checkThat(evaluate(new ProxyWhitelist(), "class X {static Object x; static {x = jenkins.model.Jenkins.instance}}; X.x"), is("should be rejected"));
         } catch (ExceptionInInitializerError x) {
             errors.checkThat(x.getMessage(), ((RejectedAccessException) x.getCause()).getSignature(), is("staticMethod jenkins.model.Jenkins getInstance"));
         } catch (Throwable t) {
@@ -279,7 +275,7 @@ public class SandboxInterceptorTest {
             }
         }
         private String quoteSingle(Object o) {
-            return "'" + String.valueOf(o) + "'";
+            return "'" + o + "'";
         }
         @Whitelisted static long incr(long x) {
             return x + 1;
@@ -652,13 +648,13 @@ public class SandboxInterceptorTest {
         assertRejected(new ProxyWhitelist(), "new java.util.TreeMap java.util.Map", "TreeMap x = [k: 1]; x");
         assertEvaluate(new StaticWhitelist("new java.util.TreeMap java.util.Map"), Collections.singletonMap("k", 1), "TreeMap x = [k: 1]; x");
         // These go through a different code path:
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList(1), "[1] as LinkedList");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "['v'] as LinkedList");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList(1), "LinkedList x = [1]; x");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "LinkedList x = ['v']; x");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList(1), "int[] a = [1]; a as LinkedList");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "String[] a = ['v']; a as LinkedList");
-        assertEvaluate(new ProxyWhitelist(), Arrays.asList("v"), "String[] a = ['v']; LinkedList x = a; x");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList(1), "[1] as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList("v"), "['v'] as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList(1), "LinkedList x = [1]; x");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList("v"), "LinkedList x = ['v']; x");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList(1), "int[] a = [1]; a as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList("v"), "String[] a = ['v']; a as LinkedList");
+        assertEvaluate(new ProxyWhitelist(), Collections.singletonList("v"), "String[] a = ['v']; LinkedList x = a; x");
         /* TODO casting arrays is not yet supported:
         assertRejected(new StaticWhitelist(cc), "new java.lang.Boolean java.lang.String", "String[] a = ['true']; Boolean x = a; x");
         assertEvaluate(new StaticWhitelist(cc, "new java.lang.Boolean java.lang.String"), true, "String[] a = ['true']; Boolean x = a; x");
@@ -1409,7 +1405,7 @@ public class SandboxInterceptorTest {
                             "}\n" +
                             "new Test()");
             // Test.equals and Test.getClass are inherited and not sandbox-transformed, so they can be called outside of the sandbox.
-            assertFalse(result.equals(new Object()));
+            assertNotEquals(result, new Object());
             assertThat(result.getClass().getSimpleName(), equalTo("Test"));
             // Test.toString is defined in the sandbox, so it cannot be called outside of the sandbox.
             result.toString();

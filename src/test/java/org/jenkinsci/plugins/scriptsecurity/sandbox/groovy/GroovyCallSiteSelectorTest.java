@@ -42,7 +42,6 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import jenkins.model.Jenkins;
-import org.apache.commons.io.output.NullOutputStream;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
@@ -56,7 +55,7 @@ public class GroovyCallSiteSelectorTest {
     @Test public void arrays() throws Exception {
         Method m = EnumeratingWhitelistTest.C.class.getDeclaredMethod("m", Object[].class);
         assertEquals("literal call", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new Object[] {"a", "b"}}));
-        assertEquals("we assume the interceptor has dealt with varargs", null, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {"a", "b"}));
+        assertNull("we assume the interceptor has dealt with varargs", GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[]{"a", "b"}));
         assertEquals("array cast", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new String[] {"a", "b"}}));
     }
 

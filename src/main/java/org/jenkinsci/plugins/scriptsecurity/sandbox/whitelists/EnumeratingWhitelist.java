@@ -218,7 +218,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         abstract boolean exists() throws Exception;
         /** opposite of {@link #getName(Class)} */
-        static final Class<?> type(String name) throws Exception {
+        static Class<?> type(String name) throws Exception {
             // ClassUtils.getClass is too lax: permits Outer.Inner where we require Outer$Inner.
             if (name.endsWith("[]")) {
                 // https://stackoverflow.com/q/1679421/12916; TODO Java 12+ use Class.arrayType
@@ -261,7 +261,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     // Utility methods for creating canonical string representations of the signature
-    static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+    static StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
         for (String type : types) {
             b.append(' ').append(type);
         }
