@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.lang.reflect.Modifier;
 import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
@@ -157,12 +158,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
             throw new MissingMethodException(method, receiver.getClass(), args);
         } else if (StaticWhitelist.isPermanentlyBlacklistedMethod(m)) {
             throw StaticWhitelist.rejectMethod(m);
-        } else if (whitelist.permitsMethod(m, receiver, args)) {
+        } else if (permitsMethod(whitelist, m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else if (method.equals("invokeMethod") && args.length == 2 && args[0] instanceof String && args[1] instanceof Object[]) {
             throw StaticWhitelist.rejectMethod(m, EnumeratingWhitelist.getName(receiver.getClass()) + " " + args[0] + printArgumentTypes((Object[]) args[1]));
         } else {
-            throw StaticWhitelist.rejectMethod(m);
+            throw rejectMethod(m);
         }
     }
 
@@ -206,11 +207,11 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 ? setterMethods.get(0) // If there is only a single setter, the argument will be cast to match the declared parameter type.
                 : GroovyCallSiteSelector.method(receiver, setter, valueArg); // If there are multiple setters, MultipleSetterProperty just calls invokeMethod.
         if (setterMethod != null) {
-            if (whitelist.permitsMethod(setterMethod, receiver, valueArg)) {
+            if (permitsMethod(whitelist, setterMethod, receiver, valueArg)) {
                 preCheckArgumentCasts(setterMethod, valueArg);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectMethod(setterMethod);
+                rejector = () -> rejectMethod(setterMethod);
             }
         }
         Object[] propertyValueArgs = new Object[] {property, value};
@@ -223,13 +224,13 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 rejector = () -> StaticWhitelist.rejectMethod(setPropertyMethod, receiver.getClass().getName() + "." + property);
             }
         }
-        final Field instanceField = GroovyCallSiteSelector.field(receiver, property);
-        if (instanceField != null) {
-            if (whitelist.permitsFieldSet(instanceField, receiver, value)) {
-                Checker.preCheckedCast(instanceField.getType(), value, false, false, false);
+        final Field field = GroovyCallSiteSelector.field(receiver, property);
+        if (field != null) {
+            if (permitsFieldSet(whitelist, field, receiver, value)) {
+                Checker.preCheckedCast(field.getType(), value, false, false, false);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectField(instanceField);
+                rejector = () -> rejectField(field);
             }
         }
         if (receiver instanceof Class) {
@@ -276,19 +277,19 @@ final class SandboxInterceptor extends GroovyInterceptor {
         String getter = "get" + MetaClassHelper.capitalize(property);
         final Method getterMethod = GroovyCallSiteSelector.method(receiver, getter, noArgs);
         if (getterMethod != null) {
-            if (whitelist.permitsMethod(getterMethod, receiver, noArgs)) {
+            if (permitsMethod(whitelist, getterMethod, receiver, noArgs)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectMethod(getterMethod);
+                rejector = () -> rejectMethod(getterMethod);
             }
         }
         String booleanGetter = "is" + MetaClassHelper.capitalize(property);
         final Method booleanGetterMethod = GroovyCallSiteSelector.method(receiver, booleanGetter, noArgs);
         if (booleanGetterMethod != null && booleanGetterMethod.getReturnType() == boolean.class) {
-            if (whitelist.permitsMethod(booleanGetterMethod, receiver, noArgs)) {
+            if (permitsMethod(whitelist, booleanGetterMethod, receiver, noArgs)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectMethod(booleanGetterMethod);
+                rejector = () -> rejectMethod(booleanGetterMethod);
             }
         }
         // look for GDK methods
@@ -311,12 +312,12 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
         }
-        final Field instanceField = GroovyCallSiteSelector.field(receiver, property);
-        if (instanceField != null) {
-            if (whitelist.permitsFieldGet(instanceField, receiver)) {
+        final Field field = GroovyCallSiteSelector.field(receiver, property);
+        if (field != null) {
+            if (permitsFieldGet(whitelist, field, receiver)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectField(instanceField);
+                rejector = () -> rejectField(field);
             }
         }
         // GroovyObject property access
@@ -391,10 +392,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Rejector rejector = null;
         Field field = GroovyCallSiteSelector.field(receiver, attribute);
         if (field != null) {
-            if (whitelist.permitsFieldGet(field, receiver)) {
+            if (permitsFieldGet(whitelist, field, receiver)) {
                 return super.onGetAttribute(invoker, receiver, attribute);
             } else {
-                rejector = () -> StaticWhitelist.rejectField(field);
+                rejector = () -> rejectField(field);
             }
         }
         if (receiver instanceof Class) {
@@ -414,11 +415,11 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Rejector rejector = null;
         Field field = GroovyCallSiteSelector.field(receiver, attribute);
         if (field != null) {
-            if (whitelist.permitsFieldSet(field, receiver, value)) {
+            if (permitsFieldSet(whitelist, field, receiver, value)) {
                 Checker.preCheckedCast(field.getType(), value, false, false, false);
                 return super.onSetAttribute(invoker, receiver, attribute, value);
             } else {
-                rejector = () -> StaticWhitelist.rejectField(field);
+                rejector = () -> rejectField(field);
             }
         }
         if (receiver instanceof Class) {
@@ -442,10 +443,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Object[] args = new Object[] {index};
         Method method = GroovyCallSiteSelector.method(receiver, "getAt", args);
         if (method != null) {
-            if (whitelist.permitsMethod(method, receiver, args)) {
+            if (permitsMethod(whitelist, method, receiver, args)) {
                 return super.onGetArray(invoker, receiver, index);
             } else {
-                throw StaticWhitelist.rejectMethod(method);
+                throw rejectMethod(method);
             }
         }
         args = new Object[] {receiver, index};
@@ -469,10 +470,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Object[] args = new Object[] {index, value};
         Method method = GroovyCallSiteSelector.method(receiver, "putAt", args);
         if (method != null) {
-            if (whitelist.permitsMethod(method, receiver, args)) {
+            if (permitsMethod(whitelist, method, receiver, args)) {
                 return super.onSetArray(invoker, receiver, index, value);
             } else {
-                throw StaticWhitelist.rejectMethod(method);
+                throw rejectMethod(method);
             }
         }
         args = new Object[] {receiver, index, value};
@@ -544,6 +545,41 @@ final class SandboxInterceptor extends GroovyInterceptor {
             LOGGER.log(Level.FINE, "could not find metamethod for " + receiver.getClass() + "." + method + Arrays.toString(types), x);
             return null;
         }
+    }
+
+    private static boolean permitsFieldGet(@NonNull Whitelist whitelist, @NonNull Field field, @NonNull Object receiver) {
+        if (Modifier.isStatic(field.getModifiers())) {
+            return whitelist.permitsStaticFieldGet(field);
+        }
+        return whitelist.permitsFieldGet(field, receiver);
+    }
+
+    private static boolean permitsFieldSet(@NonNull Whitelist whitelist, @NonNull Field field, @NonNull Object receiver, @CheckForNull Object value) {
+        if (Modifier.isStatic(field.getModifiers())) {
+            return whitelist.permitsStaticFieldSet(field, value);
+        }
+        return whitelist.permitsFieldSet(field, receiver, value);
+    }
+
+    private static boolean permitsMethod(@NonNull Whitelist whitelist, @NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
+        if (Modifier.isStatic(method.getModifiers())) {
+            return whitelist.permitsStaticMethod(method, args);
+        }
+        return whitelist.permitsMethod(method, receiver, args);
+    }
+
+    public static RejectedAccessException rejectMethod(@NonNull Method m) {
+        if (Modifier.isStatic(m.getModifiers())) {
+            return StaticWhitelist.rejectStaticMethod(m);
+        }
+        return StaticWhitelist.rejectMethod(m);
+    }
+
+    public static RejectedAccessException rejectField(@NonNull Field f) {
+        if (Modifier.isStatic(f.getModifiers())) {
+            return StaticWhitelist.rejectStaticField(f);
+        }
+        return StaticWhitelist.rejectField(f);
     }
 
 }
