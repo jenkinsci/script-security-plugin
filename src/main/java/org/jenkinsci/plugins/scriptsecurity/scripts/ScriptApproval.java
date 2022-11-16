@@ -896,7 +896,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @DataBoundSetter
     public synchronized void setApprovedScriptHashes(String[] scriptHashes) throws IOException {
-        Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+        Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.clear();
         for (String scriptHash : scriptHashes) {
             if (StringUtils.isNotEmpty(scriptHash)) {
