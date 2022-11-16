@@ -31,9 +31,12 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.ClassUtils;
@@ -197,6 +200,41 @@ class GroovyCallSiteSelector {
 
     public static @CheckForNull Method staticMethod(@NonNull Class<?> receiver, @NonNull String method, @NonNull Object[] args) {
         return findMatchingMethod(receiver, method, args);
+    }
+
+    /**
+     * Like {@link #method}, but returns all methods with the given name that match the given predicate.
+     */
+    public static List<Method> methods(@NonNull Object receiver, @NonNull String method, Predicate<Method> filter) {
+        Set<Class<?>> types = types(receiver);
+        if (types.contains(GroovyInterceptable.class) && !"invokeMethod".equals(method)) {
+            return methods(receiver, "invokeMethod", m -> true);
+        }
+        List<Method> candidates = new ArrayList<>();
+        for (Class<?> c : types) {
+            for (Method candidate : c.getDeclaredMethods()) {
+                if (candidate.getName().equals(method) && filter.test(candidate)) {
+                    candidates.add(candidate);
+                }
+            }
+        }
+        if (receiver instanceof GString) { // cf. GString.invokeMethod
+            candidates.addAll(methods(String.class, method, filter));
+        }
+        return candidates;
+    }
+
+    /**
+     * Like {@link #staticMethod}, but returns all methods with the given name that match the given predicate.
+     */
+    public static List<Method> staticMethods(@NonNull Class<?> receiver, @NonNull String method, Predicate<Method> filter) {
+        List<Method> candidates = new ArrayList<>();
+        for (Method candidate : receiver.getDeclaredMethods()) {
+            if (candidate.getName().equals(method) && filter.test(candidate)) {
+                candidates.add(candidate);
+            }
+        }
+        return candidates;
     }
 
     private static Method findMatchingMethod(@NonNull Class<?> receiver, @NonNull String method, @NonNull Object[] args) {

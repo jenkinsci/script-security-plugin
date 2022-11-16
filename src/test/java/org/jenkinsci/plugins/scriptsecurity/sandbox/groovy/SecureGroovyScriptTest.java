@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
@@ -61,6 +62,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -70,15 +72,19 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.groovy.sandbox.impl.Checker;
 
 public class SecureGroovyScriptTest {
+
+    @ClassRule public static BuildWatcher WATCHER = new BuildWatcher();
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
@@ -1244,5 +1250,38 @@ public class SecureGroovyScriptTest {
                 "if ((jenkins.YesNoMaybe.class as Object[]).size() != 3) throw new Exception('blocked enum access')", true, null)));
         FreeStyleBuild b2 = r.assertBuildStatus(Result.FAILURE, p2.scheduleBuild2(0));
         r.assertLogContains("staticField jenkins.YesNoMaybe YES", b2);
+    }
+
+    @Issue("SECURITY-2848")
+    @Test public void blockScriptClassesWithMainMethods() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test extends org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScriptTest$HasMainMethod { }", true, null);
+        p.getPublishersList().add(new TestGroovyRecorder(s));
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object (Test main)", b);
+        assertNull(r.jenkins.getSystemMessage());
+    }
+
+    @Issue("SECURITY-2824")
+    @Test public void blockCastingBindingValues() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test { File list }", true, null);
+        TestGroovyRecorder recorder = new TestGroovyRecorder(s);
+        Binding binding = new Binding();
+        binding.setProperty("list", Collections.singletonList("secret.key"));
+        recorder.setBinding(binding);
+        p.getPublishersList().add(recorder);
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("new java.io.File java.lang.String", b);
+    }
+
+    public static class HasMainMethod {
+        @Whitelisted
+        public HasMainMethod() { }
+        public static void main(String[] args) throws IOException {
+            Jenkins.get().setSystemMessage("SECURITY-2848");
+        }
     }
 }

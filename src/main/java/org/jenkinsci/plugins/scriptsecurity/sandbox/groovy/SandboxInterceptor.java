@@ -30,13 +30,14 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
-import hudson.Functions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -47,6 +48,7 @@ import org.codehaus.groovy.runtime.DateGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -60,6 +62,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
+import org.kohsuke.groovy.sandbox.impl.Checker;
 
 @SuppressWarnings("rawtypes")
 final class SandboxInterceptor extends GroovyInterceptor {
@@ -197,10 +200,14 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Rejector rejector = null; // avoid creating exception objects unless and until thrown
         // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
         Object[] valueArg = new Object[] {value};
-        String setter = "set" + Functions.capitalize(property);
-        final Method setterMethod = GroovyCallSiteSelector.method(receiver, setter, valueArg);
+        String setter = "set" + MetaClassHelper.capitalize(property);
+        List<Method> setterMethods = GroovyCallSiteSelector.methods(receiver, setter, m -> m.getParameterCount() == 1);
+        final Method setterMethod = setterMethods.size() == 1
+                ? setterMethods.get(0) // If there is only a single setter, the argument will be cast to match the declared parameter type.
+                : GroovyCallSiteSelector.method(receiver, setter, valueArg); // If there are multiple setters, MultipleSetterProperty just calls invokeMethod.
         if (setterMethod != null) {
             if (whitelist.permitsMethod(setterMethod, receiver, valueArg)) {
+                preCheckArgumentCasts(setterMethod, valueArg);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
                 rejector = () -> StaticWhitelist.rejectMethod(setterMethod);
@@ -208,8 +215,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
         }
         Object[] propertyValueArgs = new Object[] {property, value};
         final Method setPropertyMethod = GroovyCallSiteSelector.method(receiver, "setProperty", propertyValueArgs);
-        if (setPropertyMethod != null) {
+        if (setPropertyMethod != null && !isSyntheticMethod(receiver, setPropertyMethod)) {
             if (whitelist.permitsMethod(setPropertyMethod, receiver, propertyValueArgs)) {
+                preCheckArgumentCasts(setPropertyMethod, propertyValueArgs);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
                 rejector = () -> StaticWhitelist.rejectMethod(setPropertyMethod, receiver.getClass().getName() + "." + property);
@@ -218,15 +226,20 @@ final class SandboxInterceptor extends GroovyInterceptor {
         final Field instanceField = GroovyCallSiteSelector.field(receiver, property);
         if (instanceField != null) {
             if (whitelist.permitsFieldSet(instanceField, receiver, value)) {
+                Checker.preCheckedCast(instanceField.getType(), value, false, false, false);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
                 rejector = () -> StaticWhitelist.rejectField(instanceField);
             }
         }
         if (receiver instanceof Class) {
-            final Method staticSetterMethod = GroovyCallSiteSelector.staticMethod((Class) receiver, setter, valueArg);
+            List<Method> staticSetterMethods = GroovyCallSiteSelector.staticMethods((Class) receiver, setter, m -> m.getParameterCount() == 1);
+            final Method staticSetterMethod = staticSetterMethods.size() == 1
+                ? staticSetterMethods.get(0) // If there is only a single setter, the value will be cast to match the declared parameter type.
+                : GroovyCallSiteSelector.staticMethod((Class) receiver, setter, valueArg); // If there are multiple setters, MultipleSetterProperty just calls invokeMethod.
             if (staticSetterMethod != null) {
                 if (whitelist.permitsStaticMethod(staticSetterMethod, valueArg)) {
+                    preCheckArgumentCasts(staticSetterMethod, valueArg);
                     return super.onSetProperty(invoker, receiver, property, value);
                 } else if (rejector == null) {
                     rejector = () -> StaticWhitelist.rejectStaticMethod(staticSetterMethod);
@@ -235,6 +248,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
             final Field staticField = GroovyCallSiteSelector.staticField((Class) receiver, property);
             if (staticField != null) {
                 if (whitelist.permitsStaticFieldSet(staticField, value)) {
+                    Checker.preCheckedCast(staticField.getType(), value, false, false, false);
                     return super.onSetProperty(invoker, receiver, property, value);
                 } else if (rejector == null) {
                     rejector = () -> StaticWhitelist.rejectStaticField(staticField);
@@ -259,7 +273,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         }
         Rejector rejector = null;
         Object[] noArgs = new Object[] {};
-        String getter = "get" + Functions.capitalize(property);
+        String getter = "get" + MetaClassHelper.capitalize(property);
         final Method getterMethod = GroovyCallSiteSelector.method(receiver, getter, noArgs);
         if (getterMethod != null) {
             if (whitelist.permitsMethod(getterMethod, receiver, noArgs)) {
@@ -268,7 +282,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 rejector = () -> StaticWhitelist.rejectMethod(getterMethod);
             }
         }
-        String booleanGetter = "is" + Functions.capitalize(property);
+        String booleanGetter = "is" + MetaClassHelper.capitalize(property);
         final Method booleanGetterMethod = GroovyCallSiteSelector.method(receiver, booleanGetter, noArgs);
         if (booleanGetterMethod != null && booleanGetterMethod.getReturnType() == boolean.class) {
             if (whitelist.permitsMethod(booleanGetterMethod, receiver, noArgs)) {
@@ -308,7 +322,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         // GroovyObject property access
         Object[] propertyArg = new Object[] {property};
         final Method getPropertyMethod = GroovyCallSiteSelector.method(receiver, "getProperty", propertyArg);
-        if (getPropertyMethod != null) {
+        if (getPropertyMethod != null && !isSyntheticMethod(receiver, getPropertyMethod)) {
             if (whitelist.permitsMethod(getPropertyMethod, receiver, propertyArg)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
@@ -364,8 +378,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         }
     }
 
-    private static RejectedAccessException unclassifiedField(Object receiver, String property) {
-        return new RejectedAccessException("No such field found: field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+    private static MissingPropertyException unclassifiedField(Object receiver, String property) {
+        return new MissingPropertyException("No such field found: field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
     }
 
     // TODO Java 8: @FunctionalInterface
@@ -374,25 +388,51 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onGetAttribute(Invoker invoker, Object receiver, String attribute) throws Throwable {
+        Rejector rejector = null;
         Field field = GroovyCallSiteSelector.field(receiver, attribute);
-        if (field == null) {
-            throw unclassifiedField(receiver, attribute);
-        } else if (whitelist.permitsFieldGet(field, receiver)) {
-            return super.onGetAttribute(invoker, receiver, attribute);
-        } else {
-            throw StaticWhitelist.rejectField(field);
+        if (field != null) {
+            if (whitelist.permitsFieldGet(field, receiver)) {
+                return super.onGetAttribute(invoker, receiver, attribute);
+            } else {
+                rejector = () -> StaticWhitelist.rejectField(field);
+            }
         }
+        if (receiver instanceof Class) {
+            Field staticField = GroovyCallSiteSelector.staticField((Class<?>)receiver, attribute);
+            if (staticField != null) {
+                if (whitelist.permitsStaticFieldGet(staticField)) {
+                    return super.onGetAttribute(invoker, receiver, attribute);
+                } else {
+                    rejector = () -> StaticWhitelist.rejectStaticField(staticField);
+                }
+            }
+        }
+        throw rejector != null ? rejector.reject() : unclassifiedField(receiver, attribute);
     }
 
     @Override public Object onSetAttribute(Invoker invoker, Object receiver, String attribute, Object value) throws Throwable {
+        Rejector rejector = null;
         Field field = GroovyCallSiteSelector.field(receiver, attribute);
-        if (field == null) {
-            throw unclassifiedField(receiver, attribute);
-        } else if (whitelist.permitsFieldSet(field, receiver, value)) {
-            return super.onSetAttribute(invoker, receiver, attribute, value);
-        } else {
-            throw StaticWhitelist.rejectField(field);
+        if (field != null) {
+            if (whitelist.permitsFieldSet(field, receiver, value)) {
+                Checker.preCheckedCast(field.getType(), value, false, false, false);
+                return super.onSetAttribute(invoker, receiver, attribute, value);
+            } else {
+                rejector = () -> StaticWhitelist.rejectField(field);
+            }
         }
+        if (receiver instanceof Class) {
+            Field staticField = GroovyCallSiteSelector.staticField((Class<?>)receiver, attribute);
+            if (staticField != null) {
+                if (whitelist.permitsStaticFieldSet(staticField, value)) {
+                    Checker.preCheckedCast(staticField.getType(), value, false, false, false);
+                    return super.onSetAttribute(invoker, receiver, attribute, value);
+                } else {
+                    rejector = () -> StaticWhitelist.rejectStaticField(staticField);
+                }
+            }
+        }
+        throw rejector != null ? rejector.reject() : unclassifiedField(receiver, attribute);
     }
 
     @Override public Object onGetArray(Invoker invoker, Object receiver, Object index) throws Throwable {
@@ -447,6 +487,40 @@ final class SandboxInterceptor extends GroovyInterceptor {
             }
         }
         throw new RejectedAccessException("No such putAt method found: putAt method " + EnumeratingWhitelist.getName(receiver) + "[" + EnumeratingWhitelist.getName(index) + "]=" + EnumeratingWhitelist.getName(value));
+    }
+
+    private static void preCheckArgumentCasts(Method method, Object[] args) throws Throwable {
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            if (i == parameters.length - 1 && parameter.isVarArgs()) {
+                Class<?> componentType = parameter.getType().getComponentType();
+                for (int j = i; j < args.length; j++) {
+                    Object arg = args[j];
+                    Checker.preCheckedCast(componentType, arg, false, false, false);
+                }
+            } else {
+                Object arg = args[i];
+                Checker.preCheckedCast(parameter.getType(), arg, false, false, false);
+            }
+        }
+    }
+
+    /**
+     * Check if the specified method defined on the receiver is synthetic.
+     *
+     * If {@code receiver} is a {@link GroovyObject} with a synthetically generated implementation of
+     * {@link GroovyObject#getProperty} or {@link GroovyObject#setProperty}, then we do not care about intercepting
+     * that method call since we handle known cases, and we specifically do not want missing properties to be rejected
+     * because of the existence of the method.
+     */
+    private static boolean isSyntheticMethod(Object receiver, Method method) {
+        try {
+            return receiver.getClass().getDeclaredMethod(method.getName(), String.class, Object.class).isSynthetic();
+        } catch (NoSuchMethodException e) {
+            // Some unusual case, e.g. the method is defined in a superclass, so we return false and intercept the call just in case.
+        }
+        return false;
     }
 
     private static String printArgumentTypes(Object[] args) {

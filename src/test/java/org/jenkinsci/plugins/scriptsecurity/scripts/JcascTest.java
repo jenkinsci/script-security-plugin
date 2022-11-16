@@ -8,17 +8,29 @@ import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import io.jenkins.plugins.casc.model.CNode;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.jvnet.hudson.test.LoggerRule;
+
+import java.util.logging.Level;
 
 import static io.jenkins.plugins.casc.misc.Util.getSecurityRoot;
 import static io.jenkins.plugins.casc.misc.Util.toStringFromYamlFile;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 
 public class JcascTest {
 
-    @ClassRule
+    @ClassRule(order = 1)
+    public static LoggerRule logger = new LoggerRule().record(ScriptApproval.class.getName(), Level.WARNING)
+            .capture(100);
+
+    @ClassRule(order = 2)
     @ConfiguredWithCode("smoke_test.yaml")
     public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
+
+
 
     @Test
     public void smokeTestEntry() throws Exception {
@@ -28,6 +40,9 @@ public class JcascTest {
         String[] approvedScriptHashes = ScriptApproval.get().getApprovedScriptHashes();
         assertEquals(1, approvedScriptHashes.length);
         assertEquals(approvedScriptHashes[0], "fccae58c5762bdd15daca97318e9d74333203106");
+        assertThat(logger.getMessages(), containsInAnyOrder(
+                containsString("Adding deprecated script hash " +
+                        "that will be converted on next use: fccae58c5762bdd15daca97318e9d74333203106")));
     }
 
     @Test

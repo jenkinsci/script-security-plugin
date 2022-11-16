@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.model.BallColor;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.util.SystemProperties;
@@ -58,9 +59,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -68,6 +71,8 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
@@ -169,8 +174,82 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             return hash.compareTo(o.hash);
         }
     }
-    
-    /** All scripts which are already approved, via {@link #hash}. */
+
+    enum Hasher {
+        SHA512 {
+            final Pattern shaPattern = Pattern.compile("SHA512:[a-fA-F0-9]{128}");
+            @Override
+            String prefix() {
+                return "SHA512:";
+            }
+
+            @Override
+            MessageDigest digest() throws NoSuchAlgorithmException {
+                return MessageDigest.getInstance("SHA-512");
+            }
+
+            @Override
+            Pattern pattern() {
+                return shaPattern;
+            }
+        },
+        @Deprecated
+        SHA1 {
+            final Pattern shaPattern = Pattern.compile("[a-fA-F0-9]{40}");
+            @Override
+            String prefix() {
+                return "";
+            }
+            @Override
+            MessageDigest digest() throws NoSuchAlgorithmException {
+                return MessageDigest.getInstance("SHA-1");
+            }
+
+            @Override
+            Pattern pattern() {
+                return shaPattern;
+            }
+        };
+        String hash(String script, String language) {
+            try {
+                MessageDigest digest = digest();
+                digest.update(language.getBytes(StandardCharsets.UTF_8));
+                digest.update((byte) ':');
+                digest.update(script.getBytes(StandardCharsets.UTF_8));
+                return prefix() + Util.toHexString(digest.digest());
+            } catch (NoSuchAlgorithmException x) {
+                throw new AssertionError(x);
+            }
+        }
+
+        /**
+         * Creates digest of JAR contents.
+         * Package visibility to be used in tests.
+         */
+        String hashClasspathEntry(URL entry) throws IOException {
+            try {
+                MessageDigest digest = digest();
+                try (InputStream is = entry.openStream(); BufferedInputStream bis = new BufferedInputStream(is); DigestInputStream input = new DigestInputStream(bis, digest)) {
+                    byte[] buffer = new byte[1024];
+                    while (input.read(buffer) != -1) {
+                        // discard
+                    }
+                    return prefix() + Util.toHexString(digest.digest());
+                }
+            } catch (NoSuchAlgorithmException x) {
+                throw new AssertionError(x);
+            }
+        }
+        abstract String prefix();
+        abstract MessageDigest digest() throws NoSuchAlgorithmException;
+        abstract Pattern pattern();
+    }
+
+    static final Hasher DEFAULT_HASHER = Hasher.SHA512;
+
+    private Thread convertDeprecatedApprovedClasspathEntriesThread = null;
+
+    /** All scripts which are already approved, via {@link Hasher#hash(String, String)}. */
     private final TreeSet<String> approvedScriptHashes = new TreeSet<>();
 
     /** All sandbox signatures which are already whitelisted, in {@link StaticWhitelist} format. */
@@ -186,8 +265,74 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         approvedClasspathEntries.add(acp);
     }
 
-    public boolean isScriptApproved(String script, Language language) {
-        return this.isScriptHashApproved(hash(script, language.getName()));
+    public boolean isScriptApproved(@NonNull String script, @NonNull Language language) {
+        for (Hasher hasher : Hasher.values()) { //Default Hasher should be first in the array
+            String hash = hasher.hash(script, language.getName());
+            if (this.isScriptHashApproved(hash)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static class ConversionCheckResult {
+        final String oldHash;
+        final String newHash;
+        final boolean approved;
+        final boolean converted;
+
+        public ConversionCheckResult(final String oldHash, final String newHash, final boolean approved, final boolean converted) {
+            this.oldHash = oldHash;
+            this.newHash = newHash;
+            this.approved = approved;
+            this.converted = converted;
+        }
+    }
+
+    @Restricted(NoExternalUse.class) @NonNull
+    private synchronized ConversionCheckResult checkAndConvertApprovedScript(@NonNull String script, @NonNull Language language) {
+        String hash = DEFAULT_HASHER.hash(script, language.getName());
+        if (approvedScriptHashes.contains(hash)) {
+            return new ConversionCheckResult(hash, hash, true, false);
+        }
+        for (Hasher hasher : Hasher.values()) {
+            if (hasher != DEFAULT_HASHER) {
+                String oldHash = hasher.hash(script, language.getName());
+                if (approvedScriptHashes.contains(oldHash)) {
+                    LOG.fine("A script is approved with an old hash algorithm. " +
+                            "Converting now, this may cause performance issues until all old hashes has been converted or removed.");
+                    approvedScriptHashes.remove(oldHash);
+                    approvedScriptHashes.add(hash);
+                    save();
+                    return new ConversionCheckResult(oldHash, hash, true, true);
+                }
+            }
+        }
+        return new ConversionCheckResult(hash, hash, false, false);
+    }
+
+    @Restricted(NoExternalUse.class) @NonNull
+    private synchronized ConversionCheckResult checkAndConvertApprovedClasspath(@NonNull URL url) throws IOException {
+        String hash = DEFAULT_HASHER.hashClasspathEntry(url);
+        ApprovedClasspathEntry acp = new ApprovedClasspathEntry(hash, url);
+        if (approvedClasspathEntries.contains(acp)) {
+            return new ConversionCheckResult(hash, hash, true, false);
+        }
+        for (Hasher hasher : Hasher.values()) {
+            if (hasher != DEFAULT_HASHER) {
+                String oldHash = hasher.hashClasspathEntry(url);
+                ApprovedClasspathEntry oacp = new ApprovedClasspathEntry(oldHash, url);
+                if (approvedClasspathEntries.contains(oacp)) {
+                    LOG.fine("A classpath is approved with an old hash algorithm. " +
+                            "Converting now, this may cause performance issues until all old hashes has been converted or removed.");
+                    approvedClasspathEntries.remove(oacp);
+                    approvedClasspathEntries.add(acp);
+                    save();
+                    return new ConversionCheckResult(oldHash, hash, true, true);
+                }
+            }
+        }
+        return new ConversionCheckResult(hash, hash, false, false);
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly
@@ -226,7 +371,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             this.language = language.getName();
         }
         public String getHash() {
-            return hash(script, language);
+            return DEFAULT_HASHER.hash(script, language);
         }
         public Language getLanguage() {
             for (Language l : ExtensionList.lookup(Language.class)) {
@@ -361,15 +506,59 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
         // Check for loaded class directories
         boolean changed = false;
+        int dcp = 0;
         for (Iterator<ApprovedClasspathEntry> i = approvedClasspathEntries.iterator(); i.hasNext();) {
-            if (i.next().isClassDirectory()) {
+            final ApprovedClasspathEntry entry = i.next();
+            if (entry.isClassDirectory()) {
                 i.remove();
                 changed = true;
             }
+            if (!DEFAULT_HASHER.pattern().matcher(entry.hash).matches()) {
+                dcp++;
+            }
+        }
+        int dsh = countDeprecatedApprovedScriptHashes();
+        if (dcp > 0 || dsh > 0) {
+            LOG.log(Level.WARNING, "There are {0} deprecated approved script hashes " +
+                    "and {1} deprecated approved classpath hashes. " +
+                    "They will be rehashed upon next use and that may cause performance issues " +
+                    "until all of them are converted or removed.", new Object[]{dsh, dcp});
         }
         if (changed) {
             save();
         }
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized boolean hasDeprecatedApprovedScriptHashes() {
+        return countDeprecatedApprovedScriptHashes() > 0;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized int countDeprecatedApprovedScriptHashes() {
+        int dsh = 0;
+        for (String hash : approvedScriptHashes) {
+            if (!DEFAULT_HASHER.pattern().matcher(hash).matches()) {
+                dsh++;
+            }
+        }
+        return dsh;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized int countDeprecatedApprovedClasspathHashes() {
+        int dcp = 0;
+        for (ApprovedClasspathEntry entry : approvedClasspathEntries) {
+            if (!DEFAULT_HASHER.pattern().matcher(entry.getHash()).matches()) {
+                dcp++;
+            }
+        }
+        return dcp;
+    }
+
+    @Restricted(NoExternalUse.class)
+    public synchronized boolean hasDeprecatedApprovedClasspathHashes() {
+        return countDeprecatedApprovedClasspathHashes() > 0;
     }
 
     /** Nothing has ever been approved or is pending. */
@@ -381,43 +570,6 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                pendingScripts.isEmpty() &&
                pendingSignatures.isEmpty() &&
                pendingClasspathEntries.isEmpty();
-    }
-
-    private static String hash(String script, String language) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            digest.update(language.getBytes(StandardCharsets.UTF_8));
-            digest.update((byte) ':');
-            digest.update(script.getBytes(StandardCharsets.UTF_8));
-            return Util.toHexString(digest.digest());
-        } catch (NoSuchAlgorithmException x) {
-            throw new AssertionError(x);
-        }
-    }
-
-    /**
-     * Creates digest of JAR contents.
-     * Package visibility to be used in tests.
-     */
-    static String hashClasspathEntry(URL entry) throws IOException {
-        try (InputStream is = entry.openStream()) {
-            DigestInputStream input = null;
-            try {
-                MessageDigest digest = MessageDigest.getInstance("SHA-1");
-                input = new DigestInputStream(new BufferedInputStream(is), digest);
-                byte[] buffer = new byte[1024];
-                while (input.read(buffer) != -1) {
-                    // discard
-                }
-                return Util.toHexString(digest.digest());
-            } catch (NoSuchAlgorithmException x) {
-                throw new AssertionError(x);
-            } finally {
-                if (input != null) {
-                    input.close();
-                }
-            }
-        }
     }
 
     /**
@@ -436,13 +588,14 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return {@code script}, for convenience
      */
     public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
-        final String hash = hash(script, language.getName());
-        if (!approvedScriptHashes.contains(hash)) {
+        final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
+        if (!result.approved) {
             if (!Jenkins.get().isUseSecurity() || 
                     ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER)) 
                             && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
-                approvedScriptHashes.add(hash);
-                removePendingScript(hash);
+                approvedScriptHashes.add(result.newHash);
+                //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
+                removePendingScript(result.newHash);
             } else {
                 String key = context.getKey();
                 if (key != null) {
@@ -476,10 +629,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             // and in many cases there is some sensible behavior for an emoty script which we want to permit.
             return script;
         }
-        String hash = hash(script, language.getName());
-        if (!approvedScriptHashes.contains(hash)) {
+        ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
+        if (!result.approved) {
             // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
-            throw new UnapprovedUsageException(hash);
+            throw new UnapprovedUsageException(result.newHash);
         }
         return script;
     }
@@ -508,29 +661,29 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
         //TODO: better error propagation
         URL url = entry.getURL();
-        String hash;
+        ConversionCheckResult result;
         try {
-            hash = hashClasspathEntry(url);
+            result = checkAndConvertApprovedClasspath(url);
         } catch (IOException x) {
             // This is a case the path doesn't really exist
             LOG.log(Level.WARNING, null, x);
             return;
         }
-        
-        ApprovedClasspathEntry acp = new ApprovedClasspathEntry(hash, url);
-        if (!approvedClasspathEntries.contains(acp)) {
+
+        if (!result.approved) {
             boolean shouldSave = false;
-            PendingClasspathEntry pcp = new PendingClasspathEntry(hash, url, context);
+            PendingClasspathEntry pcp = new PendingClasspathEntry(result.newHash, url, context);
             if (!Jenkins.get().isUseSecurity() ||
                     ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
                             && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !StringUtils.equals(entry.getOldPath(), entry.getPath())))) {
-                LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, hash});
+                LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, result.newHash});
+                ApprovedClasspathEntry acp = new ApprovedClasspathEntry(result.newHash, url);
                 pendingClasspathEntries.remove(pcp);
                 approvedClasspathEntries.add(acp);
                 shouldSave = true;
             } else {
                 if (pendingClasspathEntries.add(pcp)) {
-                    LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, hash});
+                    LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, result.newHash});
                     shouldSave = true;
                 }
             }
@@ -570,25 +723,24 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      */
     public synchronized void using(@NonNull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
         URL url = entry.getURL();
-        String hash = hashClasspathEntry(url);
-        
-        if (!approvedClasspathEntries.contains(new ApprovedClasspathEntry(hash, url))) {
-            // Don't add it to pending if it is a class directory
-            if (entry.isClassDirectory()) {
-                LOG.log(Level.WARNING, "Classpath {0} ({1}) is a class directory, which are not allowed.", new Object[] {url, hash});
-                throw new UnapprovedClasspathException("classpath entry %s is a class directory, which are not allowed.", url, hash);
-            } else {
-                // Never approve classpath here.
-                ApprovalContext context = ApprovalContext.create();
-                if (pendingClasspathEntries.add(new PendingClasspathEntry(hash, url, context))) {
-                    LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[] {url, hash});
-                    save();
-                }
+        // Don't add it to pending if it is a class directory
+        if (entry.isClassDirectory()) {
+            LOG.log(Level.WARNING, "Classpath {0} is a class directory, which are not allowed.", url);
+            throw new UnapprovedClasspathException("classpath entry %s is a class directory, which are not allowed.", url, "");
+        }
+        ConversionCheckResult result = checkAndConvertApprovedClasspath(url);
+
+        if (!result.approved) {
+            // Never approve classpath here.
+            ApprovalContext context = ApprovalContext.create();
+            if (pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
+                LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[]{url, result.newHash});
+                save();
             }
-            throw new UnapprovedClasspathException(url, hash);
+            throw new UnapprovedClasspathException(url, result.newHash);
         }
         
-        LOG.log(Level.FINER, "{0} ({1}) had been approved", new Object[] {url, hash});
+        LOG.log(Level.FINER, "{0} ({1}) had been approved", new Object[] {url, result.newHash});
     }
 
     /**
@@ -606,7 +758,8 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (StringUtils.isEmpty(script)) {
             return FormValidation.ok();
         }
-        if (approvedScriptHashes.contains(hash(script, language.getName()))) {
+        final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
+        if (result.approved) {
             return FormValidation.okWithMarkup("The script is already approved");
         }
 
@@ -633,7 +786,8 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     synchronized boolean isClasspathEntryApproved(URL url) {
         try {
-            return approvedClasspathEntries.contains(new ApprovedClasspathEntry(hashClasspathEntry(url), url));
+            final ConversionCheckResult result = checkAndConvertApprovedClasspath(url);
+            return result.approved;
         } catch (IOException e) {
             return false;
         }
@@ -648,7 +802,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * @return {@code script}, for convenience
      */
     public synchronized String preapprove(@NonNull String script, @NonNull Language language) {
-        approvedScriptHashes.add(hash(script, language.getName()));
+        approvedScriptHashes.add(DEFAULT_HASHER.hash(script, language.getName()));
         return script;
     }
 
@@ -744,12 +898,25 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public synchronized void setApprovedScriptHashes(String[] scriptHashes) throws IOException {
         Jenkins.getInstance().checkPermission(Jenkins.RUN_SCRIPTS);
         approvedScriptHashes.clear();
-        Pattern sha1Pattern = Pattern.compile("[a-fA-F0-9]{40}");
         for (String scriptHash : scriptHashes) {
-            if (scriptHash != null && sha1Pattern.matcher(scriptHash).matches()) {
-                approvedScriptHashes.add(scriptHash);
-            } else {
-                LOG.warning(() -> "Ignoring malformed script hash: " + scriptHash);
+            if (StringUtils.isNotEmpty(scriptHash)) {
+                if (DEFAULT_HASHER.pattern().matcher(scriptHash).matches()) {
+                    approvedScriptHashes.add(scriptHash);
+                } else {
+                    boolean allowed = false;
+                    for (Hasher hasher : Hasher.values()) {
+                        if (hasher != DEFAULT_HASHER && hasher.pattern().matcher(scriptHash).matches()) {
+                            allowed = true;
+                            break;
+                        }
+                    }
+                    if (allowed) {
+                        LOG.warning(() -> "Adding deprecated script hash that will be converted on next use: " + scriptHash);
+                        approvedScriptHashes.add(scriptHash);
+                    } else {
+                        LOG.warning(() -> "Ignoring malformed script hash: " + scriptHash);
+                    }
+                }
             }
         }
         save();
@@ -834,6 +1001,82 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedScriptHashes.clear();
         save();
+    }
+
+
+    /**
+     * Clears {@link #approvedScriptHashes} from all entries not matching {@link #DEFAULT_HASHER}.
+     * @throws IOException if so when saving to disk.
+     */
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized void clearDeprecatedApprovedScripts() throws IOException {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        approvedScriptHashes.removeIf(s -> !DEFAULT_HASHER.pattern().matcher(s).matches());
+        save();
+    }
+
+    @Restricted(NoExternalUse.class)
+    public String getSpinnerIconClassName() {
+        return BallColor.GREY_ANIME.getIconClassName();
+    }
+
+    /**
+     * Schedules a {@link Thread} task that rehashes/converts all approved classpath entries
+     * that are hashed not using {@link #DEFAULT_HASHER}.
+     */
+    @Restricted(NoExternalUse.class) // for use from AJAX
+    @JavaScriptMethod public synchronized void convertDeprecatedApprovedClasspathEntries() {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        if (!isConvertingDeprecatedApprovedClasspathEntries()) {
+            final List<ApprovedClasspathEntry> entries = approvedClasspathEntries.stream()
+                    .filter(e -> !DEFAULT_HASHER.pattern().matcher(e.getHash()).matches())
+                    .collect(Collectors.toList());
+            if (!entries.isEmpty()) {
+                LOG.log(Level.INFO, "Scheduling conversion of {0} deprecated approved classpathentry hashes.", entries.size());
+                convertDeprecatedApprovedClasspathEntriesThread = new Thread(() -> {
+                    final Map<String, ApprovedClasspathEntry> result = new HashMap<>();
+                    for (int i = 0; i < entries.size(); i++) {
+                        final ApprovedClasspathEntry entry = entries.get(i);
+                        final URL entryURL = entry.getURL();
+                        LOG.log(Level.INFO, String.format("Converting %s\t(%d/%d)", entryURL, i + 1, entries.size()));
+                        try {
+                            final String hash = DEFAULT_HASHER.hashClasspathEntry(entryURL);
+                            result.put(entryURL.toExternalForm(), new ApprovedClasspathEntry(hash, entryURL));
+                        } catch (Throwable e) {
+                            LOG.log(Level.WARNING, "Failed to convert " + entryURL, e);
+                        }
+                        Thread.yield(); //Technically not needed as there is plenty of IO happening in this thread.
+                    }
+                    synchronized (ScriptApproval.this) {
+                        approvedClasspathEntries.removeIf(e -> result.containsKey(e.getURL().toExternalForm()));
+                        approvedClasspathEntries.addAll(result.values());
+                        try {
+                            save();
+                        } catch (Exception e) {
+                            LOG.log(Level.WARNING, "Failed to store conversion result.", e);
+                        }
+                    }
+                    LOG.info("Conversion done.");
+                }, "Approved Classpaths rehasher");
+                convertDeprecatedApprovedClasspathEntriesThread.setDaemon(true);
+                convertDeprecatedApprovedClasspathEntriesThread.start();
+                LOG.fine("Background conversion task scheduled.");
+            } else {
+                LOG.info("Nothing to convert.");
+            }
+        } else {
+            LOG.fine("Background conversion task already running.");
+        }
+    }
+
+    /**
+     * Checks if {@link #convertDeprecatedApprovedClasspathEntriesThread} is active.
+     * @return true if so.
+     */
+    @Restricted(NoExternalUse.class)
+    public synchronized boolean isConvertingDeprecatedApprovedClasspathEntries() {
+        return convertDeprecatedApprovedClasspathEntriesThread != null
+                && convertDeprecatedApprovedClasspathEntriesThread.isAlive();
     }
 
     @Restricted(NoExternalUse.class) // for use from Jelly

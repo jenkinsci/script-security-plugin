@@ -203,6 +203,17 @@ THE SOFTWARE.
                     </j:forEach>
                 </j:otherwise>
             </j:choose>
+            <j:if test="${it.hasDeprecatedApprovedScriptHashes()}">
+                <p id="deprecated-approvedScripts-clear">
+                    You have <st:out value="${it.countDeprecatedApprovedScriptHashes()}"/> script approvals with deprecated hashes:
+                    <button onclick="if (confirm('Really delete all deprecated approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearDeprecatedApprovedScripts(); $('deprecated-approvedScripts-clear').hide();}">Clear Deprecated Approvals</button>
+                </p>
+                <p class="setting-description">
+                    Script approvals are stored in Jenkins as the hashed value of the script. Old approvals were hashed using SHA-1, which is deprecated.
+                    Because only the hash of the script is stored, they cannot be immediately converted to use a new hash algorithm. Instead, they will be automatically rehashed when the script is next used.
+                    To minimize potential security risks, you can immediately revoke all script approvals that were hashed using SHA-1. <strong>This will cause all jobs and features that use those scripts to fail until they are reconfigured and then then approved by a Jenkins administrator.</strong>
+                </p>
+            </j:if>
             <p id="approvedScripts-clear">
                 You can also remove all previous script approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
@@ -271,6 +282,36 @@ THE SOFTWARE.
             </p>
             <div id="approvedClasspathEntries">
             </div>
+            <j:if test="${it.hasDeprecatedApprovedClasspathHashes()}">
+                <p id="deprecated-approvedClasspaths-clear">
+                    You have ${it.countDeprecatedApprovedClasspathHashes()} approved classpath entries with deprecated hashes:
+                    <span id="deprecated-approvedClasspaths-clear-btn">
+                        <button onclick="if (confirm('This will be scheduled on a background thread. You can follow the progress in the system log')) {mgr.convertDeprecatedApprovedClasspathEntries(); $('deprecated-approvedClasspaths-clear-btn').hide(); $('deprecated-approvedClasspaths-clear-spinner').show();}">Rehash Deprecated Approvals</button>
+                    </span>
+                    <span id="deprecated-approvedClasspaths-clear-spinner">
+                        <l:icon alt="${%Converting...}" class="${it.spinnerIconClassName} icon-md"/>
+                    </span>
+                </p>
+                <p class="setting-description">
+                    Approved classpath entries are stored in Jenkins with the URL and the hashed content of the resource the URL refers to. Old approvals were hashed using SHA-1, which is deprecated.
+                    Because the URL is known they can be rehashed in bulk, but that might take time, so they will each be rehashed when next used to not cause any disruption.
+                    To minimize potential security risks, you can schedule a background task to automatically convert all existing approved classpath entries to the new hash format.
+                </p>
+                <j:choose>
+                    <j:when test="${it.isConvertingDeprecatedApprovedClasspathEntries()}">
+                        <script>
+                            $('deprecated-approvedClasspaths-clear-btn').hide();
+                            $('deprecated-approvedClasspaths-clear-spinner').show();
+                        </script>
+                    </j:when>
+                    <j:otherwise>
+                        <script>
+                            $('deprecated-approvedClasspaths-clear-btn').show();
+                            $('deprecated-approvedClasspaths-clear-spinner').hide();
+                        </script>
+                    </j:otherwise>
+                </j:choose>
+            </j:if>
             <p id="approvedClasspathEntries-clear">
                 You can also remove all previous classpath entry approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>
