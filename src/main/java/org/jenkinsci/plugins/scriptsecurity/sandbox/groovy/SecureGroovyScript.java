@@ -120,7 +120,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     }
 
     public @NonNull List<ClasspathEntry> getClasspath() {
-        return classpath != null ? classpath : Collections.<ClasspathEntry>emptyList();
+        return classpath != null ? classpath : Collections.emptyList();
     }
 
     public String getOldScript() {

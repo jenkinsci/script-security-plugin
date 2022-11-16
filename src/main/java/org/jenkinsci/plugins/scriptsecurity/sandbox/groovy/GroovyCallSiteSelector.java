@@ -46,7 +46,8 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * Assists in determination of which method or other JVM element is actually about to be called by Groovy.
  * Most of this just duplicates what {@link java.lang.invoke.MethodHandles.Lookup} and {@link java.lang.invoke.MethodHandle#asType} do,
  * but {@link org.codehaus.groovy.vmplugin.v7.TypeTransformers} shows that there are Groovy-specific complications.
- * Comments in https://github.com/kohsuke/groovy-sandbox/issues/7 note that it would be great for the sandbox itself to just tell us what the call site is so we would not have to guess.
+ * Comments in <a href="https://github.com/kohsuke/groovy-sandbox/issues/7">groovy-sandbox #7</a> note that it would be
+ * great for the sandbox itself to just tell us what the call site is so we would not have to guess.
  */
 class GroovyCallSiteSelector {
 

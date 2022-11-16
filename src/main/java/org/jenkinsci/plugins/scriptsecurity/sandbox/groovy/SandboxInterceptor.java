@@ -134,7 +134,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 Script s = (Script) receiver;
                 if (s.getBinding().hasVariable(method)) {
                     Object var = s.getBinding().getVariable(method);
-                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", (Object[]) args).isEmpty()) {
+                    if (!InvokerHelper.getMetaClass(var).respondsTo(var, "call", args).isEmpty()) {
                         return onMethodCall(invoker, var, "call", args);
                     }
                 }
