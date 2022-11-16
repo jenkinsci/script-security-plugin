@@ -92,7 +92,7 @@ public final class ApprovalContext {
      */
     public @CheckForNull Item getItem() {
         // TODO if getItemByFullName == null, we should removal the approval
-        return item != null ? Jenkins.getInstance().getItemByFullName(item) : null;
+        return item != null ? Jenkins.get().getItemByFullName(item) : null;
     }
 
     /**

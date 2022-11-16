@@ -25,10 +25,15 @@ The first, and simpler, security system is to allow any kind of script to be run
 with an administrator’s approval. There is a globally maintained list of approved scripts 
 which are judged to not perform any malicious actions.
 
-When an administrator saves some kind of configuration (for example, a job), any scripts 
-it contains are automatically added to the approved list. They are ready to run with no 
-further intervention. (“Saving” usually means from the web UI, but could also mean 
-uploading a new XML configuration via REST or CLI.)
+When an administrator saves some kind of configuration (for example, a job), those scripts
+that were edited by admin are automatically approved and are ready to run with no further
+intervention. For scripts that were submitted by lower privileged users there will be
+appropriate warnings indicating that approval is required. Administrators may approve those
+scripts using the Script Approval configuration page or by editing the script and saving it.
+In previous versions of Script Security Plugin, administrators could automatically approve
+scripts submitted by unprivileged users by saving them without making any changes, but this
+functionality was disabled to prevent social engineering-based attacks. (“Saving” usually
+means from the web UI, but could also mean uploading a new XML configuration via REST or CLI.)
 
 When a non-administrator saves a template configuration, a check is done whether any 
 contained scripts have been edited from an approved text. (More precisely, whether the 

@@ -75,7 +75,7 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
     // http://stackoverflow.com/a/25393190/12916
     @WithoutJenkins
     @Test public void getPendingClasspathEntry() throws Exception {
-        TreeSet<ScriptApproval.PendingClasspathEntry> pendingClasspathEntries = new TreeSet<ScriptApproval.PendingClasspathEntry>();
+        TreeSet<ScriptApproval.PendingClasspathEntry> pendingClasspathEntries = new TreeSet<>();
         for (int i = 1; i < 100; i++) {
             pendingClasspathEntries.add(new ScriptApproval.PendingClasspathEntry(hashOf(i), new URL("file:/x" + i + ".jar"), ApprovalContext.create()));
         }
@@ -100,7 +100,7 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
             this.entry = entry;
             ScriptApproval.get().configuring(entry, ApprovalContext.create());
             // If configure is successful, calculate the hash
-            this.hash = ScriptApproval.hashClasspathEntry(entry.getURL());
+            this.hash = ScriptApproval.DEFAULT_HASHER.hashClasspathEntry(entry.getURL());
         }
 
         @Override

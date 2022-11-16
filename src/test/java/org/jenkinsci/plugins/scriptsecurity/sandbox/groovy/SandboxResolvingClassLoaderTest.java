@@ -28,12 +28,12 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.CLASS_NOT_FOUND;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.parentClassCache;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 public class SandboxResolvingClassLoaderTest {
 
@@ -45,12 +45,9 @@ public class SandboxResolvingClassLoaderTest {
         // Load a class that does exist.
         assertThat(loader.loadClass("java.lang.String", false), equalTo(String.class));
         // Load a class that does not exist.
-        try {
-            loader.loadClass("this.does.not.Exist", false);
-            fail("Class should not exist");
-        } catch (ClassNotFoundException e) {
-            assertThat(e.getMessage(), containsString("this.does.not.Exist"));
-        }
+        final ClassNotFoundException e = assertThrows(ClassNotFoundException.class,
+                () -> loader.loadClass("this.does.not.Exist", false));
+        assertThat(e.getMessage(), containsString("this.does.not.Exist"));
         // The result of both of the class loading attempts should exist in the cache.
         assertThat(parentClassCache.get(parentLoader).getIfPresent("java.lang.String"), equalTo(String.class));
         assertThat(parentClassCache.get(parentLoader).getIfPresent("this.does.not.Exist"), equalTo(CLASS_NOT_FOUND));

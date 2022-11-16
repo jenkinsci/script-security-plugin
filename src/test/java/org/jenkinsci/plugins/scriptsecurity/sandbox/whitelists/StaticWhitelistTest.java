@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,10 +58,8 @@ public class StaticWhitelistTest {
 
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
-        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
-        InputStream is = definition.openStream();
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<>();
+        try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8); BufferedReader br = new BufferedReader(isr)) {
             String line;
             while ((line = br.readLine()) != null) {
                 line = StaticWhitelist.filter(line);
@@ -69,11 +68,9 @@ public class StaticWhitelistTest {
                 }
                 sigs.add(StaticWhitelist.parse(line));
             }
-        } finally {
-            is.close();
         }
 
-        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<EnumeratingWhitelist.Signature>(sigs.size());
+        HashSet<EnumeratingWhitelist.Signature> existingSigs = new HashSet<>(sigs.size());
         boolean hasDupes = false;
         for (EnumeratingWhitelist.Signature sig : sigs) {
             if (!existingSigs.add(sig)) {
@@ -83,7 +80,7 @@ public class StaticWhitelistTest {
         }
         Assert.assertFalse("Whitelist contains duplicate entries, and this is not allowed!  Please see list above.", hasDupes);
 
-        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<EnumeratingWhitelist.Signature>(sigs);
+        ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<>(sigs);
         Collections.sort(sorted);
 
         boolean isUnsorted = false;
@@ -123,8 +120,9 @@ public class StaticWhitelistTest {
                     "java.util.Iterator", "groovy.lang.Closure"),
             // Overrides CharSequence.isEmpty in Java 15+.
             new MethodSignature(String.class, "isEmpty"),
-            // Does not exist until Java 15.
+            // Do not exist until Java 15.
             new MethodSignature(CharSequence.class, "isEmpty"),
+            new MethodSignature(String.class, "stripIndent"),
             // Override the corresponding RandomGenerator methods in Java 17+.
             new MethodSignature(Random.class, "nextBoolean"),
             new MethodSignature(Random.class, "nextBytes", byte[].class),

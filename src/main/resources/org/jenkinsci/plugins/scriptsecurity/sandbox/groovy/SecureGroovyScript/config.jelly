@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <input type="hidden" name="oldScript" value="${instance.script}" />
     <f:entry field="script" title="${%Groovy Script}">
         <!-- The })// at the end of codemirror-config is a hack to work around Jenkins core replacing any onBlur we provide (see textarea.js) -->
         <f:textarea checkMethod="post" codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save();editor.getTextArea().onchange();} })//" />

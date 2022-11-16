@@ -24,10 +24,21 @@ THE SOFTWARE.
 -->
 
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+    <j:if test="${!instance.scriptAutoApprovalEnabled}">
+        <f:invisibleEntry>
+            <f:textbox clazz="secure-groovy-script__classpath-entry-old-path" field="oldPath" value="${instance.path}"/>
+        </f:invisibleEntry>
+        <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry.resources"/>
+    </j:if>
     <f:entry field="path" title="${%JAR file path or URL}">
-        <f:textbox />
+        <f:textbox clazz="secure-groovy-script__classpath-entry-path" />
     </f:entry>
+    <j:if test="${!instance.scriptAutoApprovalEnabled and h.hasPermission(app.ADMINISTER) and !instance.entryApproved}">
+        <f:entry field="shouldBeApproved">
+            <f:checkbox class="secure-groovy-script__classpath-approve" title="${%Approve the classpath entry on save}" checked="false"/>
+        </f:entry>
+    </j:if>
     <f:entry title="">
       <div align="right">
         <f:repeatableDeleteButton />

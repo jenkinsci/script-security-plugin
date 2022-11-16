@@ -57,7 +57,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<String, Boolean>();  // Not private to facilitate testing
+    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<>();  // Not private to facilitate testing
 
     @SafeVarargs
     private final void cacheSignatureList(List<Signature> ...sigs) {
@@ -83,7 +83,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
     final void clearCache() {
         this.permittedCache.clear();
-        this.permittedCache = new ConcurrentHashMap<String, Boolean>();
+        this.permittedCache = new ConcurrentHashMap<>();
     }
 
     @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
@@ -218,7 +218,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         abstract boolean exists() throws Exception;
         /** opposite of {@link #getName(Class)} */
-        static final Class<?> type(String name) throws Exception {
+        static Class<?> type(String name) throws Exception {
             // ClassUtils.getClass is too lax: permits Outer.Inner where we require Outer$Inner.
             if (name.endsWith("[]")) {
                 // https://stackoverflow.com/q/1679421/12916; TODO Java 12+ use Class.arrayType
@@ -261,7 +261,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     // Utility methods for creating canonical string representations of the signature
-    static final StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
+    static StringBuilder joinWithSpaces(StringBuilder b, String[] types) {
         for (String type : types) {
             b.append(' ').append(type);
         }

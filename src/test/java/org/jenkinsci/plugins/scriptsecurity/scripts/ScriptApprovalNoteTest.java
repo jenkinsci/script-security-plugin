@@ -32,12 +32,15 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Result;
 import jenkins.model.Jenkins;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.junit.ClassRule;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
