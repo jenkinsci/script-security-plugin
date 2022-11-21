@@ -28,6 +28,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
+import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
@@ -52,7 +53,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
-import jenkins.security.NotReallyRoleSensitiveCallable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
@@ -1011,24 +1011,18 @@ public class SecureGroovyScriptTest {
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript("class Test { public void finalize() { } }; null", false, null)));
 
-        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
-            public Void call() throws Exception {
-                FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
-                r.assertLogContains("UnapprovedUsageException", b);
-                return null;
-            }
-        });
+        try (ACLContext ctx = ACL.as(User.getById("dev", true))) {
+            FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+            r.assertLogContains("UnapprovedUsageException", b);
+        }
 
         Set<ScriptApproval.PendingScript> ps = ScriptApproval.get().getPendingScripts();
         assertEquals(1, ps.size());
         ScriptApproval.get().approveScript(ps.iterator().next().getHash());
 
-        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
-            public Void call() throws Exception {
-                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
-                return null;
-            }
-        });
+        try (ACLContext ctx = ACL.as(User.getById("dev", true))) {
+            r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
+        }
     }
 
     @Issue("SECURITY-1292")

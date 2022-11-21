@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BallColor;
+import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.util.SystemProperties;
@@ -77,8 +78,6 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
-import org.acegisecurity.context.SecurityContext;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -578,7 +577,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
      * It should also be called from a {@code readResolve} method (which may then simply return {@code this}),
      * so that administrators can for example POST to {@code config.xml} and have their scripts be considered approved.
      * <p>If the script has already been approved, this does nothing.
-     * Otherwise, if this user has the {@link Jenkins#ADMINISTER} permission (and is not {@link ACL#SYSTEM})
+     * Otherwise, if this user has the {@link Jenkins#ADMINISTER} permission (and is not {@link ACL#SYSTEM2})
      * and a corresponding flag is set to {@code true}, or Jenkins is running without security, it is added to the approved list.
      * Otherwise, it is added to the pending list.
      * @param script the text of a possibly novel script
@@ -591,7 +590,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
             if (!Jenkins.get().isUseSecurity() || 
-                    ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER)) 
+                    ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
                             && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
                 approvedScriptHashes.add(result.newHash);
                 //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
@@ -674,7 +673,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             boolean shouldSave = false;
             PendingClasspathEntry pcp = new PendingClasspathEntry(result.newHash, url, context);
             if (!Jenkins.get().isUseSecurity() ||
-                    ((Jenkins.getAuthentication() != ACL.SYSTEM && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
+                    ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
                             && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !StringUtils.equals(entry.getOldPath(), entry.getPath())))) {
                 LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, result.newHash});
                 ApprovedClasspathEntry acp = new ApprovedClasspathEntry(result.newHash, url);
@@ -968,13 +967,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             removePendingScript(hash);
             save();
         }
-        SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-        try {
+
+        try (ACLContext ctx = ACL.as2(ACL.SYSTEM2)) {
             for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                 listener.onApproved(hash);
             }
-        } finally {
-            SecurityContextHolder.setContext(orig);
         }
     }
 
@@ -1195,13 +1192,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             }
         }
         if (url != null) {
-            SecurityContext orig = ACL.impersonate(ACL.SYSTEM);
-            try {
+            try (ACLContext ctx = ACL.as2(ACL.SYSTEM2)) {
                 for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
                     listener.onApprovedClasspathEntry(hash, url);
                 }
-            } finally {
-                SecurityContextHolder.setContext(orig);
             }
         }
         return getClasspathRenderInfo();
