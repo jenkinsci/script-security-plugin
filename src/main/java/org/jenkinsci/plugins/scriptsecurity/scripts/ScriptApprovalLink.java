@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.ManagementLink;
 import hudson.security.Permission;
@@ -71,11 +72,13 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         return message;
     }
 
+    @NonNull
     @Override public Permission getRequiredPermission() {
         return Jenkins.ADMINISTER;
     }
 
     // TODO: Override `getCategory` instead using `Category.SECURITY` when minimum core version is 2.226+, see https://github.com/jenkinsci/jenkins/commit/6de7e5fc7f6fb2e2e4cb342461788f97e3dfd8f6.
+    @NonNull
     protected String getCategoryName() {
         return "SECURITY";
     }

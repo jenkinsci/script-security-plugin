@@ -60,31 +60,31 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
             return ann.restricted() == restricted;
         }
 
-        @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+        @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
             return allowed(method);
         }
 
-        @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+        @Override public boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
             return allowed(constructor);
         }
 
-        @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+        @Override public boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
             return allowed(method);
         }
 
-        @Override public boolean permitsFieldGet(Field field, Object receiver) {
+        @Override public boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
             return allowed(field);
         }
 
-        @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+        @Override public boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
             return allowed(field);
         }
 
-        @Override public boolean permitsStaticFieldGet(Field field) {
+        @Override public boolean permitsStaticFieldGet(@NonNull Field field) {
             return allowed(field);
         }
 
-        @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+        @Override public boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
             return allowed(field);
         }
 

@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts.languages;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Util;
@@ -40,11 +41,13 @@ public class SystemCommandLanguage extends Language {
         return ExtensionList.lookup(Language.class).get(SystemCommandLanguage.class);
     }
 
+    @NonNull
     @Override
     public String getName() {
         return "system-command";
     }
 
+    @NonNull
     @Override
     public String getDisplayName() {
         return "System Commands";
