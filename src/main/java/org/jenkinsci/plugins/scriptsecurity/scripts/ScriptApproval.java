@@ -116,6 +116,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return new XmlFile(XSTREAM2, new File(Jenkins.get().getRootDir(),getUrlName() + ".xml"));
     }
 
+    @NonNull
     @Override
     public GlobalConfigurationCategory getCategory() {
         return GlobalConfigurationCategory.get(GlobalConfigurationCategory.Security.class);
@@ -379,9 +380,11 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                 }
             }
             return new Language() {
+                @NonNull
                 @Override public String getName() {
                     return language;
                 }
+                @NonNull
                 @Override public String getDisplayName() {
                     return "<missing language: " + language + ">";
                 }

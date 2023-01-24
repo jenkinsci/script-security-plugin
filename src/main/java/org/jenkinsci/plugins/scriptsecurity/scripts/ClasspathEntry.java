@@ -197,6 +197,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
     
     @Extension
     public static class DescriptorImpl extends Descriptor<ClasspathEntry> {
+        @NonNull
         @Override
         public String getDisplayName() {
             return "ClasspathEntry";

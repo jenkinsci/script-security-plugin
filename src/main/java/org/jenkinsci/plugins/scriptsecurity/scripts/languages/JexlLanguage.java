@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts.languages;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jenkinsci.plugins.scriptsecurity.scripts.Language;
 import hudson.Extension;
 import hudson.ExtensionList;
@@ -37,10 +38,12 @@ import hudson.ExtensionList;
         return ExtensionList.lookup(Language.class).get(JexlLanguage.class);
     }
 
+    @NonNull
     @Override public String getName() {
         return "jexl";
     }
 
+    @NonNull
     @Override public String getDisplayName() {
         return "JEXL";
     }

@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import groovy.json.JsonBuilder;
 import groovy.json.JsonDelegate;
 import groovy.lang.GString;
@@ -135,7 +136,7 @@ public class SandboxInterceptorTest {
         assertEvaluate(new ProxyWhitelist(
             new AbstractWhitelist() {
                 @Override
-                public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+                public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
                     if (method.getName().equals("invokeMethod") && receiver instanceof JsonBuilder)
                         return true;
                     if (method.getName().equals("invokeMethod") && receiver instanceof JsonDelegate)
@@ -600,10 +601,10 @@ public class SandboxInterceptorTest {
         cc.setScriptBaseClass(SpecialScript.class.getName());
         GroovyShell shell = new GroovyShell(cc);
         Whitelist wl = new AbstractWhitelist() {
-            @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+            @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
                 return method.getDeclaringClass() == GroovyObject.class && method.getName().equals("getProperty") && receiver instanceof SpecialScript && args[0].equals("magic");
             }
-            @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+            @Override public boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
                 return constructor.getDeclaringClass() == SpecialScript.class;
             }
         };

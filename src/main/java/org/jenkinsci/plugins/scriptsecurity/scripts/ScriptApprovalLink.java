@@ -72,6 +72,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         return message;
     }
 
+    @NonNull
     @Override public Permission getRequiredPermission() {
         return Jenkins.ADMINISTER;
     }

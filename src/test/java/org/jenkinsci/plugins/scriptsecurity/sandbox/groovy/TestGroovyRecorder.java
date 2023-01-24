@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import groovy.lang.Binding;
 import hudson.Extension;
 import hudson.Launcher;
@@ -78,7 +79,8 @@ public final class TestGroovyRecorder extends Recorder {
     }
     
     @Extension public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        
+
+        @NonNull
         @Override public String getDisplayName() {
             return "Test Groovy Recorder";
         }

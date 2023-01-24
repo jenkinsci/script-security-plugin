@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import net.jcip.annotations.GuardedBy;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import java.util.ArrayList;
@@ -185,7 +186,7 @@ public class ProxyWhitelist extends Whitelist {
         this(Arrays.asList(delegates));
     }
 
-    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -199,7 +200,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -213,7 +214,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -227,7 +228,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -241,7 +242,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
+    @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -256,7 +257,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsStaticFieldGet(Field field) {
+    @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {
@@ -270,7 +271,7 @@ public class ProxyWhitelist extends Whitelist {
         return false;
     }
 
-    @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
+    @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
         lock.readLock().lock();
         try {
             for (Whitelist delegate : delegates) {

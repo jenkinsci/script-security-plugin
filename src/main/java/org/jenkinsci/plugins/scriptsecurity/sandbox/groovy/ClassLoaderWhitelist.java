@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 import java.lang.reflect.Constructor;
@@ -23,31 +24,31 @@ public final class ClassLoaderWhitelist extends Whitelist {
         return declaringClass.getClassLoader() == scriptLoader;
     }
 
-    @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
         return permits(method.getDeclaringClass()) && !isIllegalSyntheticMethod(method);
     }
 
-    @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
         return permits(constructor.getDeclaringClass()) && !isIllegalSyntheticConstructor(constructor);
     }
 
-    @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
         return permits(method.getDeclaringClass()) && !isIllegalSyntheticMethod(method);
     }
 
-    @Override public boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
         return permits(field.getDeclaringClass()) && !isIllegalSyntheticField(field);
     }
 
-    @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+    @Override public boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
         return permits(field.getDeclaringClass()) && !isIllegalSyntheticField(field);
     }
 
-    @Override public boolean permitsStaticFieldGet(Field field) {
+    @Override public boolean permitsStaticFieldGet(@NonNull Field field) {
         return permits(field.getDeclaringClass()) && !isIllegalSyntheticField(field);
     }
 
-    @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+    @Override public boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
         return permits(field.getDeclaringClass()) && !isIllegalSyntheticField(field);
     }
 

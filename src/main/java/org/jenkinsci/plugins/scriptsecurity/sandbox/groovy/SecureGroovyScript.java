@@ -524,6 +524,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     @Extension public static final class DescriptorImpl extends Descriptor<SecureGroovyScript> {
 
+        @NonNull
         @Override public String getDisplayName() {
             return ""; // not intended to be displayed on its own
         }

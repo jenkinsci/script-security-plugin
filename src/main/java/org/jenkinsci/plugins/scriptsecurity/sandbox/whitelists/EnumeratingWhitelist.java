@@ -86,7 +86,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         this.permittedCache = new ConcurrentHashMap<>();
     }
 
-    @Override public final boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
         String key = canonicalMethodSig(method);
         Boolean b = permittedCache.get(key);
         if (b != null) {
@@ -104,7 +104,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return output;
     }
 
-    @Override public final boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
         String key = canonicalConstructorSig(constructor);
         Boolean b = permittedCache.get(key);
         if (b != null) {
@@ -122,7 +122,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return output;
     }
 
-    @Override public final boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
         String key = canonicalStaticMethodSig(method);
         Boolean b = permittedCache.get(key);
         if (b != null) {
@@ -140,7 +140,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return output;
     }
 
-    @Override public final boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
         String key = canonicalFieldSig(field);
         Boolean b = permittedCache.get(key);
         if (b != null) {
@@ -158,11 +158,11 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return output;
     }
 
-    @Override public final boolean permitsFieldSet(Field field, Object receiver, Object value) {
+    @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
         return permitsFieldGet(field, receiver);
     }
 
-    @Override public final boolean permitsStaticFieldGet(Field field) {
+    @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
         String key = canonicalStaticFieldSig(field);
         Boolean b = permittedCache.get(key);
         if (b != null) {
@@ -180,7 +180,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         return output;
     }
 
-    @Override public final boolean permitsStaticFieldSet(Field field, Object value) {
+    @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
         return permitsStaticFieldGet(field);
     }
 

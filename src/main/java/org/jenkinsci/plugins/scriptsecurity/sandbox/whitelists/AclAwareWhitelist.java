@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.security.ACL;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -60,31 +61,31 @@ public class AclAwareWhitelist extends Whitelist {
         return !ACL.SYSTEM2.equals(Jenkins.getAuthentication2());
     }
 
-    @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
         return unrestricted.permitsMethod(method, receiver, args) || authenticated() && restricted.permitsMethod(method, receiver, args);
     }
 
-    @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
         return unrestricted.permitsConstructor(constructor, args) || authenticated() && restricted.permitsConstructor(constructor, args);
     }
 
-    @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
         return unrestricted.permitsStaticMethod(method, args) || authenticated() && restricted.permitsStaticMethod(method, args);
     }
 
-    @Override public boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
         return unrestricted.permitsFieldGet(field, receiver);
     }
 
-    @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+    @Override public boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
         return unrestricted.permitsFieldSet(field, receiver, value);
     }
 
-    @Override public boolean permitsStaticFieldGet(Field field) {
+    @Override public boolean permitsStaticFieldGet(@NonNull Field field) {
         return unrestricted.permitsStaticFieldGet(field);
     }
 
-    @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+    @Override public boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
         return unrestricted.permitsStaticFieldSet(field, value);
     }
 
