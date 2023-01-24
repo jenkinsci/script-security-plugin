@@ -385,6 +385,20 @@ public class SandboxInterceptorTest {
     @Issue("JENKINS-34741")
     @Test public void structConstructor() throws Exception {
         assertEvaluate(new StaticWhitelist(), "ok", "class C {String f}; new C(f: 'ok').f");
+        // Map literals are equivalent to the named argument syntax.
+        assertEvaluate(new StaticWhitelist(), "ok", "class C {String f}; new C([f: 'ok']).f");
+        // The map does not have to be a literal.
+        assertEvaluate(new StaticWhitelist(), "ok", "class C {String f}; def map = [f: 'ok']; new C(map).f");
+        // Make sure that we do not assign properties more than once.
+        assertEvaluate(new StaticWhitelist(), 2,
+                "class Global { static int x = 0 }\n" +
+                "class C { def y; def setY(def y) { Global.x += y } }\n" +
+                "new C(y: 2); Global.x");
+        // Make sure that we do not instantiate the object more than once.
+        assertEvaluate(new StaticWhitelist(), 1,
+                "class Global { static int x = 0 }\n" +
+                "class C { def y; C() { Global.x += 1 } }\n" +
+                "new C(y: 2); Global.x");
     }
 
     @Test public void defSyntax() throws Exception {
@@ -670,7 +684,7 @@ public class SandboxInterceptorTest {
 
     @Issue("kohsuke/groovy-sandbox #16")
     @Test public void infiniteLoop() throws Exception {
-        assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {println(i); b.append(split[i])}; b.toString()");
+        assertEvaluate(new BlanketWhitelist(), "abc", "def split = 'a b c'.split(' '); def b = new StringBuilder(); for (i = 0; i < split.length; i++) {b.append(split[i])}; b.toString()");
     }
 
     @Issue("JENKINS-25118")
@@ -1377,6 +1391,16 @@ public class SandboxInterceptorTest {
                 "new Subclass().class.simpleName");
     }
 
+    @Test public void blockCallsToSyntheticConstructorsViaCasts() throws Exception {
+        // Not ok, the call to super() in the synthetic constructor for Subclass cannot be intercepted.
+        assertRejected(new GenericWhitelist(), "new Subclass org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper",
+                        "class Superclass { }\n" +
+                        "class Subclass extends Superclass {\n" +
+                        "  Subclass() { }\n" +
+                        "}\n" +
+                        "Subclass x = [null]");
+    }
+
     @Issue("SECURITY-1754")
     @Test public void groovyInterceptable() throws Throwable {
         assertRejected(new GenericWhitelist(), "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object",
@@ -1702,6 +1726,27 @@ public class SandboxInterceptorTest {
             signaturesList.add("new " + HasStaticMembers.class.getName());
             return new StaticWhitelist(signaturesList);
         }
+    }
+
+    @Issue("SECURITY-3016")
+    @Test public void blockUnsafeCastsPropertyAssignmentViaImplicitMapConstructor() throws Throwable {
+        // Map constructors are supported when using new, but these property assignments are unsafe.
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "class Test { File f }; new Test(f: ['secret.key'])");
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "class Test { File f; int x }; new Test(x: 1, f: ['secret.key'])");
+        // Map constructors are not supported when casting, regardless of whether the property assignments are safe or not.
+        errors.checkThrows(UnsupportedOperationException.class, () -> evaluate(new GenericWhitelist(),
+                "class Test { File f }; Test t = [f: ['secret.key']]"));
+        errors.checkThrows(UnsupportedOperationException.class, () -> evaluate(new GenericWhitelist(),
+                "class Test { File f; int x }; Test t = [x: 1, f: ['secret.key']]"));
+        errors.checkThrows(UnsupportedOperationException.class, () -> evaluate(new GenericWhitelist(),
+                "class Test { File f }; [f: ['secret.key']] as Test"));
+        errors.checkThrows(UnsupportedOperationException.class, () -> evaluate(new GenericWhitelist(),
+                "class Test { File f }; (Test)[f: ['secret.key']]"));
+        // Map constructors are not currently supported when constructing inner classes.
+        errors.checkThrows(SecurityException.class, () -> evaluate(new GenericWhitelist(),
+                "class Outer { class Inner { File f }; def makeInner() { new Inner(f: ['secret.key']) } }; new Outer().makeInner().f"));
     }
 
     /**

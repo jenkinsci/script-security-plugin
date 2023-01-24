@@ -33,10 +33,10 @@ import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
- * Delegating whitelist which allows certain calls to be made only when a non-{@link ACL#SYSTEM} user is making them.
+ * Delegating whitelist which allows certain calls to be made only when a non-{@link ACL#SYSTEM2} user is making them.
  * <p>First there is a list of unrestricted signatures; these can always be run.
  * <p>Then there is a (probably much smaller) list of restricted signatures.
- * These can be run only when the {@linkplain Jenkins#getAuthentication current user} is a real user or even {@linkplain Jenkins#ANONYMOUS}, but not when {@link ACL#SYSTEM}.
+ * These can be run only when the {@linkplain Jenkins#getAuthentication2 current user} is a real user or even {@linkplain Jenkins#ANONYMOUS2}, but not when {@link ACL#SYSTEM2}.
  * Restricted methods should be limited to those which actually perform a permissions check, typically using {@link ACL#checkPermission}.
  * Allowing the system pseudo-user to run these would be dangerous, since we do not know “on whose behalf” a script is running, and this “user” is permitted to do anything.
  */
@@ -58,7 +58,7 @@ public class AclAwareWhitelist extends Whitelist {
     }
 
     private static boolean authenticated() {
-        return !ACL.SYSTEM.equals(Jenkins.getAuthentication());
+        return !ACL.SYSTEM2.equals(Jenkins.getAuthentication2());
     }
 
     @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {

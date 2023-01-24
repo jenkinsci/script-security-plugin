@@ -57,6 +57,7 @@ import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.typehandling.NumberMathModificationInfo;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.tools.DgmConverter;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -174,6 +175,24 @@ final class SandboxInterceptor extends GroovyInterceptor {
         } else if (StaticWhitelist.isPermanentlyBlacklistedConstructor(c)) {
             throw StaticWhitelist.rejectNew(c);
         } else if (whitelist.permitsConstructor(c, args)) {
+            if (c.getParameterCount() == 0 && args.length == 1 && args[0] instanceof Map) {
+                // c.f. https://github.com/apache/groovy/blob/41b990d0a20e442f29247f0e04cbed900f3dcad4/src/main/groovy/lang/MetaClassImpl.java#L1728-L1738
+                // We replace the arguments that the invoker will use to construct the object with the empty array to
+                // bypass Groovy's default handling for implicit map constructors.
+                Object newInstance = super.onNewInstance(invoker, receiver, new Object[0]);
+                if (newInstance == null) {
+                    // We were called by Checker.preCheckedCast. Our options here are limited, so we just reject everything.
+                    throw new UnsupportedOperationException("Groovy map constructors may only be invoked using the 'new' keyword in the sandbox (attempted to construct " + receiver + " via a Groovy cast)");
+                }
+                // The call to Map.entrySet below may be on a user-defined type, which could be a problem if we iterated
+                // over it here to pre-check the property assignments and then let Groovy iterate over it again to
+                // actually perform them, so we only iterate over it once and perform the property assignments
+                // ourselves using sandbox-aware methods.
+                for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) args[0]).entrySet()) {
+                    Checker.checkedSetProperty(newInstance, entry.getKey(), false, false, Types.ASSIGN, entry.getValue());
+                }
+                return newInstance;
+            }
             return super.onNewInstance(invoker, receiver, args);
         } else {
             throw StaticWhitelist.rejectNew(c);
