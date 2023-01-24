@@ -1,8 +1,5 @@
 # Script Security Plugin
 
-[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/script-security)](https://plugins.jenkins.io/script-security)
-[![Changelog](https://img.shields.io/github/v/tag/jenkinsci/script-security-plugin?label=changelog)](https://github.com/jenkinsci/script-security-plugin/releases)
-[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/script-security?color=blue)](https://plugins.jenkins.io/script-security)
 ## User’s guide
 (adapted from information on [Template plugin in CloudBees Plugins guide](https://docs.cloudbees.com/docs/admin-resources/latest/plugins/template#template-sect-script-approval))
 
@@ -193,4 +190,6 @@ whitelist methods used by your tests -- either generally for real users, or usin
 
 
 ## Version history
-See [the changelog](CHANGELOG.md)
+
+From of version 1.77 see [GitHub Releases](https://github.com/jenkinsci/script-security-plugin/releases).
+[Archives](https://github.com/jenkinsci/script-security-plugin/blob/71755e3bd5cf0f04acfcb5afc27b5a29252fca7e/CHANGELOG.md)
