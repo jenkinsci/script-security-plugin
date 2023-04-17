@@ -116,7 +116,6 @@ new java.lang.Boolean java.lang.String
 staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
-staticMethod java.lang.Enum valueOf java.lang.Class java.lang.String
 method java.lang.CharSequence charAt int
 method java.lang.CharSequence isEmpty
 method java.lang.CharSequence length
@@ -128,6 +127,7 @@ method java.lang.Comparable compareTo java.lang.Object
 new java.lang.Enum java.lang.String int
 method java.lang.Enum name
 method java.lang.Enum ordinal
+staticMethod java.lang.Enum valueOf java.lang.Class java.lang.String
 new java.lang.Exception java.lang.String
 staticField java.lang.Integer MAX_VALUE
 # could add valueOf, though currently the staticField’s need to be whitelisted, which is the more likely use case
