@@ -2,7 +2,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import org.hamcrest.Matcher;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
-import org.jetbrains.annotations.NotNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -162,7 +162,7 @@ public class HasherScriptApprovalTest {
         approval.save();
     }
 
-    @NotNull
+    @NonNull
     private URL getJar(final String resource) throws MalformedURLException {
         URL url = getClass().getClassLoader().getResource(resource);
         String path = url.getPath();
