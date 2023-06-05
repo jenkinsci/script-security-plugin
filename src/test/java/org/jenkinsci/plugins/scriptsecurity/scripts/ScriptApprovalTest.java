@@ -24,8 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
 import hudson.util.VersionNumber;
