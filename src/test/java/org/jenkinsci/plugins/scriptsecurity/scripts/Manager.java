@@ -24,10 +24,10 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import com.gargoylesoftware.htmlunit.ConfirmHandler;
-import com.gargoylesoftware.htmlunit.html.DomElement;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.htmlunit.ConfirmHandler;
+import org.htmlunit.html.DomElement;
+import org.htmlunit.html.HtmlElement;
+import org.htmlunit.html.HtmlPage;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.IOException;

@@ -24,18 +24,18 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import org.htmlunit.html.HtmlCheckBoxInput;
+import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import hudson.remoting.Which;
 import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlFormUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import org.htmlunit.html.HtmlForm;
+import org.htmlunit.html.HtmlFormUtil;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
