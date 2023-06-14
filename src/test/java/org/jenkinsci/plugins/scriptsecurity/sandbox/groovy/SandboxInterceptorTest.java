@@ -338,6 +338,27 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Test public void propertyMissingMethods() throws Exception {
+        String clazz = PropertyMissing.class.getName();
+        String ctor = "new " + clazz;
+        String getPM = "method " + clazz + " propertyMissing java.lang.String";
+        String setPM = "method " + clazz + " propertyMissing java.lang.String java.lang.Object";
+        String script = "def d = new " + clazz + "(); d.prop = 'val'; d.prop";
+        assertEvaluate(new StaticWhitelist(ctor, getPM, setPM), "val", script);
+        assertRejected(new StaticWhitelist(ctor, setPM), getPM, script);
+        assertRejected(new StaticWhitelist(ctor), setPM, script);
+    }
+
+    public static final class PropertyMissing {
+        private final Map<String,Object> values = new HashMap<>();
+        public Object propertyMissing(String n) {
+            return values.get(n);
+        }
+        public void propertyMissing(String n, Object v) {
+            values.put(n, v);
+        }
+    }
+
     @Test public void mapProperties() throws Exception {
         assertEvaluate(new GenericWhitelist(), 42, "def m = [:]; m.answer = 42; m.answer");
     }

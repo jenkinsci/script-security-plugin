@@ -252,6 +252,15 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 rejector = () -> rejectField(field);
             }
         }
+        final Method propertyMissingMethod = GroovyCallSiteSelector.method(receiver, "propertyMissing", propertyValueArgs);
+        if (propertyMissingMethod != null) {
+            if (whitelist.permitsMethod(propertyMissingMethod, receiver, propertyValueArgs)) {
+                preCheckArgumentCasts(propertyMissingMethod, propertyValueArgs);
+                return super.onSetProperty(invoker, receiver, property, value);
+            } else if (rejector == null) {
+                rejector = () -> StaticWhitelist.rejectMethod(propertyMissingMethod, receiver.getClass().getName() + "." + property);
+            }
+        }
         if (receiver instanceof Class) {
             List<Method> staticSetterMethods = GroovyCallSiteSelector.staticMethods((Class) receiver, setter, m -> m.getParameterCount() == 1);
             final Method staticSetterMethod = staticSetterMethods.size() == 1
@@ -347,6 +356,15 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
                 rejector = () -> StaticWhitelist.rejectMethod(getPropertyMethod, receiver.getClass().getName() + "." + property);
+            }
+        }
+        // GroovyObject property access
+        final Method propertyMissingMethod = GroovyCallSiteSelector.method(receiver, "propertyMissing", propertyArg);
+        if (propertyMissingMethod != null) {
+            if (whitelist.permitsMethod(propertyMissingMethod, receiver, propertyArg)) {
+                return super.onGetProperty(invoker, receiver, property);
+            } else if (rejector == null) {
+                rejector = () -> StaticWhitelist.rejectMethod(propertyMissingMethod, receiver.getClass().getName() + "." + property);
             }
         }
         MetaMethod metaMethod = findMetaMethod(receiver, getter, noArgs);
