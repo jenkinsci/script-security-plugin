@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BallColor;
+import hudson.model.PageDecorator;
 import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
@@ -82,7 +83,9 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
+import org.kohsuke.stapler.verb.POST;
 
 /**
  * Manages approved scripts.
@@ -94,6 +97,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
     public static /* non-final */ boolean ADMIN_AUTO_APPROVAL_ENABLED =
             SystemProperties.getBoolean(ScriptApproval.class.getName() + ".ADMIN_AUTO_APPROVAL_ENABLED");
+
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
+    public static /* non-final */ boolean ALLOW_ADMIN_APPROVAL_ENABLED =
+            SystemProperties.getBoolean(ScriptApproval.class.getName() + ".ALLOW_ADMIN_APPROVAL_ENABLED");
 
     private static final Logger LOG = Logger.getLogger(ScriptApproval.class.getName());
 
@@ -593,8 +600,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
             if (!Jenkins.get().isUseSecurity() || 
+                    (ALLOW_ADMIN_APPROVAL_ENABLED &&
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
-                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin)))) {
                 approvedScriptHashes.add(result.newHash);
                 //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
                 removePendingScript(result.newHash);
@@ -768,14 +776,22 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used");
         } else {
-            if (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED) {
-                return FormValidation.ok("The script has not yet been approved, but it will be approved on save");
+            if ((ALLOW_ADMIN_APPROVAL_ENABLED && (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED)) || !Jenkins.get().isUseSecurity()) {
+                return FormValidation.okWithMarkup("The script has not yet been approved, but it will be approved on save.");
             }
-
+            String approveScript = "<a class='jenkins-button script-approval-approve-link' data-base-url='" + Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "' data-hash='" + result.newHash + "'>Approve script</a>";
             return FormValidation.okWithMarkup("The script is not approved and will not be approved on save. " +
-                    "Modify the script to approve it on save, or approve it explicitly on the " +
-                    "<a target='blank' href='"+ Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "'>Script Approval Configuration</a> page");
+                    "Either modify the script to match an already approved script, approve it explicitly on the " +
+                    "<a target='blank' href='"+ Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "'>Script Approval Configuration</a> page after save, or approve this version of the script. " +
+                    approveScript);
         }
+    }
+
+    @Restricted(NoExternalUse.class)
+    @POST
+    // can not call this method doApproveScript as that collides with the javascript binding in #approveScript
+    public synchronized void doApproveScriptHash(@QueryParameter(required=true) String hash) throws IOException {
+        approveScript(hash);
     }
 
     /**
@@ -1235,4 +1251,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return getClasspathRenderInfo();
     }
 
+    @Restricted(NoExternalUse.class)
+    @Extension
+    public static class FormValidationPageDecorator extends PageDecorator {}
 }

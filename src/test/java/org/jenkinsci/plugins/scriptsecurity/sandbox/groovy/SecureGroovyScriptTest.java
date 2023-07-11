@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+
+import com.gargoylesoftware.htmlunit.CollectingAlertHandler;
 import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
@@ -61,7 +63,12 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -163,7 +170,7 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has ADMINISTER privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
      */
     @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
@@ -198,12 +205,12 @@ public class SecureGroovyScriptTest {
         // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has ADMINISTER privs, the script should not have ended up pending approval
+        // even though it has ADMINISTER privs, the script should still require approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
-        assertEquals(0, pendingScripts.size());
+        assertEquals(1, pendingScripts.size());
 
         // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
     }
 
     /**
@@ -892,7 +899,7 @@ public class SecureGroovyScriptTest {
 
         JenkinsRule.WebClient wc = r.createWebClient();
         
-        // If configured by a user with ADMINISTER script is approved if edited by that user
+        // If configured by a user with ADMINISTER script is not approved and approval is requested
         {
             wc.login("admin");
             HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
@@ -903,8 +910,9 @@ public class SecureGroovyScriptTest {
             script.setText(groovy);
             r.submit(config);
 
-            assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
-            
+            assertFalse(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+            assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+
             // clean up for next tests
             ScriptApproval.get().preapproveAll();
             ScriptApproval.get().clearApprovedScripts();
@@ -929,11 +937,14 @@ public class SecureGroovyScriptTest {
             ScriptApproval.get().clearApprovedScripts();
         }
         
-        // If configured by a user with ADMINISTER while escape hatch is on script is approved upon save
+        // If configured by a user with ADMINISTER while escape hatches are on script is approved upon save
         {
             wc.login("admin");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = true;
+
             try {
                 HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
                 List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
@@ -948,15 +959,18 @@ public class SecureGroovyScriptTest {
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = originalAllowAdminApproval;
             }
         }
 
         // If configured by a user without ADMINISTER while escape hatch is on script is not approved
         {
             wc.login("devel");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = true;
             try {
                 r.submit(wc.getPage(p, "configure").getFormByName("config"));
 
@@ -966,7 +980,8 @@ public class SecureGroovyScriptTest {
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = originalAllowAdminApproval;
             }
         }
     }
@@ -1269,6 +1284,52 @@ public class SecureGroovyScriptTest {
         p.getPublishersList().add(recorder);
         FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
         r.assertLogContains("new java.io.File java.lang.String", b);
+    }
+
+    @Test public void testApprovalFromFormValidation() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        try (JenkinsRule.WebClient wc = r.createWebClient()) {
+            CollectingAlertHandler altertHandler = new CollectingAlertHandler();
+            wc.setAlertHandler(altertHandler);
+
+            wc.login("admin");
+            HtmlPage page = wc.getPage(p, "configure");
+            HtmlForm config = page.getFormByName("config");
+            HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+            page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+            wc.waitForBackgroundJavaScript(10000);
+            List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+            // Get the last one, because previous ones might be from Lockable Resources during PCT.
+            HtmlTextArea script = scripts.get(scripts.size() - 1);
+            String groovy = "build.externalizableId";
+            script.setText(groovy);
+            // nothing is approved or pending (no save)
+            assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
+            assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(emptyArray()));
+
+            wc.waitForBackgroundJavaScript(10_000); // FormValidation to display
+
+            page.getAnchorByText("Approve script").click();
+
+            wc.waitForBackgroundJavaScript(10_000); // wait for the ajax approval to complete
+
+            assertThat(altertHandler.getCollectedAlerts(), contains("Script approved"));
+            // script is approved
+            assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
+            assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(arrayWithSize(1)));
+
+            r.submit(config);
+
+            FreeStyleBuild b = r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
+        }
     }
 
     public static class HasMainMethod {
