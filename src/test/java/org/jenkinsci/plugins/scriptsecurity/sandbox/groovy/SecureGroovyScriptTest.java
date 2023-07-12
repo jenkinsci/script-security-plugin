@@ -163,7 +163,7 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has ADMINISTER privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
      */
     @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
@@ -198,12 +198,12 @@ public class SecureGroovyScriptTest {
         // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has ADMINISTER privs, the script should not have ended up pending approval
+        // even though it has ADMINISTER privs, the script should still require approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
-        assertEquals(0, pendingScripts.size());
+        assertEquals(1, pendingScripts.size());
 
-        // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        // Test that the script is not executable. If it's not, we will get an UnapprovedUsageException
+        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
     }
 
     /**
@@ -892,7 +892,7 @@ public class SecureGroovyScriptTest {
 
         JenkinsRule.WebClient wc = r.createWebClient();
         
-        // If configured by a user with ADMINISTER script is approved if edited by that user
+        // If configured by a user with ADMINISTER script is not approved and approval is requested
         {
             wc.login("admin");
             HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
@@ -903,8 +903,9 @@ public class SecureGroovyScriptTest {
             script.setText(groovy);
             r.submit(config);
 
-            assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
-            
+            assertFalse(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+            assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+
             // clean up for next tests
             ScriptApproval.get().preapproveAll();
             ScriptApproval.get().clearApprovedScripts();
@@ -929,36 +930,96 @@ public class SecureGroovyScriptTest {
             ScriptApproval.get().clearApprovedScripts();
         }
         
-        // If configured by a user with ADMINISTER while escape hatch is on script is approved upon save
+        // If configured by a user with ADMINISTER while both escape hatches are on script is approved upon save
         {
             wc.login("admin");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = true;
+
+            try {
+                HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+                List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+                // Get the last one, because previous ones might be from Lockable Resources during PCT.
+                HtmlTextArea script = scripts.get(scripts.size() - 1);
+                String groovy = "echo 'testScriptApproval modified by admin'";
+                script.setText(groovy);
+                r.submit(config);
+
+                assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+
+                // clean up for next tests
+                ScriptApproval.get().preapproveAll();
+                ScriptApproval.get().clearApprovedScripts();
+            } finally {
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = originalAllowAdminApproval;
+            }
+        }
+        // If configured by a user with ADMINISTER with only ADMIN_AUTO_APPROVAL_ENABLED enabled script is not approved upon save
+        {
+            wc.login("admin");
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
             try {
                 HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
                 List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
                 // Get the last one, because previous ones might be from Lockable Resources during PCT.
                 HtmlTextArea script = scripts.get(scripts.size() - 1);
-                String currentScriptValue = script.getText();
+                String groovy = "echo 'testScriptApproval modified by admin with ADMIN_AUTO_APPROVAL_ENABLED'";
+                script.setText(groovy);
                 r.submit(config);
 
-                assertTrue(ScriptApproval.get().isScriptApproved(currentScriptValue, GroovyLanguage.get()));
+                assertFalse(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+                assertEquals(1, ScriptApproval.get().getPendingScripts().size());
 
                 // clean up for next tests
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+            }
+        }
+        // If configured by a user with ADMINISTER while ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED is enabled script is approved upon save
+        {
+            wc.login("admin");
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = true;
+
+            try {
+                HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+                List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+                // Get the last one, because previous ones might be from Lockable Resources during PCT.
+                HtmlTextArea script = scripts.get(scripts.size() - 1);
+                String groovy = "echo 'testScriptApproval modified by admin with ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED'";
+                script.setText(groovy);
+                r.submit(config);
+
+                assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+
+                // clean up for next tests
+                ScriptApproval.get().preapproveAll();
+                ScriptApproval.get().clearApprovedScripts();
+            } finally {
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = originalAllowAdminApproval;
             }
         }
 
         // If configured by a user without ADMINISTER while escape hatch is on script is not approved
         {
             wc.login("devel");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = true;
             try {
-                r.submit(wc.getPage(p, "configure").getFormByName("config"));
+                HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
+                List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+                // Get the last one, because previous ones might be from Lockable Resources during PCT.
+                HtmlTextArea script = scripts.get(scripts.size() - 1);
+                script.setText(initialGroovyScript);
+                r.submit(config);
 
                 assertFalse(ScriptApproval.get().isScriptApproved(initialGroovyScript, GroovyLanguage.get()));
 
@@ -966,7 +1027,8 @@ public class SecureGroovyScriptTest {
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED = originalAllowAdminApproval;
             }
         }
     }

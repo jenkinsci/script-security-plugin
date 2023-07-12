@@ -95,6 +95,10 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public static /* non-final */ boolean ADMIN_AUTO_APPROVAL_ENABLED =
             SystemProperties.getBoolean(ScriptApproval.class.getName() + ".ADMIN_AUTO_APPROVAL_ENABLED");
 
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
+    public static /* non-final */ boolean ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED =
+            SystemProperties.getBoolean(ScriptApproval.class.getName() + ".ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED");
+
     private static final Logger LOG = Logger.getLogger(ScriptApproval.class.getName());
 
     private static final XStream2 XSTREAM2 = new XStream2();
@@ -592,7 +596,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
-            if (!Jenkins.get().isUseSecurity() || 
+            if (!Jenkins.get().isUseSecurity() || ALLOW_ADMIN_APPROVAL_ON_SAVE_ENABLED &&
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
                             && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin))) {
                 approvedScriptHashes.add(result.newHash);
