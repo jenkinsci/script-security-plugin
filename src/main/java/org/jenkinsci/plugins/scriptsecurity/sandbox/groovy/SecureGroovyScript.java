@@ -35,12 +35,9 @@ import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
-import hudson.util.VersionNumber;
-import io.jenkins.lib.versionnumber.JavaSpecificationVersion;
 
 import java.beans.Introspector;
 import java.io.Serializable;
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -52,9 +49,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -208,10 +203,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         if (encounteredClasses.add(clazz)) {
             LOGGER.log(Level.FINER, "found {0}", clazz.getName());
             Introspector.flushFromCaches(clazz);
-            cleanUpClassInfoCache(clazz);
             cleanUpGlobalClassSet(clazz);
             cleanUpClassHelperCache(clazz);
-            cleanUpObjectStreamClassCaches(clazz);
             cleanUpLoader(clazz.getClassLoader(), encounteredLoaders, encounteredClasses);
         }
     }
@@ -269,46 +262,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         }
     }
 
-    private static void cleanUpClassInfoCache(Class<?> clazz) {
-        int releaseVersion = JavaSpecificationVersion.forCurrentJVM().toReleaseVersion();
-        if ((releaseVersion > 8 && releaseVersion < 11)
-                || (releaseVersion == 11 && new VersionNumber(System.getProperty("java.version")).isOlderThan(new VersionNumber("11.0.17")))
-                || (releaseVersion > 11 && releaseVersion < 16)) {
-            try {
-                // TODO Work around JDK-8231454.
-                Class<?> classInfoC = Class.forName("com.sun.beans.introspect.ClassInfo");
-                Field cacheF = classInfoC.getDeclaredField("CACHE");
-                try {
-                    cacheF.setAccessible(true);
-                } catch (RuntimeException e) { // TODO Java 9+ InaccessibleObjectException
-                    /*
-                     * Not running with "--add-opens java.desktop/com.sun.beans.introspect=ALL-UNNAMED".
-                     * Until core adds this to its --add-opens configuration, and until that core
-                     * change is widely adopted, avoid unnecessary log spam and return early.
-                     */
-                    if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.log(Level.FINER, "Failed to clean up " + clazz.getName() + " from ClassInfo#CACHE. A metaspace leak may have occurred.", e);
-                    }
-                    return;
-                }
-                Object cache = cacheF.get(null);
-                Class<?> cacheC = Class.forName("com.sun.beans.util.Cache");
-                if (LOGGER.isLoggable(Level.FINER)) {
-                    LOGGER.log(Level.FINER, "Cleaning up " + clazz.getName() + " from ClassInfo#CACHE.");
-                }
-                Method removeM = cacheC.getMethod("remove", Object.class);
-                removeM.invoke(cache, clazz);
-            } catch (ReflectiveOperationException e) {
-                /*
-                 * Should never happen, but if it does, ensure the failure is isolated to this
-                 * method and does not prevent other cleanup logic from executing.
-                 */
-                LOGGER.log(Level.WARNING, "Failed to clean up " + clazz.getName() + " from ClassInfo#CACHE. A metaspace leak may have occurred.", e);
-            }
-        }
-    }
-
-
     private static void cleanUpGlobalClassSet(@NonNull Class<?> clazz) throws Exception {
         Class<?> classInfoC = Class.forName("org.codehaus.groovy.reflection.ClassInfo"); // or just ClassInfo.class, but unclear whether this will always be there
         Field globalClassSetF = classInfoC.getDeclaredField("globalClassSet");
@@ -349,36 +302,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             LOGGER.log(Level.FINER, "cleaning up {0} from ClassHelperCache? {1}", new Object[] {clazz.getName(), classCache.getClass().getMethod("get", Object.class).invoke(classCache, clazz) != null});
         }
         classCache.getClass().getMethod("remove", Object.class).invoke(classCache, clazz);
-    }
-
-    private static void cleanUpObjectStreamClassCaches(@NonNull Class<?> clazz) throws Exception {
-      int releaseVersion = JavaSpecificationVersion.forCurrentJVM().toReleaseVersion();
-      VersionNumber javaVersion = new VersionNumber(System.getProperty("java.version"));
-      if ((releaseVersion < 11)
-              || (releaseVersion == 11 && javaVersion.isOlderThan(new VersionNumber("11.0.16")))
-              || (releaseVersion > 11 && releaseVersion < 17)
-              || (releaseVersion == 17 && javaVersion.isOlderThan(new VersionNumber("17.0.4")))
-              || (releaseVersion == 18 && javaVersion.isOlderThan(new VersionNumber("18.0.2")))) {
-        Class<?> cachesC = Class.forName("java.io.ObjectStreamClass$Caches");
-        for (String cacheFName : new String[] {"localDescs", "reflectors"}) {
-            Field cacheF = cachesC.getDeclaredField(cacheFName);
-            cacheF.setAccessible(true);
-            Object cache = cacheF.get(null);
-            if (cache instanceof ConcurrentMap) {
-                // Prior to JDK-8277072
-                Iterator<? extends Map.Entry<Reference<Class<?>>, ?>> iterator = ((ConcurrentMap) cache).entrySet().iterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next().getKey().get() == clazz) {
-                        iterator.remove();
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "cleaning up {0} from ObjectStreamClass.Caches.{1}", new Object[]{clazz.getName(), cacheFName});
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-      }
     }
 
     /** @deprecated use {@link #evaluate(ClassLoader, Binding, TaskListener)} */
