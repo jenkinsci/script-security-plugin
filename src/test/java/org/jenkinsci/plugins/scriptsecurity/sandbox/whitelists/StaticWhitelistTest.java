@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
@@ -140,7 +141,11 @@ public class StaticWhitelistTest {
             new MethodSignature("java.util.random.RandomGenerator", "nextGaussian"),
             new MethodSignature("java.util.random.RandomGenerator", "nextInt"),
             new MethodSignature("java.util.random.RandomGenerator", "nextInt", "int"),
-            new MethodSignature("java.util.random.RandomGenerator", "nextLong")
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong"),
+            // Override the corresponding MatchResult methods in Java 20+.
+            new MethodSignature(Matcher.class, "end", String.class),
+            new MethodSignature(Matcher.class, "group", String.class),
+            new MethodSignature(Matcher.class, "start", String.class)
     ));
 
     @Test public void sanity() throws Exception {
