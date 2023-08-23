@@ -39,7 +39,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
         if (ScriptApproval.get().isEmpty()) {
             return null;
         }
-        return "notepad.svg";
+        return "symbol-edit-note";
     }
 
     @Override public String getUrlName() {
