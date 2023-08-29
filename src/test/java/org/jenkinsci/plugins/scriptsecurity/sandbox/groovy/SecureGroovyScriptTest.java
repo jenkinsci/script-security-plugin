@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import org.htmlunit.CollectingAlertHandler;
-import org.htmlunit.ElementNotFoundException;
 import org.htmlunit.html.HtmlCheckBoxInput;
 import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
@@ -47,6 +46,7 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import hudson.util.VersionNumber;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -99,12 +99,13 @@ public class SecureGroovyScriptTest {
 
     private void addPostBuildAction(HtmlPage page) throws IOException {
         String displayName = r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName();
-        try {
+        if (Jenkins.getVersion().isOlderThan(new VersionNumber("2.422"))) {
             page.getAnchorByText(displayName).click();
-        } catch (ElementNotFoundException enf) {
+        } else {
             HtmlForm config = page.getFormByName("config");
             r.getButtonByCaption(config, displayName).click();
         }
+
     }
 
     /**
