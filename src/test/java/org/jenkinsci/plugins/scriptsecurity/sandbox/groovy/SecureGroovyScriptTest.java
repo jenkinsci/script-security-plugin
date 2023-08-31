@@ -46,6 +46,7 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import hudson.util.VersionNumber;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -96,6 +97,17 @@ public class SecureGroovyScriptTest {
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
+    private void addPostBuildAction(HtmlPage page) throws IOException {
+        String displayName = r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName();
+        if (Jenkins.getVersion().isOlderThan(new VersionNumber("2.422"))) {
+            page.getAnchorByText(displayName).click();
+        } else {
+            HtmlForm config = page.getFormByName("config");
+            r.getButtonByCaption(config, displayName).click();
+        }
+
+    }
+
     /**
      * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
@@ -116,7 +128,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -188,7 +200,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -231,7 +243,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -1303,7 +1315,7 @@ public class SecureGroovyScriptTest {
             HtmlPage page = wc.getPage(p, "configure");
             HtmlForm config = page.getFormByName("config");
             HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-            page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+            addPostBuildAction(page);
             wc.waitForBackgroundJavaScript(10000);
             List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
             // Get the last one, because previous ones might be from Lockable Resources during PCT.
