@@ -114,3 +114,6 @@ method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
 # SECURITY-1754
 new org.kohsuke.groovy.sandbox.impl.Checker$SuperConstructorWrapper java.lang.Object[]
 new org.kohsuke.groovy.sandbox.impl.Checker$ThisConstructorWrapper java.lang.Object[]
+
+# Ability to define global parsers that include scripts without further approval
+method io.jenkins.plugins.analysis.warnings.groovy.ParserConfiguration setParsers java.util.List
