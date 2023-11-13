@@ -254,7 +254,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     static final Hasher DEFAULT_HASHER = Hasher.SHA512;
 
-    private Thread convertDeprecatedApprovedClasspathEntriesThread = null;
+    private transient Thread convertDeprecatedApprovedClasspathEntriesThread = null;
 
     /** All scripts which are already approved, via {@link Hasher#hash(String, String)}. */
     private final TreeSet<String> approvedScriptHashes = new TreeSet<>();
@@ -1073,6 +1073,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
                         }
                     }
                     LOG.info("Conversion done.");
+                    synchronized (ScriptApproval.this) {
+                        convertDeprecatedApprovedClasspathEntriesThread = null;
+                    }
                 }, "Approved Classpaths rehasher");
                 convertDeprecatedApprovedClasspathEntriesThread.setDaemon(true);
                 convertDeprecatedApprovedClasspathEntriesThread.start();
