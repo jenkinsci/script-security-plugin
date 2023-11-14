@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import groovy.lang.GroovyShell;
 import java.net.URL;
 import java.time.Duration;
@@ -98,13 +99,13 @@ class SandboxResolvingClassLoader extends ClassLoader {
     private static <T> LoadingCache<ClassLoader, Cache<String, T>> makeParentCache(boolean weakValuesInnerCache) {
         // The outer cache has weak keys, so that we do not leak class loaders, but strong values, because the
         // inner caches are only referenced by the outer cache internally.
-        Caffeine<Object, Object> outerBuilder = Caffeine.newBuilder().recordStats().weakKeys();
+        Caffeine<Object, Object> outerBuilder = Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).recordStats().weakKeys();
         // The inner cache has strong keys, since they are just strings, and expires entries 15 minutes after they are
         // added to the cache, so that classes defined by dynamically installed plugins become available even if there
         // were negative cache hits prior to the installation (ideally this would be done with a listener). The values
         // for the inner cache may be weak if needed, for example parentClassCache uses weak values to avoid leaking
         // classes and their loaders.
-        Caffeine<Object, Object> innerBuilder = Caffeine.newBuilder().recordStats().expireAfterWrite(Duration.ofMinutes(15));
+        Caffeine<Object, Object> innerBuilder = Caffeine.newBuilder().scheduler(Scheduler.systemScheduler()).recordStats().expireAfterWrite(Duration.ofMinutes(15));
         if (weakValuesInnerCache) {
             innerBuilder.weakValues();
         }
