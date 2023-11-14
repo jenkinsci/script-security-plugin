@@ -58,7 +58,7 @@ public class SandboxResolvingClassLoaderTest {
         CacheStats stats = parentClassCache.get(parentLoader).stats();
         // Before the fix for JENKINS-59587, the original inner cache was removed after the call to `System.gc()`, so
         // the miss count was 2 and the hit count was 0.
-        assertThat(stats.missCount(), equalTo(2L)); // The two calls to `loadClass()`
+        assertThat(stats.missCount(), equalTo(4L)); // The two calls to `loadClass()`, each of which internally checks for presence in the cache
         assertThat(stats.hitCount(), equalTo(4L)); // The four calls to `getIfPresent()`
     }
 }

@@ -3,7 +3,11 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import groovy.lang.GroovyShell;
+import hudson.util.DaemonThreadFactory;
+import hudson.util.NamingThreadFactory;
+import java.lang.ref.Cleaner;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
@@ -22,6 +26,8 @@ import java.util.logging.Logger;
 class SandboxResolvingClassLoader extends ClassLoader {
 
     private static final Logger LOGGER = Logger.getLogger(SandboxResolvingClassLoader.class.getName());
+
+    private static final Cleaner CLEANER = Cleaner.create(new NamingThreadFactory(new DaemonThreadFactory(), SandboxResolvingClassLoader.class.getName() + ".cleaner"));
 
     static final LoadingCache<ClassLoader, Cache<String, Class<?>>> parentClassCache = makeParentCache(true);
 
@@ -46,13 +52,22 @@ class SandboxResolvingClassLoader extends ClassLoader {
             return this.getClass().getClassLoader().loadClass(name);
         } else {
             ClassLoader parentLoader = getParent();
-            Class<?> c = load(parentClassCache, name, parentLoader, () -> {
+            boolean keyPresent = parentClassCache.getIfPresent(parentLoader) != null;
+            Cache<String, Class<?>> childCache = parentClassCache.get(parentLoader);
+            if (!keyPresent) {
+                CLEANER.register(parentLoader, parentClassCache::cleanUp);
+            }
+            boolean valuePresent = childCache.getIfPresent(name) != null;
+            Class<?> c = load(childCache, name, parentLoader, () -> {
                 try {
                     return parentLoader.loadClass(name);
                 } catch (ClassNotFoundException x) {
                     return CLASS_NOT_FOUND;
                 }
             });
+            if (!valuePresent) {
+                CLEANER.register(c, childCache::cleanUp);
+            }
             if (c != CLASS_NOT_FOUND) {
                 if (resolve) {
                     super.resolveClass(c);
@@ -70,13 +85,16 @@ class SandboxResolvingClassLoader extends ClassLoader {
 
     @Override public URL getResource(String name) {
         ClassLoader parentLoader = getParent();
-        return load(parentResourceCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name))).orElse(null);
+        boolean keyPresent = parentResourceCache.getIfPresent(parentLoader) != null;
+        Cache<String, Optional<URL>> childCache = parentResourceCache.get(parentLoader);
+        if (!keyPresent) {
+            CLEANER.register(parentLoader, parentResourceCache::cleanUp);
+        }
+        return load(childCache, name, parentLoader, () -> Optional.ofNullable(parentLoader.getResource(name))).orElse(null);
     }
 
     // We cannot have the inner cache be a LoadingCache and just use .get(name), since then the values of the outer cache would strongly refer to the keys.
-    private static <T> T load(LoadingCache<ClassLoader, Cache<String, T>> cache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
-        Cache<String, T> classCache = cache.get(parentLoader);
-        assert classCache != null; // Never null, see makeParentCache, but we need the assertion to convince SpotBugs.
+    private static <T> T load(@NonNull Cache<String, T> classCache, String name, ClassLoader parentLoader, Supplier<T> supplier) {
         // itemName is ignored but caffeine requires a function<String, T>
         return classCache.get(name, (String itemName) -> {
             Thread t = Thread.currentThread();
