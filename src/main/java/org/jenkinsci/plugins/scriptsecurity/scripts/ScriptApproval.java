@@ -534,12 +534,15 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
             save();
         }
         // only call on subsequent load to avoid cycle
-        if (Jenkins.get().getInitLevel().compareTo(InitMilestone.COMPLETED) > 0) {
+        if (Jenkins.get().getInitLevel() == InitMilestone.COMPLETED) {
             try {
+                LOG.log(Level.FINE, "Reconfiguring ScriptApproval after loading configuration from disk");
                 reconfigure();
             } catch (IOException e) {
                 LOG.log(Level.WARNING, e, () -> "Failed to reconfigure ScriptApproval");
             }
+        } else {
+            LOG.log(Level.FINE, "Skipping reconfiguration of ScriptApproval during Jenkins startup sequence");
         }
     }
 
