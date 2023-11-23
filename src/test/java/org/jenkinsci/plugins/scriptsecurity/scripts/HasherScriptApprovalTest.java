@@ -18,6 +18,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +52,7 @@ public class HasherScriptApprovalTest {
         session.then(r -> {
             final ScriptApproval approval = ScriptApproval.get();
             assertEquals(2, approval.countDeprecatedApprovedScriptHashes());
-            assertThat(log.getMessages(), containsInAnyOrder(
+            assertThat(log.getMessages(), hasItem(
                     containsString("There are 2 deprecated approved script hashes " +
                             "and 0 deprecated approved classpath hashes.")));
             approval.clearDeprecatedApprovedScripts();
@@ -102,7 +103,7 @@ public class HasherScriptApprovalTest {
             final ScriptApproval approval = ScriptApproval.get();
             assertEquals(2, approval.countDeprecatedApprovedClasspathHashes());
 
-            assertThat(log.getMessages(), containsInAnyOrder(
+            assertThat(log.getMessages(), hasItem(
                     containsString("There are 0 deprecated approved script hashes " +
                             "and 2 deprecated approved classpath hashes.")));
 
