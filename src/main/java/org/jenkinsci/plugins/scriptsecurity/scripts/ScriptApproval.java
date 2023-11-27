@@ -664,7 +664,10 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
         ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
-            // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
+            // Usually. this method is called once the job configuration with the script is saved.
+            // If a script was previously pending and is now deleted, however, it would require to re-configure the job.
+            // That's why we call it again if it is unapproved in a running job.
+            this.configuring(script, language, ApprovalContext.create(), false);
             throw new UnapprovedUsageException(result.newHash);
         }
         return script;
