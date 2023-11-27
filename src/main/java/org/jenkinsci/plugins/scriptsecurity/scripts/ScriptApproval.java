@@ -605,7 +605,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
 
-        /**
+    /**
      * Used when someone is configuring a script.
      * Typically you would call this from a {@link DataBoundConstructor}.
      * It should also be called from a {@code readResolve} method (which may then simply return {@code this}),
@@ -652,11 +652,11 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     /**
-     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean)} instead
+     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean, boolean)} instead
      */
     @Deprecated
     public String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
-        return this.configuring(script, language, context, false);
+        return this.configuring(script, language, context, false, false);
     }
 
     /**
