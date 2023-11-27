@@ -78,7 +78,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test
-    public void reapprovingShouldFail() throws Exception {
+    public void afterDenyScriptShouldBePending() throws Exception {
         configureSecurity();
         final ScriptApproval sa = ScriptApproval.get();
         FreeStyleProject p = r.createFreeStyleProject();
