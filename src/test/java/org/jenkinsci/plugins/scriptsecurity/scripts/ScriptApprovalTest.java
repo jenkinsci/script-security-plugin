@@ -176,6 +176,29 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
     }
 
+    @LocalData // Some scriptApproval.xml with existing signatures approved
+    @Test
+    public void reload() throws Exception {
+        configureSecurity();
+        ScriptApproval sa = ScriptApproval.get();
+
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript("println(jenkins.model.Jenkins.instance.getLabels())", false, null)));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException: "
+                        + "Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
+        r.assertLogNotContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
+                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get()));
+
+        ScriptApproval.get().getConfigFile().delete();
+        sa.load();
+        r.assertLogContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
+                r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
+    }
+
     private Script script(String groovy) {
         return new Script(groovy);
     }

@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.init.InitMilestone;
 import hudson.model.BallColor;
 import hudson.model.PageDecorator;
 import hudson.security.ACLContext;
@@ -268,7 +269,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     /** All external classpath entries allowed used for scripts. */
     private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
 
-    /* for test */ void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
+    /* for test */ synchronized void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
         approvedClasspathEntries.add(acp);
     }
 
@@ -503,16 +504,12 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     @DataBoundConstructor
     public ScriptApproval() {
         load();
-        /* can be null when upgraded from old versions.*/
-        if (aclApprovedSignatures == null) {
-            aclApprovedSignatures = new TreeSet<>();
-        }
-        if (approvedClasspathEntries == null) {
-            approvedClasspathEntries = new TreeSet<>();
-        }
-        if (pendingClasspathEntries == null) {
-            pendingClasspathEntries = new TreeSet<>();
-        }
+    }
+
+    @Override
+    public synchronized void load() {
+        clear();
+        super.load();
         // Check for loaded class directories
         boolean changed = false;
         int dcp = 0;
@@ -535,6 +532,40 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         }
         if (changed) {
             save();
+        }
+        // only call on subsequent load to avoid cycle
+        if (Jenkins.get().getInitLevel() == InitMilestone.COMPLETED) {
+            try {
+                LOG.log(Level.FINE, "Reconfiguring ScriptApproval after loading configuration from disk");
+                reconfigure();
+            } catch (IOException e) {
+                LOG.log(Level.WARNING, e, () -> "Failed to reconfigure ScriptApproval");
+            }
+        } else {
+            LOG.log(Level.FINE, "Skipping reconfiguration of ScriptApproval during Jenkins startup sequence");
+        }
+    }
+
+    private void clear() {
+        approvedScriptHashes.clear();
+        approvedSignatures.clear();
+        pendingScripts.clear();
+        pendingSignatures.clear();
+        /* can be null when upgraded from old versions.*/
+        if (aclApprovedSignatures == null) {
+            aclApprovedSignatures = new TreeSet<>();
+        } else {
+            aclApprovedSignatures.clear();
+        }
+        if (approvedClasspathEntries == null) {
+            approvedClasspathEntries = new TreeSet<>();
+        } else {
+            approvedClasspathEntries.clear();
+        }
+        if (pendingClasspathEntries == null) {
+            pendingClasspathEntries = new TreeSet<>();
+        } else {
+            pendingClasspathEntries.clear();
         }
     }
 
@@ -571,7 +602,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
     }
 
     /** Nothing has ever been approved or is pending. */
-    boolean isEmpty() {
+    synchronized boolean isEmpty() {
         return approvedScriptHashes.isEmpty() &&
                approvedSignatures.isEmpty() &&
                aclApprovedSignatures.isEmpty() &&
@@ -1201,7 +1232,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
-    public JSON approveClasspathEntry(String hash) throws IOException {
+    public synchronized JSON approveClasspathEntry(String hash) throws IOException {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         URL url = null;
         synchronized (this) {
@@ -1225,7 +1256,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
-    public JSON denyClasspathEntry(String hash) throws IOException {
+    public synchronized JSON denyClasspathEntry(String hash) throws IOException {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         PendingClasspathEntry cp = getPendingClasspathEntry(hash);
         if (cp != null) {
@@ -1237,7 +1268,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod
-    public JSON denyApprovedClasspathEntry(String hash) throws IOException {
+    public synchronized JSON denyApprovedClasspathEntry(String hash) throws IOException {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         if (approvedClasspathEntries.remove(new ApprovedClasspathEntry(hash, null))) {
             save();
