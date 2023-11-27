@@ -1220,6 +1220,8 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods times java.lang.Nu
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.Boolean
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toBoolean java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toDouble java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toFloat java.lang.String
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.Number
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList boolean[]
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toList byte[]
