@@ -604,7 +604,8 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                pendingClasspathEntries.isEmpty();
     }
 
-    /**
+
+        /**
      * Used when someone is configuring a script.
      * Typically you would call this from a {@link DataBoundConstructor}.
      * It should also be called from a {@code readResolve} method (which may then simply return {@code this}),
@@ -617,15 +618,16 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      * @param language the language in which it is written
      * @param context any additional information about how where or by whom this is being configured
      * @param approveIfAdmin indicates whether script should be approved if current user has admin permissions
+     * @param ignoreAdmin indicates whether auto approval should be ignored, regardless of any configurations.
      * @return {@code script}, for convenience
      */
-    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin, boolean ignoreAdmin) {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
-            if (!Jenkins.get().isUseSecurity() || 
+            if (!Jenkins.get().isUseSecurity() ||
                     (ALLOW_ADMIN_APPROVAL_ENABLED &&
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
-                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin)))) {
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin) && !ignoreAdmin))) {
                 approvedScriptHashes.add(result.newHash);
                 //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
                 removePendingScript(result.newHash);
@@ -639,6 +641,14 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             save();
         }
         return script;
+    }
+
+    /**
+     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean, boolean)} instead
+     */
+    @Deprecated
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
+        return configuring(script, language, context, approveIfAdmin, false);
     }
 
     /**
@@ -667,7 +677,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             // Usually. this method is called once the job configuration with the script is saved.
             // If a script was previously pending and is now deleted, however, it would require to re-configure the job.
             // That's why we call it again if it is unapproved in a running job.
-            this.configuring(script, language, ApprovalContext.create(), false);
+            // 'ignoreAdmin' is set to true, so that administrators
+            // do not accidentally approve scripts when running a job.
+            this.configuring(script, language, ApprovalContext.create(), false, true);
             throw new UnapprovedUsageException(result.newHash);
         }
         return script;
