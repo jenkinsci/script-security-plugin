@@ -35,6 +35,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Restricted(NoExternalUse.class)
 @Extension public final class GenericWhitelist extends ProxyWhitelist {
 
+    // TODO replace this & JenkinsWhitelist with @Extension on a static method
     public GenericWhitelist() throws IOException {
         super(StaticWhitelist.from(GenericWhitelist.class.getResource("generic-whitelist")));
     }

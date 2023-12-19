@@ -64,17 +64,6 @@ public class ProxyWhitelistTest {
         assertFalse(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
     }
 
-    /** Ensures we cache at the top-level ProxyWhitelist */
-    @Test
-    public void caching() throws Exception {
-        ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("method java.lang.String length")));
-        assertEquals(1, ((EnumeratingWhitelist)pw1.delegates.get(0)).permittedCache.size());
-
-        ProxyWhitelist pw2 = new ProxyWhitelist(pw1, new StaticWhitelist(new StringReader("method java.lang.String trim")));
-        assertEquals(0, ((EnumeratingWhitelist)pw1.delegates.get(0)).permittedCache.size());
-        assertEquals(2, ((EnumeratingWhitelist)pw2.delegates.get(0)).permittedCache.size());
-    }
-
     /**
      * Test concurrent modification of delegates when initializing a ProxyWhitelist. This may cause concurrent threads 
      * to enter an infinite loop when using a {@link java.util.WeakHashMap} to hold the delegates as it is not 

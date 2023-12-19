@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.init.InitMilestone;
 import hudson.model.BallColor;
 import hudson.model.PageDecorator;
 import hudson.security.ACLContext;
@@ -40,7 +39,6 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.StaticWhitelist;
-import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox;
 import hudson.Extension;
 import hudson.ExtensionList;
@@ -78,8 +76,10 @@ import java.util.stream.Collectors;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.util.concurrent.atomic.AtomicBoolean;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -93,7 +93,7 @@ import org.kohsuke.stapler.verb.POST;
  */
 @Symbol("scriptApproval")
 @Extension
-public class ScriptApproval extends GlobalConfiguration implements RootAction {
+public final class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
     public static /* non-final */ boolean ADMIN_AUTO_APPROVAL_ENABLED =
@@ -533,17 +533,7 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         if (changed) {
             save();
         }
-        // only call on subsequent load to avoid cycle
-        if (Jenkins.get().getInitLevel() == InitMilestone.COMPLETED) {
-            try {
-                LOG.log(Level.FINE, "Reconfiguring ScriptApproval after loading configuration from disk");
-                reconfigure();
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, e, () -> "Failed to reconfigure ScriptApproval");
-            }
-        } else {
-            LOG.log(Level.FINE, "Skipping reconfiguration of ScriptApproval during Jenkins startup sequence");
-        }
+        ApprovedWhitelist.configurationChanged();
     }
 
     private void clear() {
@@ -979,21 +969,28 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
 
     @Restricted(NoExternalUse.class) // implementation
     @Extension public static final class ApprovedWhitelist extends ProxyWhitelist {
-        public ApprovedWhitelist() {
-            try {
-                reconfigure();
-            } catch (IOException e) {
-                LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + e.getMessage() + "'");
+
+        static void configurationChanged() {
+            ExtensionList.lookupSingleton(ApprovedWhitelist.class).initialized.set(false);
+        }
+
+        private final AtomicBoolean initialized = new AtomicBoolean();
+
+        @Override protected void beforePermits() {
+            if (initialized.compareAndSet(false, true)) {
+                try {
+                    ScriptApproval instance = ScriptApproval.get();
+                    Whitelist delegate;
+                    synchronized (instance) {
+                        delegate = new AclAwareWhitelist(new StaticWhitelist(instance.approvedSignatures), new StaticWhitelist(instance.aclApprovedSignatures));
+                    }
+                    reset(Set.of(delegate));
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + e.getMessage() + "'");
+                }
             }
         }
 
-        String[][] reconfigure() throws IOException {
-            ScriptApproval instance = ScriptApproval.get();
-            synchronized (instance) {
-                reset(Collections.singleton(new AclAwareWhitelist(new StaticWhitelist(instance.approvedSignatures), new StaticWhitelist(instance.aclApprovedSignatures))));
-                return new String[][] {instance.getApprovedSignatures(), instance.getAclApprovedSignatures(), instance.getDangerousApprovedSignatures()};
-            }
-        }
     }
 
     @Override public String getIconFileName() {
@@ -1134,14 +1131,9 @@ public class ScriptApproval extends GlobalConfiguration implements RootAction {
         return pendingSignatures;
     }
 
-    // Added to account for new findbugs annotations in ExtensionList#get (PCT scenario)
     private String[][] reconfigure() throws IOException {
-        final ApprovedWhitelist awl = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
-        if (awl != null) {
-            return awl.reconfigure();
-        } else {
-            return new String[][] {new String[0], new String[0], new String[0]};
-        }
+        ApprovedWhitelist.configurationChanged();
+        return new String[][] {getApprovedSignatures(), getAclApprovedSignatures(), getDangerousApprovedSignatures()};
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX

@@ -24,6 +24,8 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -31,7 +33,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
@@ -57,105 +58,26 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<>();  // Not private to facilitate testing
-
-    @SafeVarargs
-    private final void cacheSignatureList(List<Signature> ...sigs) {
-        for (List<Signature> list : sigs) {
-            for (Signature s : list) {
-                if (!s.isWildcard()) { // Cache entries for wildcard signatures will never be accessed and just waste space
-                    permittedCache.put(s.toString(), Boolean.TRUE);
-                }
-            }
-        }
-    }
-
-    /** Prepopulates the "permitted" cache, resetting if populated already.  Should be called when method signatures change or after initialization. */
-    final void precache() {
-        if (!permittedCache.isEmpty()) {
-            this.permittedCache.clear();  // No sense calling clearCache
-        }
-        cacheSignatureList((List)methodSignatures(), (List)(newSignatures()),
-                           (List)(staticMethodSignatures()), (List)(fieldSignatures()),
-                           (List)(staticFieldSignatures()));
-    }
-
-    /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
-    final void clearCache() {
-        this.permittedCache.clear();
-        this.permittedCache = new ConcurrentHashMap<>();
-    }
+    private final Cache<Method, Boolean> methodCache = Caffeine.newBuilder().weakKeys().build();
+    private final Cache<Constructor<?>, Boolean> constructorCache = Caffeine.newBuilder().weakKeys().build();
+    private final Cache<Method, Boolean> staticMethodCache = Caffeine.newBuilder().weakKeys().build();
+    private final Cache<Field, Boolean> fieldCache = Caffeine.newBuilder().weakKeys().build();
+    private final Cache<Field, Boolean> staticFieldCache = Caffeine.newBuilder().weakKeys().build();
 
     @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
-        String key = canonicalMethodSig(method);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (MethodSignature s : methodSignatures()) {
-            if (s.matches(method)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return methodCache.get(method, m -> methodSignatures().stream().anyMatch(s -> s.matches(m)));
     }
 
     @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
-        String key = canonicalConstructorSig(constructor);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (NewSignature s : newSignatures()) {
-            if (s.matches(constructor)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return constructorCache.get(constructor, c -> newSignatures().stream().anyMatch(s -> s.matches(c)));
     }
 
     @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
-        String key = canonicalStaticMethodSig(method);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (MethodSignature s : staticMethodSignatures()) {
-            if (s.matches(method)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return staticMethodCache.get(method, m -> staticMethodSignatures().stream().anyMatch(s -> s.matches(m)));
     }
 
     @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
-        String key = canonicalFieldSig(field);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (FieldSignature s : fieldSignatures()) {
-            if (s.matches(field)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return fieldCache.get(field, f -> fieldSignatures().stream().anyMatch(s -> s.matches(f)));
     }
 
     @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
@@ -163,21 +85,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
-        String key = canonicalStaticFieldSig(field);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (FieldSignature s : staticFieldSignatures()) {
-            if (s.matches(field)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return staticFieldCache.get(field, f -> staticFieldSignatures().stream().anyMatch(s -> s.matches(f)));
     }
 
     @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
@@ -275,6 +183,8 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         return s;
     }
+
+    // TODO move all these to StaticWhitelist
 
     /** Canonical name for a field access. */
     static String canonicalFieldString(@NonNull Field field) {
