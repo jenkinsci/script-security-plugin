@@ -24,8 +24,11 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,11 +36,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
-
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A whitelist based on listing signatures and searching them. Lists of signatures should not change
@@ -58,26 +60,47 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    private final Cache<Method, Boolean> methodCache = Caffeine.newBuilder().weakKeys().build();
-    private final Cache<Constructor<?>, Boolean> constructorCache = Caffeine.newBuilder().weakKeys().build();
-    private final Cache<Method, Boolean> staticMethodCache = Caffeine.newBuilder().weakKeys().build();
-    private final Cache<Field, Boolean> fieldCache = Caffeine.newBuilder().weakKeys().build();
-    private final Cache<Field, Boolean> staticFieldCache = Caffeine.newBuilder().weakKeys().build();
+    private final Predicate<Method> methodCache = cache(this::methodSignatures, MethodSignature::matches);
+    private final Predicate<Constructor<?>> constructorCache = cache(this::newSignatures, NewSignature::matches);
+    private final Predicate<Method> staticMethodCache = cache(this::staticMethodSignatures, MethodSignature::matches);
+    private final Predicate<Field> fieldCache = cache(this::fieldSignatures, FieldSignature::matches);
+    private final Predicate<Field> staticFieldCache = cache(this::staticFieldSignatures, FieldSignature::matches);
+
+    private static <M extends AccessibleObject, S extends Signature> Predicate<M> cache(Supplier<List<S>> signatures, BiPredicate<S, M> matches) {
+        // Unfortunately xxxSignatures() will return empty if called from superclass constructor,
+        // since subclass constructors initialize lists, thus the need for Supplier.
+        // Would be cleaner for EnumeratingWhitelist to take all signatures in its constructor,
+        // and for StaticWhitelist to just be a utility with static constructor methods rather than a subclass.
+        LoadingCache<M, Boolean> cache = Caffeine.newBuilder().weakKeys().build((M m) -> {
+            for (S s : signatures.get()) {
+                if (matches.test(s, m)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        return m -> {
+            if (signatures.get().isEmpty()) {
+                return false; // shortcut
+            }
+            return cache.get(m);
+        };
+    }
 
     @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
-        return methodCache.get(method, m -> methodSignatures().stream().anyMatch(s -> s.matches(m)));
+        return methodCache.test(method);
     }
 
     @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
-        return constructorCache.get(constructor, c -> newSignatures().stream().anyMatch(s -> s.matches(c)));
+        return constructorCache.test(constructor);
     }
 
     @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
-        return staticMethodCache.get(method, m -> staticMethodSignatures().stream().anyMatch(s -> s.matches(m)));
+        return staticMethodCache.test(method);
     }
 
     @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
-        return fieldCache.get(field, f -> fieldSignatures().stream().anyMatch(s -> s.matches(f)));
+        return fieldCache.test(field);
     }
 
     @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
@@ -85,7 +108,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
-        return staticFieldCache.get(field, f -> staticFieldSignatures().stream().anyMatch(s -> s.matches(f)));
+        return staticFieldCache.test(field);
     }
 
     @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
@@ -295,7 +318,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         public NewSignature(Class<?> type, Class<?>... argumentTypes) {
             this(getName(type), argumentTypes(argumentTypes));
         }
-        boolean matches(Constructor c) {
+        boolean matches(Constructor<?> c) {
             return getName(c.getDeclaringClass()).equals(type) && Arrays.equals(argumentTypes(c.getParameterTypes()), argumentTypes);
         }
         @Override String signaturePart() {
