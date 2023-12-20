@@ -57,17 +57,8 @@ public class ProxyWhitelist extends Whitelist {
      */
     protected void beforePermits() {}
 
-    private void callBeforePermits() {
-        beforePermits();
-        for (Whitelist delegate : delegates) {
-            if (delegate instanceof ProxyWhitelist) {
-                ((ProxyWhitelist) delegate).callBeforePermits();
-            }
-        }
-    }
-
     @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsMethod(method, receiver, args)) {
                 return true;
@@ -77,7 +68,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsConstructor(constructor, args)) {
                 return true;
@@ -87,7 +78,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsStaticMethod(method, args)) {
                 return true;
@@ -97,7 +88,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsFieldGet(field, receiver)) {
                 return true;
@@ -107,7 +98,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsFieldSet(field, receiver, value)) {
                 return true;
@@ -117,7 +108,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsStaticFieldGet(field)) {
                 return true;
@@ -127,7 +118,7 @@ public class ProxyWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
-        callBeforePermits();
+        beforePermits();
         for (Whitelist delegate : delegates) {
             if (delegate.permitsStaticFieldSet(field, value)) {
                 return true;
