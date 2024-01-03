@@ -28,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.ManagementLink;
 import hudson.security.Permission;
+import jenkins.management.Badge;
 import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -81,5 +82,51 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
     @Override
     public Category getCategory() {
         return Category.SECURITY;
+    }
+
+    @Override
+    public Badge getBadge() {
+        int pendingScripts = ScriptApproval.get().getPendingScripts().size();
+        int pendingSignatures = ScriptApproval.get().getPendingSignatures().size();
+        int pendingClasspathEntries = ScriptApproval.get().getPendingClasspathEntries().size();
+        int dangerous = ScriptApproval.get().getDangerousApprovedSignatures().length;
+        int total = 0;
+        StringBuilder toolTip = new StringBuilder();
+        if (pendingScripts > 0) {
+            total += pendingScripts;
+            toolTip.append(Messages.ScriptApprovalLink_outstandingScript(pendingScripts));
+        }
+        if (pendingSignatures > 0) {
+            if (total > 0) {
+                toolTip.append("\n");
+            }
+            toolTip.append(Messages.ScriptApprovalLink_outstandingSignature(pendingSignatures));
+            total += pendingSignatures;
+        }
+        if (pendingClasspathEntries > 0) {
+            if (total > 0) {
+                toolTip.append("\n");
+            }
+            toolTip.append(Messages.ScriptApprovalLink_outstandingClasspath(pendingClasspathEntries));
+            total += pendingClasspathEntries;
+        }
+        if (total > 0 || dangerous > 0) {
+            StringBuilder text = new StringBuilder();
+            if (total > 0) {
+                text.append(total);
+            }
+            if (dangerous > 0) {
+                if (total > 0) {
+                    toolTip.append("\n");
+                    text.append("/");
+                }
+                text.append(dangerous);
+                toolTip.append(Messages.ScriptApprovalLink_dangerous(dangerous));
+            }
+            Badge.Severity severity = dangerous > 0 ? Badge.Severity.DANGER : Badge.Severity.WARNING;
+            return new Badge(text.toString(), toolTip.toString(), severity);
+        }
+
+        return null;
     }
 }
