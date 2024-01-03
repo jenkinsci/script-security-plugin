@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -75,11 +76,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @LocalData("malformedScriptApproval")
     public void malformedScriptApproval() throws Exception {
         logging.record(ScriptApproval.class, Level.FINER).capture(100);
-        try {
-            Whitelist w = new ScriptApproval.ApprovedWhitelist();
-        } catch (Exception e) {
-            // ignore - we want to make sure we're logging this properly.
-        }
+        assertThat(Whitelist.all().permitsMethod(Jenkins.class.getMethod("get"), null, null), is(false));
         assertThat(logging.getRecords(), Matchers.hasSize(Matchers.equalTo(1)));
         assertEquals("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'",
                 logging.getRecords().get(0).getMessage());

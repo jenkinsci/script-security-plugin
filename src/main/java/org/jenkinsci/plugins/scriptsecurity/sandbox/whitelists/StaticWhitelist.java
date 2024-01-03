@@ -46,9 +46,13 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.Extension;
+import org.apache.commons.io.input.SequenceReader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
@@ -201,6 +205,17 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     public static StaticWhitelist from(URL definition) throws IOException {
         try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             return new StaticWhitelist(isr);
+        }
+    }
+
+    @Restricted(DoNotUse.class)
+    @Extension public static Whitelist stockWhitelists() throws IOException {
+        try (InputStream gis = StaticWhitelist.class.getResourceAsStream("generic-whitelist");
+                Reader gr = new InputStreamReader(gis, StandardCharsets.UTF_8);
+                InputStream jis = StaticWhitelist.class.getResourceAsStream("jenkins-whitelist");
+                Reader jr = new InputStreamReader(jis, StandardCharsets.UTF_8);
+                Reader r = new SequenceReader(gr, jr)) {
+            return new StaticWhitelist(r);
         }
     }
 

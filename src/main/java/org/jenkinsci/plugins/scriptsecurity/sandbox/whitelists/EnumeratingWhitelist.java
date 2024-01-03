@@ -24,6 +24,11 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -31,12 +36,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A whitelist based on listing signatures and searching them. Lists of signatures should not change
@@ -57,105 +60,47 @@ public abstract class EnumeratingWhitelist extends Whitelist {
 
     protected abstract List<FieldSignature> staticFieldSignatures();
 
-    ConcurrentHashMap<String, Boolean> permittedCache = new ConcurrentHashMap<>();  // Not private to facilitate testing
+    private final Predicate<Method> methodCache = cache(this::methodSignatures, MethodSignature::matches);
+    private final Predicate<Constructor<?>> constructorCache = cache(this::newSignatures, NewSignature::matches);
+    private final Predicate<Method> staticMethodCache = cache(this::staticMethodSignatures, MethodSignature::matches);
+    private final Predicate<Field> fieldCache = cache(this::fieldSignatures, FieldSignature::matches);
+    private final Predicate<Field> staticFieldCache = cache(this::staticFieldSignatures, FieldSignature::matches);
 
-    @SafeVarargs
-    private final void cacheSignatureList(List<Signature> ...sigs) {
-        for (List<Signature> list : sigs) {
-            for (Signature s : list) {
-                if (!s.isWildcard()) { // Cache entries for wildcard signatures will never be accessed and just waste space
-                    permittedCache.put(s.toString(), Boolean.TRUE);
+    private static <M extends AccessibleObject, S extends Signature> Predicate<M> cache(Supplier<List<S>> signatures, BiPredicate<S, M> matches) {
+        // Unfortunately xxxSignatures() will return empty if called from superclass constructor,
+        // since subclass constructors initialize lists, thus the need for Supplier.
+        // Would be cleaner for EnumeratingWhitelist to take all signatures in its constructor,
+        // and for StaticWhitelist to just be a utility with static constructor methods rather than a subclass.
+        LoadingCache<M, Boolean> cache = Caffeine.newBuilder().weakKeys().build((M m) -> {
+            for (S s : signatures.get()) {
+                if (matches.test(s, m)) {
+                    return true;
                 }
             }
-        }
-    }
-
-    /** Prepopulates the "permitted" cache, resetting if populated already.  Should be called when method signatures change or after initialization. */
-    final void precache() {
-        if (!permittedCache.isEmpty()) {
-            this.permittedCache.clear();  // No sense calling clearCache
-        }
-        cacheSignatureList((List)methodSignatures(), (List)(newSignatures()),
-                           (List)(staticMethodSignatures()), (List)(fieldSignatures()),
-                           (List)(staticFieldSignatures()));
-    }
-
-    /** Frees up nearly all memory used for the cache.  MUST BE CALLED if you change the result of the xxSignatures() methods. */
-    final void clearCache() {
-        this.permittedCache.clear();
-        this.permittedCache = new ConcurrentHashMap<>();
+            return false;
+        });
+        return m -> {
+            if (signatures.get().isEmpty()) {
+                return false; // shortcut
+            }
+            return cache.get(m);
+        };
     }
 
     @Override public final boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
-        String key = canonicalMethodSig(method);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (MethodSignature s : methodSignatures()) {
-            if (s.matches(method)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return methodCache.test(method);
     }
 
     @Override public final boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
-        String key = canonicalConstructorSig(constructor);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (NewSignature s : newSignatures()) {
-            if (s.matches(constructor)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return constructorCache.test(constructor);
     }
 
     @Override public final boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
-        String key = canonicalStaticMethodSig(method);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (MethodSignature s : staticMethodSignatures()) {
-            if (s.matches(method)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return staticMethodCache.test(method);
     }
 
     @Override public final boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
-        String key = canonicalFieldSig(field);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (FieldSignature s : fieldSignatures()) {
-            if (s.matches(field)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return fieldCache.test(field);
     }
 
     @Override public final boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
@@ -163,21 +108,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     }
 
     @Override public final boolean permitsStaticFieldGet(@NonNull Field field) {
-        String key = canonicalStaticFieldSig(field);
-        Boolean b = permittedCache.get(key);
-        if (b != null) {
-            return b;
-        }
-
-        boolean output = false;
-        for (FieldSignature s : staticFieldSignatures()) {
-            if (s.matches(field)) {
-                output = true;
-                break;
-            }
-        }
-        permittedCache.put(key, output);
-        return output;
+        return staticFieldCache.test(field);
     }
 
     @Override public final boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
@@ -275,6 +206,8 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         }
         return s;
     }
+
+    // TODO move all these to StaticWhitelist
 
     /** Canonical name for a field access. */
     static String canonicalFieldString(@NonNull Field field) {
@@ -385,7 +318,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
         public NewSignature(Class<?> type, Class<?>... argumentTypes) {
             this(getName(type), argumentTypes(argumentTypes));
         }
-        boolean matches(Constructor c) {
+        boolean matches(Constructor<?> c) {
             return getName(c.getDeclaringClass()).equals(type) && Arrays.equals(argumentTypes(c.getParameterTypes()), argumentTypes);
         }
         @Override String signaturePart() {
