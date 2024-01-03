@@ -972,7 +972,11 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
 
         static void configurationChanged() {
             // Do not use lookupSingleton: ScriptApprovalLoadingTest.dynamicLoading
-            ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class).initialized.set(false);
+            ApprovedWhitelist instance = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
+            if (instance == null) {
+                throw new IllegalStateException("Failed to find ApprovedWhitelist");
+            }
+            instance.initialized.set(false);
         }
 
         private final AtomicBoolean initialized = new AtomicBoolean();
