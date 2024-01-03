@@ -35,12 +35,9 @@ import org.jvnet.hudson.test.RealJenkinsRule;
 
 public final class ScriptApprovalLoadingTest {
 
-    @Rule public final RealJenkinsRule rr = new RealJenkinsRule().prepareHomeLazily(true);
+    @Rule public final RealJenkinsRule rr = new RealJenkinsRule();
 
     @Test public void dynamicLoading() throws Throwable {
-        File marker = new File(rr.getHome(), "plugins/script-security.jpl.disabled");
-        FileUtils.createParentDirectories(marker);
-        FileUtils.touch(marker);
         rr.then(ScriptApprovalLoadingTest::_dynamicLoading1);
         rr.then(ScriptApprovalLoadingTest::_dynamicLoading2);
     }
