@@ -223,7 +223,7 @@ THE SOFTWARE.
                 <p class="setting-description">
                     Script approvals are stored in Jenkins as the hashed value of the script. Old approvals were hashed using SHA-1, which is deprecated.
                     Because only the hash of the script is stored, they cannot be immediately converted to use a new hash algorithm. Instead, they will be automatically rehashed when the script is next used.
-                    To minimize potential security risks, you can immediately revoke all script approvals that were hashed using SHA-1. <strong>This will cause all jobs and features that use those scripts to fail until they are reconfigured and then then approved by a Jenkins administrator.</strong>
+                    To minimize potential security risks, you can immediately revoke all script approvals that were hashed using SHA-1. <strong>This will cause all jobs and features that use those scripts to fail until they are reconfigured and then approved by a Jenkins administrator.</strong>
                 </p>
             </j:if>
             <p id="approvedScripts-clear">
