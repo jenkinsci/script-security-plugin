@@ -971,7 +971,12 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Extension public static final class ApprovedWhitelist extends ProxyWhitelist {
 
         static void configurationChanged() {
-            ExtensionList.lookupSingleton(ApprovedWhitelist.class).initialized.set(false);
+            // Do not use lookupSingleton: ScriptApprovalLoadingTest.dynamicLoading
+            ApprovedWhitelist instance = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
+            if (instance == null) {
+                throw new IllegalStateException("Failed to find ApprovedWhitelist");
+            }
+            instance.initialized.set(false);
         }
 
         private final AtomicBoolean initialized = new AtomicBoolean();
