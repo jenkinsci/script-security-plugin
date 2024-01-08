@@ -25,9 +25,11 @@
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import java.io.File;
+import jenkins.RestartRequiredException;
 import org.apache.commons.io.FileUtils;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
+import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -51,7 +53,11 @@ public final class ScriptApprovalLoadingTest {
     private static void _dynamicLoading2(JenkinsRule r) throws Throwable {
         File plugin = new File(r.jenkins.root, "plugins/script-security.jpl");
         FileUtils.copyFile(new File(plugin + ".bak"), plugin);
-        r.jenkins.pluginManager.dynamicLoad(plugin);
+        try {
+            r.jenkins.pluginManager.dynamicLoad(plugin);
+        } catch (RestartRequiredException x) {
+            throw new AssumptionViolatedException("perhaps running in PCT, where this cannot be tested", x);
+        }
         ScriptApproval sa = ScriptApproval.get();
         sa.approveSignature("method java.lang.Object wait");
         assertThat(sa.getApprovedSignatures(), arrayContaining("method java.lang.Object wait"));
