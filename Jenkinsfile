@@ -5,4 +5,4 @@ if (env.CHANGE_ID == null) { // TODO https://github.com/jenkinsci/script-securit
 buildPlugin(
   useContainerAgent: true,
   configurations: configurations
-])
+)
