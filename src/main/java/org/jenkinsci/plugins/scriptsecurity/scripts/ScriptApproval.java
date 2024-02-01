@@ -58,7 +58,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -76,7 +75,6 @@ import java.util.stream.Collectors;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import java.util.concurrent.atomic.AtomicBoolean;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -533,7 +531,11 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         if (changed) {
             save();
         }
-        ApprovedWhitelist.configurationChanged();
+        try {
+            configurationChanged();
+        } catch (IOException x) {
+            LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + x.getMessage() + "'");
+        }
     }
 
     private void clear() {
@@ -967,32 +969,30 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         return approvedScriptHashes.toArray(new String[approvedScriptHashes.size()]);
     }
 
+    private synchronized void configurationChanged() throws IOException {
+        // Do not use lookupSingleton: ScriptApprovalLoadingTest.dynamicLoading
+        ApprovedWhitelist instance = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
+        if (instance == null) {
+            throw new IllegalStateException("Failed to find ApprovedWhitelist");
+        }
+        LOG.fine("resetting");
+        synchronized (instance) {
+            instance.pendingDelegate = new AclAwareWhitelist(new StaticWhitelist(approvedSignatures), new StaticWhitelist(aclApprovedSignatures));
+        }
+    }
+
     @Restricted(NoExternalUse.class) // implementation
     @Extension public static final class ApprovedWhitelist extends ProxyWhitelist {
 
-        static void configurationChanged() {
-            // Do not use lookupSingleton: ScriptApprovalLoadingTest.dynamicLoading
-            ApprovedWhitelist instance = ExtensionList.lookup(Whitelist.class).get(ApprovedWhitelist.class);
-            if (instance == null) {
-                throw new IllegalStateException("Failed to find ApprovedWhitelist");
-            }
-            instance.initialized.set(false);
-        }
+        private @CheckForNull Whitelist pendingDelegate;
 
-        private final AtomicBoolean initialized = new AtomicBoolean();
-
-        @Override protected void beforePermits() {
-            if (initialized.compareAndSet(false, true)) {
-                try {
-                    ScriptApproval instance = ScriptApproval.get();
-                    Whitelist delegate;
-                    synchronized (instance) {
-                        delegate = new AclAwareWhitelist(new StaticWhitelist(instance.approvedSignatures), new StaticWhitelist(instance.aclApprovedSignatures));
-                    }
-                    reset(Set.of(delegate));
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "Malformed signature entry in scriptApproval.xml: '" + e.getMessage() + "'");
-                }
+        @Override protected synchronized void beforePermits() {
+            if (pendingDelegate != null) {
+                LOG.fine("refreshing");
+                reset(Set.of(pendingDelegate));
+                pendingDelegate = null;
+            } else {
+                LOG.finer("no need to refresh");
             }
         }
 
@@ -1136,8 +1136,8 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         return pendingSignatures;
     }
 
-    private String[][] reconfigure() throws IOException {
-        ApprovedWhitelist.configurationChanged();
+    private synchronized String[][] reconfigure() throws IOException {
+        configurationChanged();
         return new String[][] {getApprovedSignatures(), getAclApprovedSignatures(), getDangerousApprovedSignatures()};
     }
 
