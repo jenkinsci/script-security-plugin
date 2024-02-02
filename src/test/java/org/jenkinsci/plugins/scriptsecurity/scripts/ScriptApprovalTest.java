@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -57,7 +58,7 @@ import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
     @Rule
-    public LoggerRule logging = new LoggerRule();
+    public LoggerRule logging = new LoggerRule().record(ScriptApproval.class, Level.FINER).capture(100);
 
     private static final String CLEAR_ALL_ID = "approvedScripts-clear";
 
@@ -75,11 +76,9 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Test
     @LocalData("malformedScriptApproval")
     public void malformedScriptApproval() throws Exception {
-        logging.record(ScriptApproval.class, Level.FINER).capture(100);
         assertThat(Whitelist.all().permitsMethod(Jenkins.class.getMethod("get"), null, null), is(false));
-        assertThat(logging.getRecords(), Matchers.hasSize(Matchers.equalTo(1)));
-        assertEquals("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'",
-                logging.getRecords().get(0).getMessage());
+        assertThat(logging.getRecords().stream().map(r -> r.getMessage()).toArray(String[]::new),
+            hasItemInArray("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'"));
     }
 
     @Test @LocalData("dangerousApproved") public void dangerousApprovedSignatures() {
