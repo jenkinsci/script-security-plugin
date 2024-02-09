@@ -152,4 +152,7 @@ public class StaticWhitelistTest {
         sanity(StaticWhitelist.class.getResource("blacklist"));
     }
 
+    @Test public void malformed() throws Exception {
+        StaticWhitelist.from(StaticWhitelist.class.getResource("malformed-list"));
+    }
 }

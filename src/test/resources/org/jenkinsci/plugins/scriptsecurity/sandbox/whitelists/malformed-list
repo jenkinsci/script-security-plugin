@@ -1,0 +1,16 @@
+# Malformed entry
+java.lang.temporal.Temporal
+
+# Groovy:
+staticMethod groovy.json.JsonOutput prettyPrint java.lang.String
+staticMethod groovy.json.JsonOutput toJson java.lang.Boolean
+staticMethod groovy.json.JsonOutput toJson java.lang.Character
+staticMethod groovy.json.JsonOutput toJson java.lang.Number
+staticMethod groovy.json.JsonOutput toJson java.lang.String
+staticMethod groovy.json.JsonOutput toJson java.net.URL
+staticMethod groovy.json.JsonOutput toJson java.util.Calendar
+staticMethod groovy.json.JsonOutput toJson java.util.Date
+staticMethod groovy.json.JsonOutput toJson java.util.Map
+staticMethod groovy.json.JsonOutput toJson java.util.UUID
+new groovy.json.JsonSlurper
+method groovy.json.JsonSlurper parseText java.lang.String

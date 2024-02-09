@@ -85,14 +85,22 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         while ((line = br.readLine()) != null) {
             line = filter(line);
             if (line != null) {
-                add(line);
+                try {
+                    add(line);
+                } catch (IOException x) {
+                    // Failed to parse line, ignore it and continue with the rest
+                }
             }
         }
     }
 
     public StaticWhitelist(Collection<? extends String> lines) throws IOException {
         for (String line : lines) {
-            add(line);
+            try {
+                add(line);
+            } catch (IOException x) {
+                // Failed to parse line, ignore it and continue with the rest
+            }
         }
     }
 
