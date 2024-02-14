@@ -18,7 +18,7 @@
     <jenkins.version>2.387.3</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <!-- TODO until in parent -->
-    <jenkins-test-harness.version>2146.v6b_f8b_1cb_d12d</jenkins-test-harness.version>
+    <jenkins-test-harness.version>2161.v114f3cb_78326</jenkins-test-harness.version>
   </properties>
   <licenses>
     <license>
