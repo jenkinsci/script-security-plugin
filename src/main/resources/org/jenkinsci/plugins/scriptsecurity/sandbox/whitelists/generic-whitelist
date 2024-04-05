@@ -792,6 +792,7 @@ method java.util.regex.MatchResult end
 method java.util.regex.MatchResult end int
 method java.util.regex.MatchResult group
 method java.util.regex.MatchResult group int
+method java.util.regex.MatchResult group java.lang.String
 method java.util.regex.MatchResult groupCount
 method java.util.regex.MatchResult start
 method java.util.regex.MatchResult start int
