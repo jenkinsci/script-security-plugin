@@ -147,7 +147,7 @@ public class StaticWhitelistTest {
             new MethodSignature(Matcher.class, "end", String.class),
             new MethodSignature(Matcher.class, "group", String.class),
             new MethodSignature(Matcher.class, "start", String.class),
-            // Override MatchResult default methods in Java 20+ (for Java 17 compatibility)
+            // Do not exist until Java 20.
             new MethodSignature(MatchResult.class, "end", String.class),
             new MethodSignature(MatchResult.class, "group", String.class),
             new MethodSignature(MatchResult.class, "hasMatch"),
