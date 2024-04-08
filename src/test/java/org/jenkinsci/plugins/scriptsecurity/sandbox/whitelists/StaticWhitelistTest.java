@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
@@ -145,7 +146,13 @@ public class StaticWhitelistTest {
             // Override the corresponding MatchResult methods in Java 20+.
             new MethodSignature(Matcher.class, "end", String.class),
             new MethodSignature(Matcher.class, "group", String.class),
-            new MethodSignature(Matcher.class, "start", String.class)
+            new MethodSignature(Matcher.class, "start", String.class),
+            // Do not exist until Java 20.
+            new MethodSignature(MatchResult.class, "end", String.class),
+            new MethodSignature(MatchResult.class, "group", String.class),
+            new MethodSignature(MatchResult.class, "hasMatch"),
+            new MethodSignature(MatchResult.class, "namedGroups"),
+            new MethodSignature(MatchResult.class, "start", String.class)
     ));
 
     @Test public void sanity() throws Exception {

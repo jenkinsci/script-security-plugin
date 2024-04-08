@@ -790,11 +790,16 @@ method java.util.random.RandomGenerator nextInt int
 method java.util.random.RandomGenerator nextLong
 method java.util.regex.MatchResult end
 method java.util.regex.MatchResult end int
+method java.util.regex.MatchResult end java.lang.String
 method java.util.regex.MatchResult group
 method java.util.regex.MatchResult group int
+method java.util.regex.MatchResult group java.lang.String
 method java.util.regex.MatchResult groupCount
+method java.util.regex.MatchResult hasMatch
+method java.util.regex.MatchResult namedGroups 
 method java.util.regex.MatchResult start
 method java.util.regex.MatchResult start int
+method java.util.regex.MatchResult start java.lang.String
 method java.util.regex.Matcher appendReplacement java.lang.StringBuffer java.lang.String
 method java.util.regex.Matcher appendTail java.lang.StringBuffer
 method java.util.regex.Matcher end java.lang.String
