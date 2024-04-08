@@ -152,8 +152,7 @@ public class StaticWhitelistTest {
             new MethodSignature(MatchResult.class, "group", String.class),
             new MethodSignature(MatchResult.class, "hasMatch"),
             new MethodSignature(MatchResult.class, "namedGroups"),
-            new MethodSignature(MatchResult.class, "start", String.class),
-
+            new MethodSignature(MatchResult.class, "start", String.class)
     ));
 
     @Test public void sanity() throws Exception {
