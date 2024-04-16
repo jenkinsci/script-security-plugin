@@ -61,7 +61,7 @@
     <dependency>
       <groupId>org.kohsuke</groupId>
       <artifactId>groovy-sandbox</artifactId>
-      <version>1.33</version>
+      <version>1.34</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>

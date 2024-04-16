@@ -24,9 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import groovy.lang.Binding;
 import groovy.lang.GString;
-import groovy.lang.Script;
 import hudson.EnvVars;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Hudson;
@@ -45,7 +43,6 @@ import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -95,13 +92,6 @@ public class GroovyCallSiteSelectorTest {
     @Test public void staticMethodsCannotBeOverridden() throws Exception {
         assertEquals(Jenkins.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Jenkins.class, "getInstance", new Object[0]));
         assertEquals(Hudson.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Hudson.class, "getInstance", new Object[0]));
-    }
-
-    @Issue("JENKINS-38908")
-    @Test public void main() throws Exception {
-        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
-        assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
-        assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
 
     @Issue("JENKINS-45117")

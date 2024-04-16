@@ -28,6 +28,7 @@ import org.htmlunit.CollectingAlertHandler;
 import org.htmlunit.html.HtmlCheckBoxInput;
 import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
+import groovy.lang.Script;
 import hudson.remoting.Which;
 import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
@@ -70,6 +71,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -88,6 +90,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.groovy.sandbox.impl.Checker;
+import static org.junit.Assert.assertEquals;
 
 public class SecureGroovyScriptTest {
 
@@ -1349,5 +1352,12 @@ public class SecureGroovyScriptTest {
         public static void main(String[] args) throws IOException {
             Jenkins.get().setSystemMessage("SECURITY-2848");
         }
+    }
+
+    @Issue("JENKINS-38908")
+    @Test public void groovyCallSiteSelectorMain() throws Exception {
+        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
+        assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
+        assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
 }

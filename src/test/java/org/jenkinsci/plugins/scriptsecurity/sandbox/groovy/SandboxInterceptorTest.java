@@ -41,6 +41,8 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.transform.ASTTest;
 import hudson.Functions;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
@@ -580,7 +582,10 @@ public class SandboxInterceptorTest {
 
     @Test public void templates() throws Exception {
         final GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
-        final Template t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
+        final Template t;
+        try (GroovySandbox.Scope scope = new GroovySandbox().withWhitelist(new GenericWhitelist()).enter()) {
+            t = new SimpleTemplateEngine(shell).createTemplate("goodbye <%= aspect.toLowerCase() %> world");
+        }
         assertEquals("goodbye cruel world", GroovySandbox.runInSandbox(() ->
                         t.make(new HashMap<String, Object>(Collections.singletonMap("aspect", "CRUEL"))).toString(),
                 new ProxyWhitelist(new StaticWhitelist("method java.lang.String toLowerCase"), new GenericWhitelist())));
@@ -880,7 +885,14 @@ public class SandboxInterceptorTest {
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new AssertionError("Groovy class loader fields have changed", e);
         }
-        Object actual = new GroovySandbox().withWhitelist(whitelist).runScript(shell, script);
+        // Not all tests use GenericWhitelist, so we always force allow `new Script(Binding)`.
+        Whitelist baseWhitelist;
+        try {
+            baseWhitelist = new ProxyWhitelist(whitelist, new StaticWhitelist("new groovy.lang.Script groovy.lang.Binding"));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        Object actual = new GroovySandbox().withWhitelist(baseWhitelist).runScript(shell, script);
         if (actual instanceof GString) {
             actual = actual.toString(); // for ease of comparison
         }

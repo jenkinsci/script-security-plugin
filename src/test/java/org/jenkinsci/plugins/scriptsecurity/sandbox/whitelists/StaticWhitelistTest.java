@@ -44,6 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.NewSignature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.StaticMethodSignature;
 import org.junit.Assert;
@@ -115,6 +116,8 @@ public class StaticWhitelistTest {
      * on the test environment.
      */
     private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
+            // From workflow-cps, which is not a dependency of this plugin.
+            new NewSignature("org.jenkinsci.plugins.workflow.cps.CpsScript"),
             // From workflow-support, which is not a dependency of this plugin.
             new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild"),
             // From groovy-cps, which is not a dependency of this plugin.

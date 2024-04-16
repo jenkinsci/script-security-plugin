@@ -311,7 +311,7 @@ public abstract class EnumeratingWhitelist extends Whitelist {
     public static final class NewSignature extends Signature  {
         private final String type;
         private final String[] argumentTypes;
-        public NewSignature(String type, String[] argumentTypes) {
+        public NewSignature(String type, String... argumentTypes) {
             this.type = type;
             this.argumentTypes = argumentTypes.clone();
         }

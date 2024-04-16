@@ -38,7 +38,9 @@ method groovy.lang.Range getFrom
 method groovy.lang.Range getTo
 method groovy.lang.Range step int
 method groovy.lang.Range step int groovy.lang.Closure
+new groovy.lang.Script
 method groovy.lang.Script getBinding
+new groovy.lang.Script groovy.lang.Binding
 staticMethod groovy.xml.XmlUtil escapeXml java.lang.String
 
 method java.io.Flushable flush
@@ -1392,6 +1394,9 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods tr java.lang.CharSe
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpand java.lang.CharSequence int
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods unexpandLine java.lang.CharSequence int
+
+# Needed for normal Pipeline script instantiation. TODO: Add @Whitelisted annotation to the constructor and remove this entry.
+new org.jenkinsci.plugins.workflow.cps.CpsScript
 
 # No longer needed except for Pipelines serialized before groovy-cps changes for SECURITY-2824, so wait for most users to update and then remove it.
 staticMethod org.kohsuke.groovy.sandbox.impl.Checker checkedCast java.lang.Class java.lang.Object boolean boolean boolean
