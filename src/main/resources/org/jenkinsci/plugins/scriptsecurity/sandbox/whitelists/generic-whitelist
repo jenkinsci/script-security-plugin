@@ -796,7 +796,7 @@ method java.util.regex.MatchResult group int
 method java.util.regex.MatchResult group java.lang.String
 method java.util.regex.MatchResult groupCount
 method java.util.regex.MatchResult hasMatch
-method java.util.regex.MatchResult namedGroups 
+method java.util.regex.MatchResult namedGroups
 method java.util.regex.MatchResult start
 method java.util.regex.MatchResult start int
 method java.util.regex.MatchResult start java.lang.String
@@ -1373,8 +1373,10 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods readLines java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.CharSequence java.util.regex.Pattern java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.util.regex.Pattern java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
