@@ -634,7 +634,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         if (securityIsDisabled ||
                 (ALLOW_ADMIN_APPROVAL_ENABLED && isAdminUser && implicitAdminApproval && !ignoreAdmin)) {
             approvedScriptHashes.add(result.newHash);
-            //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
+            // Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
             removePendingScript(result.newHash);
         } else {
             String key = context.getKey();
