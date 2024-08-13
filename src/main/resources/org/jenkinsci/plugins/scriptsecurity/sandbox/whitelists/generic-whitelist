@@ -488,6 +488,7 @@ staticField java.time.format.DateTimeFormatter ISO_WEEK_DATE
 staticField java.time.format.DateTimeFormatter ISO_ZONED_DATE_TIME
 staticField java.time.format.DateTimeFormatter RFC_1123_DATE_TIME
 staticMethod java.time.format.DateTimeFormatter ofPattern java.lang.String
+method java.time.format.DateTimeFormatter parse java.lang.CharSequence
 staticField java.time.temporal.ChronoUnit CENTURIES
 staticField java.time.temporal.ChronoUnit DAYS
 staticField java.time.temporal.ChronoUnit DECADES
