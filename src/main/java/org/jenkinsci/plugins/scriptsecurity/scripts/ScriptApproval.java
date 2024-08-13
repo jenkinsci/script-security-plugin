@@ -100,7 +100,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      *     This flag restores the previous behavior when set to {@code true}.
      * </p>
      *
-     * @link <a href="https://github.com/jenkinsci/script-security-plugin/releases/tag/1172.v35f6a_0b_8207e">1172.v35f6a_0b_8207e changelog</a>
+     * @see <a href="https://github.com/jenkinsci/script-security-plugin/releases/tag/1172.v35f6a_0b_8207e">1172.v35f6a_0b_8207e changelog</a>
      */
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
     public static /* non-final */ boolean ADMIN_AUTO_APPROVAL_ENABLED =
@@ -113,7 +113,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      *     This flag restores the previous behavior when set to {@code true}.
      * </p>
      *
-     * @link <a href="https://github.com/jenkinsci/script-security-plugin/releases/tag/1265.va_fb_290b_4b_d34">1265.va_fb_290b_4b_d34 changelog</a>
+     * @see <a href="https://github.com/jenkinsci/script-security-plugin/releases/tag/1265.va_fb_290b_4b_d34">1265.va_fb_290b_4b_d34 changelog</a>
      */
     @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
     public static /* non-final */ boolean ALLOW_ADMIN_APPROVAL_ENABLED =
