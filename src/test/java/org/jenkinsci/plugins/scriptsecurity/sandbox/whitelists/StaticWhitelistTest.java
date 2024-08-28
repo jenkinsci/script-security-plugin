@@ -155,7 +155,9 @@ public class StaticWhitelistTest {
             new MethodSignature(MatchResult.class, "group", String.class),
             new MethodSignature(MatchResult.class, "hasMatch"),
             new MethodSignature(MatchResult.class, "namedGroups"),
-            new MethodSignature(MatchResult.class, "start", String.class)
+            new MethodSignature(MatchResult.class, "start", String.class),
+            // TODO Do not exist until Jenkins includes https://github.com/jenkinsci/jenkins/pull/9674
+            new MethodSignature("jenkins.model.HistoricalBuild", "getFullDisplayName")
     ));
 
     @Test public void sanity() throws Exception {
