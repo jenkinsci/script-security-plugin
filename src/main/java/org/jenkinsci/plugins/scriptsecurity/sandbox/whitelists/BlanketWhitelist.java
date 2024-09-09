@@ -27,6 +27,8 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 
 /**
@@ -35,31 +37,31 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
  */
 public final class BlanketWhitelist extends Whitelist {
 
-    @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
+    @Override public boolean permitsMethod(@NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
         return true;
     }
 
-    @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args) {
+    @Override public boolean permitsConstructor(@NonNull Constructor<?> constructor, @NonNull Object[] args) {
         return true;
     }
 
-    @Override public boolean permitsStaticMethod(Method method, Object[] args) {
+    @Override public boolean permitsStaticMethod(@NonNull Method method, @NonNull Object[] args) {
         return true;
     }
 
-    @Override public boolean permitsFieldSet(Field field, Object receiver, Object value) {
+    @Override public boolean permitsFieldSet(@NonNull Field field, @NonNull Object receiver, Object value) {
         return true;
     }
 
-    @Override public boolean permitsFieldGet(Field field, Object receiver) {
+    @Override public boolean permitsFieldGet(@NonNull Field field, @NonNull Object receiver) {
         return true;
     }
 
-    @Override public boolean permitsStaticFieldSet(Field field, Object value) {
+    @Override public boolean permitsStaticFieldSet(@NonNull Field field, Object value) {
         return true;
     }
 
-    @Override public boolean permitsStaticFieldGet(Field field) {
+    @Override public boolean permitsStaticFieldGet(@NonNull Field field) {
         return true;
     }
 

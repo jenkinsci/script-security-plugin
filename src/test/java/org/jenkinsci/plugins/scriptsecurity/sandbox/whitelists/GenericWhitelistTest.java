@@ -36,7 +36,7 @@ public class GenericWhitelistTest {
     @Rule public ErrorCollector errors = new ErrorCollector();
 
     @Test public void sanity() throws Exception {
-        StaticWhitelistTest.sanity(GenericWhitelist.class.getResource("generic-whitelist"));
+        StaticWhitelistTest.sanity(StaticWhitelist.class.getResource("generic-whitelist"));
     }
 
     @Issue("SECURITY-538")

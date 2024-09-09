@@ -24,9 +24,9 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import com.gargoylesoftware.htmlunit.TextPage;
-import com.gargoylesoftware.htmlunit.html.DomNodeUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import org.htmlunit.TextPage;
+import org.htmlunit.html.DomNodeUtil;
+import org.htmlunit.html.HtmlPage;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;

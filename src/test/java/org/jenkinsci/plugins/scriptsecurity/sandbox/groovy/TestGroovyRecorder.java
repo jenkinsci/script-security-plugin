@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import groovy.lang.Binding;
 import hudson.Extension;
 import hudson.Launcher;
@@ -46,6 +47,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public final class TestGroovyRecorder extends Recorder {
 
     private final SecureGroovyScript script;
+    private transient Binding binding;
 
     @DataBoundConstructor public TestGroovyRecorder(SecureGroovyScript script) {
         this.script = script.configuringWithKeyItem();
@@ -54,10 +56,16 @@ public final class TestGroovyRecorder extends Recorder {
     public SecureGroovyScript getScript() {
         return script;
     }
-    
+
+    public void setBinding(Binding binding) {
+        this.binding = binding;
+    }
+
     @Override public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         try {
-            Binding binding = new Binding();
+            if (binding == null) {
+                binding = new Binding();
+            }
             binding.setVariable("build", build);
             build.setDescription(String.valueOf(script.evaluate(Jenkins.get().getPluginManager().uberClassLoader, binding, listener)));
         } catch (Exception x) {
@@ -71,7 +79,8 @@ public final class TestGroovyRecorder extends Recorder {
     }
     
     @Extension public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
-        
+
+        @NonNull
         @Override public String getDisplayName() {
             return "Test Groovy Recorder";
         }

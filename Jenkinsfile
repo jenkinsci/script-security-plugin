@@ -1,4 +1,6 @@
-buildPlugin(useAci: true, configurations: [
-  [ platform: "windows", jdk: "11" ],
-  [ platform: "linux", jdk: "11" ]
+buildPlugin(
+  useContainerAgent: true,
+  configurations: [
+    [platform: 'linux', jdk: 21],
+    [platform: 'windows', jdk: 17],
 ])

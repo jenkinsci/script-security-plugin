@@ -58,19 +58,19 @@ public final class ApprovalContext {
 
     /**
      * Creates a context with a specified user ID.
-     * ({@link ACL#SYSTEM} is automatically ignored.)
+     * ({@link ACL#SYSTEM2} is automatically ignored.)
      */
     public ApprovalContext withUser(@CheckForNull String user) {
-        return new ApprovalContext(ACL.SYSTEM.getName().equals(user) ? null : user, item, key);
+        return new ApprovalContext(ACL.SYSTEM2.getName().equals(user) ? null : user, item, key);
     }
 
     /**
      * Creates a context with the user associated with the current thread.
-     * ({@link ACL#SYSTEM} is automatically ignored, but the user might be {@link Jenkins#ANONYMOUS}.)
+     * ({@link ACL#SYSTEM2} is automatically ignored, but the user might be {@link Jenkins#ANONYMOUS2}.)
      */
     public ApprovalContext withCurrentUser() {
         User u = User.current();
-        return withUser(u != null ? u.getId() : Jenkins.ANONYMOUS.getName());
+        return withUser(u != null ? u.getId() : Jenkins.ANONYMOUS2.getName());
     }
 
     /**

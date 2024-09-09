@@ -24,16 +24,13 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import hudson.Extension;
 import java.io.IOException;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
- * Includes entries useful for general kinds of scripts.
+ * @deprecated replaced by {@link StaticWhitelist#stockWhitelists}, now used only in tests
  */
-@Restricted(NoExternalUse.class)
-@Extension public final class GenericWhitelist extends ProxyWhitelist {
+@Deprecated
+public final class GenericWhitelist extends ProxyWhitelist {
 
     public GenericWhitelist() throws IOException {
         super(StaticWhitelist.from(GenericWhitelist.class.getResource("generic-whitelist")));

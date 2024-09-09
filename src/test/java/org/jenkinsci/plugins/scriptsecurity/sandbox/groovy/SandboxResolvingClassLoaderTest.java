@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.CLASS_NOT_FOUND;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.parentClassCache;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
 
 public class SandboxResolvingClassLoaderTest {
 

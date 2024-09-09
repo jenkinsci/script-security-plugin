@@ -40,8 +40,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.MethodSignature;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.NewSignature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.StaticMethodSignature;
 import org.junit.Assert;
@@ -58,7 +61,7 @@ public class StaticWhitelistTest {
 
     static void sanity(URL definition) throws Exception {
         StaticWhitelist wl = StaticWhitelist.from(definition);
-        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<EnumeratingWhitelist.Signature>();
+        List<EnumeratingWhitelist.Signature> sigs = new ArrayList<>();
         try (InputStream is = definition.openStream(); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8); BufferedReader br = new BufferedReader(isr)) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -113,6 +116,8 @@ public class StaticWhitelistTest {
      * on the test environment.
      */
     private static final Set<Signature> KNOWN_GOOD_SIGNATURES = new HashSet<>(Arrays.asList(
+            // From workflow-cps, which is not a dependency of this plugin.
+            new NewSignature("org.jenkinsci.plugins.workflow.cps.CpsScript"),
             // From workflow-support, which is not a dependency of this plugin.
             new MethodSignature("org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper", "getRawBuild"),
             // From groovy-cps, which is not a dependency of this plugin.
@@ -120,8 +125,9 @@ public class StaticWhitelistTest {
                     "java.util.Iterator", "groovy.lang.Closure"),
             // Overrides CharSequence.isEmpty in Java 15+.
             new MethodSignature(String.class, "isEmpty"),
-            // Does not exist until Java 15.
+            // Do not exist until Java 15.
             new MethodSignature(CharSequence.class, "isEmpty"),
+            new MethodSignature(String.class, "stripIndent"),
             // Override the corresponding RandomGenerator methods in Java 17+.
             new MethodSignature(Random.class, "nextBoolean"),
             new MethodSignature(Random.class, "nextBytes", byte[].class),
@@ -139,7 +145,17 @@ public class StaticWhitelistTest {
             new MethodSignature("java.util.random.RandomGenerator", "nextGaussian"),
             new MethodSignature("java.util.random.RandomGenerator", "nextInt"),
             new MethodSignature("java.util.random.RandomGenerator", "nextInt", "int"),
-            new MethodSignature("java.util.random.RandomGenerator", "nextLong")
+            new MethodSignature("java.util.random.RandomGenerator", "nextLong"),
+            // Override the corresponding MatchResult methods in Java 20+.
+            new MethodSignature(Matcher.class, "end", String.class),
+            new MethodSignature(Matcher.class, "group", String.class),
+            new MethodSignature(Matcher.class, "start", String.class),
+            // Do not exist until Java 20.
+            new MethodSignature(MatchResult.class, "end", String.class),
+            new MethodSignature(MatchResult.class, "group", String.class),
+            new MethodSignature(MatchResult.class, "hasMatch"),
+            new MethodSignature(MatchResult.class, "namedGroups"),
+            new MethodSignature(MatchResult.class, "start", String.class)
     ));
 
     @Test public void sanity() throws Exception {

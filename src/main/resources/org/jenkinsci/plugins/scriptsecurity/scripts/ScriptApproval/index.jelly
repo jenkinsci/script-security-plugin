@@ -30,7 +30,7 @@ THE SOFTWARE.
             <script>
                 var mgr = <st:bind value="${it}"/>;
                 function hideScript(hash) {
-                    $('ps-' + hash).remove();
+                    document.getElementById('ps-' + hash).remove();
                 }
                 function approveScript(hash) {
                     mgr.approveScript(hash);
@@ -41,13 +41,15 @@ THE SOFTWARE.
                     hideScript(hash);
                 }
                 function hideSignature(hash) {
-                    $('s-' + hash).style.display = 'none';
+                    document.getElementById('s-' + hash).style.display = 'none';
                 }
                 function updateApprovedSignatures(r) {
                     var both = r.responseObject();
-                    $('approvedSignatures').value = both[0].join('\n');
-                    $('aclApprovedSignatures').value = both[1].join('\n');
-                    $('dangerousApprovedSignatures').value = both[2].join('\n');
+                    document.getElementById('approvedSignatures').value = both[0].join('\n');
+                    document.getElementById('aclApprovedSignatures').value = both[1].join('\n');
+                    if (document.getElementById('dangerousApprovedSignatures')) {
+                        document.getElementById('dangerousApprovedSignatures').value = both[2].join('\n');
+                    }
                 }
                 function approveSignature(signature, hash) {
                     mgr.approveSignature(signature, function(r) {
@@ -78,12 +80,12 @@ THE SOFTWARE.
                 
                 function renderPendingClasspathEntries(pendingClasspathEntries) {
                     if (pendingClasspathEntries.length == 0) {
-                        $('pendingClasspathEntries-none').show();
-                        $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
-                        $('pendingClasspathEntries').hide();
+                        document.getElementById('pendingClasspathEntries-none').style.display = '';
+                        Array.from(document.getElementById('pendingClasspathEntries').children).forEach(function(e){e.remove()});
+                        document.getElementById('pendingClasspathEntries').style.display = 'none';
                     } else {
-                        $('pendingClasspathEntries-none').hide();
-                        $('pendingClasspathEntries').childElements().each(function(e){e.remove()});
+                        document.getElementById('pendingClasspathEntries-none').style.display = 'none';
+                        Array.from(document.getElementById('pendingClasspathEntries').children).forEach(function(e){e.remove()});
                         /*
                            Create a list like:
                             <p id="pcp-${pcp.hash}">
@@ -92,39 +94,45 @@ THE SOFTWARE.
                                 ${pcp.hash} (${pcp.path})
                             </p>
                          */
-                        pendingClasspathEntries.each(function(e) {
-                            var block = new Element('p', { 'id': 'pcp-' + e.hash });
-                            var approveButton = new Element('button', { 'class': 'approve', 'hash': e.hash});
-                            approveButton.insert('Approve');
-                            approveButton.observe('click', function() {
-                                approveClasspathEntry(this.readAttribute('hash'));
+                        pendingClasspathEntries.forEach(function(e) {
+                            var block = document.createElement('p');
+                            block.setAttribute('id', 'pcp-' + e.hash);
+                            var approveButton = document.createElement('button');
+                            approveButton.setAttribute('class', 'approve');
+                            approveButton.setAttribute('hash', e.hash);
+                            approveButton.textContent = 'Approve';
+                            approveButton.addEventListener('click', function() {
+                                approveClasspathEntry(this.getAttribute('hash'));
                             });
-                            var denyButton = new Element('button', { 'class': 'deny', 'hash': e.hash});
-                            denyButton.insert('Deny');
-                            denyButton.observe('click', function() {
-                                denyClasspathEntry(this.readAttribute('hash'));
+                            var denyButton = document.createElement('button');
+                            denyButton.setAttribute('class', 'deny');
+                            denyButton.setAttribute('hash', e.hash);
+                            denyButton.textContent = 'Deny';
+                            denyButton.addEventListener('click', function() {
+                                denyClasspathEntry(this.getAttribute('hash'));
                             });
-                            block.insert(approveButton);
-                            block.insert(denyButton);
-                            var code = new Element('code', { 'title': e.hash });
+                            block.appendChild(approveButton);
+                            block.appendChild(denyButton);
+                            var code = document.createElement('code');
+                            code.setAttribute('title', e.hash);
                             code.textContent = e.path;
-                            block.insert(code);
+                            block.appendChild(code);
                             
-                            $('pendingClasspathEntries').insert(block);
+                            document.getElementById('pendingClasspathEntries').appendChild(block);
                         });
-                        $('pendingClasspathEntries').show();
+                        document.getElementById('pendingClasspathEntries').style.display = '';
                     }
                 }
                 
                 function renderApprovedClasspathEntries(approvedClasspathEntries) {
                     if (approvedClasspathEntries.length == 0) {
-                        $('approvedClasspathEntries-none').show();
-                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
-                        $('approvedClasspathEntries').hide();
-                        $('approvedClasspathEntries-clear').hide();
+                        document.getElementById('approvedClasspathEntries-none').style.display = '';
+                        Array.from(document.getElementById('approvedClasspathEntries').children).forEach(function(e){e.remove()});
+                        document.getElementById('approvedClasspathEntries').style.display = 'none';
+                        document.getElementById('approvedClasspathEntries-clear').style.display = 'none';
                     } else {
-                        $('approvedClasspathEntries-none').hide();
-                        $('approvedClasspathEntries').childElements().each(function(e){e.remove()});
+                        document.getElementById('approvedClasspathEntries-none').style.display = 'none';
+                        Array.from(document.getElementById('approvedClasspathEntries').children).forEach(function(e){e.remove()});
                         /*
                            Create a list like:
                             <p id="acp-${acp.hash}">
@@ -132,24 +140,28 @@ THE SOFTWARE.
                                 ${acp.hash} (${acp.path})
                             </p>
                          */
-                        approvedClasspathEntries.each(function(e) {
-                            var block = new Element('p', { 'id': 'acp-' + e.hash });
-                            var deleteButton = new Element('button', { 'class': 'delete', 'hash': e.hash});
-                            deleteButton.insert('Delete');
-                            deleteButton.observe('click', function() {
+                        approvedClasspathEntries.forEach(function(e) {
+                            var block = document.createElement('p');
+                            block.setAttribute('id', 'acp-' + e.hash);
+                            var deleteButton = document.createElement('button');
+                            deleteButton.setAttribute('class', 'delete');
+                            deleteButton.setAttribute('hash', e.hash);
+                            deleteButton.textContent = 'Delete';
+                            deleteButton.addEventListener('click', function() {
                                 if (confirm('Really delete this approved classpath entry? Any existing scripts using it will need to be rerun and the entry reapproved.')) {
-                                    denyApprovedClasspathEntry(this.readAttribute('hash'));
+                                    denyApprovedClasspathEntry(this.getAttribute('hash'));
                                 }
                             });
-                            block.insert(deleteButton);
-                            var code = new Element('code', { 'title': e.hash });
+                            block.appendChild(deleteButton);
+                            var code = document.createElement('code');
+                            code.setAttribute('title', e.hash);
                             code.textContent = e.path;
-                            block.insert(code);
+                            block.appendChild(code);
                             
-                            $('approvedClasspathEntries').insert(block);
+                            document.getElementById('approvedClasspathEntries').appendChild(block);
                         });
-                        $('approvedClasspathEntries').show();
-                        $('approvedClasspathEntries-clear').show();
+                        document.getElementById('approvedClasspathEntries').style.display = '';
+                        document.getElementById('approvedClasspathEntries-clear').style.display = '';
                     }
                 }
                 
@@ -179,7 +191,7 @@ THE SOFTWARE.
                     });
                 }
                 
-                Event.observe(window, "load", function(){
+                window.addEventListener("load", function(){
                     mgr.getClasspathRenderInfo(function(r) {
                         renderClasspaths(r);
                     });
@@ -203,6 +215,17 @@ THE SOFTWARE.
                     </j:forEach>
                 </j:otherwise>
             </j:choose>
+            <j:if test="${it.hasDeprecatedApprovedScriptHashes()}">
+                <p id="deprecated-approvedScripts-clear">
+                    You have <st:out value="${it.countDeprecatedApprovedScriptHashes()}"/> script approvals with deprecated hashes:
+                    <button onclick="if (confirm('Really delete all deprecated approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearDeprecatedApprovedScripts(); document.getElementById('deprecated-approvedScripts-clear').style.display = 'none';}">Clear Deprecated Approvals</button>
+                </p>
+                <p class="setting-description">
+                    Script approvals are stored in Jenkins as the hashed value of the script. Old approvals were hashed using SHA-1, which is deprecated.
+                    Because only the hash of the script is stored, they cannot be immediately converted to use a new hash algorithm. Instead, they will be automatically rehashed when the script is next used.
+                    To minimize potential security risks, you can immediately revoke all script approvals that were hashed using SHA-1. <strong>This will cause all jobs and features that use those scripts to fail until they are reconfigured and then approved by a Jenkins administrator.</strong>
+                </p>
+            </j:if>
             <p id="approvedScripts-clear">
                 You can also remove all previous script approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
@@ -246,6 +269,7 @@ THE SOFTWARE.
             <j:set var="dangerousApprovedSignatures" value="${it.dangerousApprovedSignatures}"/>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
                 <p>Signatures already approved which <strong><font color="red">may have introduced a security vulnerability</font></strong> (recommend clearing):</p>
+                <br/>
                 <textarea readonly="readonly" id="dangerousApprovedSignatures" rows="10" cols="80">
                     <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
                 </textarea>
@@ -271,6 +295,36 @@ THE SOFTWARE.
             </p>
             <div id="approvedClasspathEntries">
             </div>
+            <j:if test="${it.hasDeprecatedApprovedClasspathHashes()}">
+                <p id="deprecated-approvedClasspaths-clear">
+                    You have ${it.countDeprecatedApprovedClasspathHashes()} approved classpath entries with deprecated hashes:
+                    <span id="deprecated-approvedClasspaths-clear-btn">
+                        <button onclick="if (confirm('This will be scheduled on a background thread. You can follow the progress in the system log')) {mgr.convertDeprecatedApprovedClasspathEntries(); document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = 'none'; document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = '';}">Rehash Deprecated Approvals</button>
+                    </span>
+                    <span id="deprecated-approvedClasspaths-clear-spinner">
+                        <l:icon alt="${%Converting...}" class="${it.spinnerIconClassName} icon-md"/>
+                    </span>
+                </p>
+                <p class="setting-description">
+                    Approved classpath entries are stored in Jenkins with the URL and the hashed content of the resource the URL refers to. Old approvals were hashed using SHA-1, which is deprecated.
+                    Because the URL is known they can be rehashed in bulk, but that might take time, so they will each be rehashed when next used to not cause any disruption.
+                    To minimize potential security risks, you can schedule a background task to automatically convert all existing approved classpath entries to the new hash format.
+                </p>
+                <j:choose>
+                    <j:when test="${it.isConvertingDeprecatedApprovedClasspathEntries()}">
+                        <script>
+                            document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = 'none';
+                            document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = '';
+                        </script>
+                    </j:when>
+                    <j:otherwise>
+                        <script>
+                            document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = '';
+                            document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = 'none';
+                        </script>
+                    </j:otherwise>
+                </j:choose>
+            </j:if>
             <p id="approvedClasspathEntries-clear">
                 You can also remove all previous classpath entry approvals:
                 <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>

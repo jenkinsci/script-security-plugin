@@ -24,17 +24,20 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import com.gargoylesoftware.htmlunit.html.HtmlCheckBoxInput;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import org.htmlunit.CollectingAlertHandler;
+import org.htmlunit.html.HtmlCheckBoxInput;
+import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
+import groovy.lang.Script;
 import hudson.remoting.Which;
+import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlFormUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
+import org.htmlunit.html.HtmlForm;
+import org.htmlunit.html.HtmlFormUtil;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlTextArea;
 import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
@@ -44,14 +47,15 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import hudson.util.VersionNumber;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import jenkins.model.Jenkins;
-import jenkins.security.NotReallyRoleSensitiveCallable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
@@ -60,7 +64,14 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.is;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -68,22 +79,37 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.groovy.sandbox.impl.Checker;
+import static org.junit.Assert.assertEquals;
 
 public class SecureGroovyScriptTest {
+
+    @ClassRule public static BuildWatcher WATCHER = new BuildWatcher();
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
+
+    private void addPostBuildAction(HtmlPage page) throws IOException {
+        String displayName = r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName();
+        if (Jenkins.getVersion().isOlderThan(new VersionNumber("2.422"))) {
+            page.getAnchorByText(displayName).click();
+        } else {
+            HtmlForm config = page.getFormByName("config");
+            r.getButtonByCaption(config, displayName).click();
+        }
+
+    }
 
     /**
      * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
@@ -105,7 +131,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -118,7 +144,7 @@ public class SecureGroovyScriptTest {
         List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
         HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
-        assertEquals(true, sandboxRB.isChecked()); // should be checked
+        assertTrue(sandboxRB.isChecked()); // should be checked
         sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
 
         r.submit(config);
@@ -158,7 +184,7 @@ public class SecureGroovyScriptTest {
 
 
     /**
-     * Test where the user has ADMINISTER privs, default to non sandbox mode.
+     * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
      */
     @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
@@ -177,7 +203,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -193,12 +219,12 @@ public class SecureGroovyScriptTest {
         // The user has ADMINISTER privs => should default to non sandboxed
         assertFalse(publisher.getScript().isSandbox());
 
-        // Because it has ADMINISTER privs, the script should not have ended up pending approval
+        // even though it has ADMINISTER privs, the script should still require approval
         Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
-        assertEquals(0, pendingScripts.size());
+        assertEquals(1, pendingScripts.size());
 
         // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertEquals(groovy, ScriptApproval.get().using(groovy, GroovyLanguage.get(), "Testing"));
+        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get(), "Testing"));
     }
 
     /**
@@ -220,7 +246,7 @@ public class SecureGroovyScriptTest {
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
         HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        page.getAnchorByText(r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName()).click();
+        addPostBuildAction(page);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -887,7 +913,7 @@ public class SecureGroovyScriptTest {
 
         JenkinsRule.WebClient wc = r.createWebClient();
         
-        // If configured by a user with ADMINISTER script is approved if edited by that user
+        // If configured by a user with ADMINISTER script is not approved and approval is requested
         {
             wc.login("admin");
             HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
@@ -898,8 +924,9 @@ public class SecureGroovyScriptTest {
             script.setText(groovy);
             r.submit(config);
 
-            assertTrue(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
-            
+            assertFalse(ScriptApproval.get().isScriptApproved(groovy, GroovyLanguage.get()));
+            assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+
             // clean up for next tests
             ScriptApproval.get().preapproveAll();
             ScriptApproval.get().clearApprovedScripts();
@@ -924,11 +951,14 @@ public class SecureGroovyScriptTest {
             ScriptApproval.get().clearApprovedScripts();
         }
         
-        // If configured by a user with ADMINISTER while escape hatch is on script is approved upon save
+        // If configured by a user with ADMINISTER while escape hatches are on script is approved upon save
         {
             wc.login("admin");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = true;
+
             try {
                 HtmlForm config = wc.getPage(p, "configure").getFormByName("config");
                 List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
@@ -943,15 +973,18 @@ public class SecureGroovyScriptTest {
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = originalAllowAdminApproval;
             }
         }
 
         // If configured by a user without ADMINISTER while escape hatch is on script is not approved
         {
             wc.login("devel");
-            boolean original = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
+            boolean originalAdminAutoApprove = ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED;
             ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = true;
+            boolean originalAllowAdminApproval = ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED;
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = true;
             try {
                 r.submit(wc.getPage(p, "configure").getFormByName("config"));
 
@@ -961,7 +994,8 @@ public class SecureGroovyScriptTest {
                 ScriptApproval.get().preapproveAll();
                 ScriptApproval.get().clearApprovedScripts();
             } finally {
-                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = original;
+                ScriptApproval.ADMIN_AUTO_APPROVAL_ENABLED = originalAdminAutoApprove;
+                ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = originalAllowAdminApproval;
             }
         }
     }
@@ -1006,24 +1040,18 @@ public class SecureGroovyScriptTest {
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript("class Test { public void finalize() { } }; null", false, null)));
 
-        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
-            public Void call() throws Exception {
-                FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
-                r.assertLogContains("UnapprovedUsageException", b);
-                return null;
-            }
-        });
+        try (ACLContext ctx = ACL.as(User.getById("dev", true))) {
+            FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+            r.assertLogContains("UnapprovedUsageException", b);
+        }
 
         Set<ScriptApproval.PendingScript> ps = ScriptApproval.get().getPendingScripts();
         assertEquals(1, ps.size());
         ScriptApproval.get().approveScript(ps.iterator().next().getHash());
 
-        ACL.impersonate(User.getById("dev", true).impersonate(), new NotReallyRoleSensitiveCallable<Void, Exception>() {
-            public Void call() throws Exception {
-                r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
-                return null;
-            }
-        });
+        try (ACLContext ctx = ACL.as(User.getById("dev", true))) {
+            r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
+        }
     }
 
     @Issue("SECURITY-1292")
@@ -1245,5 +1273,91 @@ public class SecureGroovyScriptTest {
                 "if ((jenkins.YesNoMaybe.class as Object[]).size() != 3) throw new Exception('blocked enum access')", true, null)));
         FreeStyleBuild b2 = r.assertBuildStatus(Result.FAILURE, p2.scheduleBuild2(0));
         r.assertLogContains("staticField jenkins.YesNoMaybe YES", b2);
+    }
+
+    @Issue("SECURITY-2848")
+    @Test public void blockScriptClassesWithMainMethods() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test extends org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScriptTest$HasMainMethod { }", true, null);
+        p.getPublishersList().add(new TestGroovyRecorder(s));
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object (Test main)", b);
+        assertNull(r.jenkins.getSystemMessage());
+    }
+
+    @Issue("SECURITY-2824")
+    @Test public void blockCastingBindingValues() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject();
+        SecureGroovyScript s = new SecureGroovyScript(
+                "class Test { File list }", true, null);
+        TestGroovyRecorder recorder = new TestGroovyRecorder(s);
+        Binding binding = new Binding();
+        binding.setProperty("list", Collections.singletonList("secret.key"));
+        recorder.setBinding(binding);
+        p.getPublishersList().add(recorder);
+        FreeStyleBuild b = r.buildAndAssertStatus(Result.FAILURE, p);
+        r.assertLogContains("new java.io.File java.lang.String", b);
+    }
+
+    @Test public void testApprovalFromFormValidation() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        try (JenkinsRule.WebClient wc = r.createWebClient()) {
+            CollectingAlertHandler altertHandler = new CollectingAlertHandler();
+            wc.setAlertHandler(altertHandler);
+
+            wc.login("admin");
+            HtmlPage page = wc.getPage(p, "configure");
+            HtmlForm config = page.getFormByName("config");
+            HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+            addPostBuildAction(page);
+            wc.waitForBackgroundJavaScript(10000);
+            List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+            // Get the last one, because previous ones might be from Lockable Resources during PCT.
+            HtmlTextArea script = scripts.get(scripts.size() - 1);
+            String groovy = "build.externalizableId";
+            script.setText(groovy);
+            // nothing is approved or pending (no save)
+            assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
+            assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(emptyArray()));
+
+            wc.waitForBackgroundJavaScript(10_000); // FormValidation to display
+
+            page.getAnchorByText("Approve script").click();
+
+            wc.waitForBackgroundJavaScript(10_000); // wait for the ajax approval to complete
+
+            assertThat(altertHandler.getCollectedAlerts(), contains("Script approved"));
+            // script is approved
+            assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
+            assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(arrayWithSize(1)));
+
+            r.submit(config);
+
+            FreeStyleBuild b = r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
+        }
+    }
+
+    public static class HasMainMethod {
+        @Whitelisted
+        public HasMainMethod() { }
+        public static void main(String[] args) throws IOException {
+            Jenkins.get().setSystemMessage("SECURITY-2848");
+        }
+    }
+
+    @Issue("JENKINS-38908")
+    @Test public void groovyCallSiteSelectorMain() throws Exception {
+        Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
+        assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
+        assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
     }
 }

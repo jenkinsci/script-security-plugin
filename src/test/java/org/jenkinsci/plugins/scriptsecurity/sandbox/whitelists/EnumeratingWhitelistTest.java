@@ -33,6 +33,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import static org.junit.Assert.*;
 
 public class EnumeratingWhitelistTest {
@@ -136,51 +137,22 @@ public class EnumeratingWhitelistTest {
         Field f = Fancy.class.getField("myF");
         Field staticF = Fancy.class.getField("myStaticF");
 
-        EnumeratingWhitelist.MethodSignature mSig = new EnumeratingWhitelist.MethodSignature(Fancy.class, "m", Object[].class);
-        String[] obString = {Object.class.getName()};
-        EnumeratingWhitelist.StaticMethodSignature staticMSig = new EnumeratingWhitelist.StaticMethodSignature(Fancy.class.getName(), "staticM", obString);
-        EnumeratingWhitelist.NewSignature conSig = new EnumeratingWhitelist.NewSignature(Fancy.class);
-        EnumeratingWhitelist.FieldSignature fSig = new EnumeratingWhitelist.FieldSignature(Fancy.class, "myF");
-        EnumeratingWhitelist.FieldSignature staticFSig = new EnumeratingWhitelist.StaticFieldSignature(Fancy.class.getName(), "myStaticF");
-
         // Each tested twice to allow for once with and once without caching
         // And we're checking cache entries and equality of canonical method name and signatures
         assertFalse(myList.permitsMethod(m, new Fancy(), null));
         assertFalse(myList.permitsMethod(m, new Fancy(), null));
-        assertEquals(Boolean.FALSE, myList.permittedCache.get(mSig.toString()));
 
         assertFalse(myList.permitsStaticMethod(staticM, null));
         assertFalse(myList.permitsStaticMethod(staticM, null));
-        assertEquals(Boolean.FALSE, myList.permittedCache.get(staticMSig.toString()));
 
         assertFalse(myList.permitsConstructor(con, null));
         assertFalse(myList.permitsConstructor(con, null));
-        assertEquals(Boolean.FALSE, myList.permittedCache.get(conSig.toString()));
 
         assertFalse(myList.permitsFieldGet(f, new Fancy()));
         assertFalse(myList.permitsFieldGet(f, new Fancy()));
-        assertEquals(Boolean.FALSE, myList.permittedCache.get(fSig.toString()));
 
         assertFalse(myList.permitsStaticFieldGet(staticF));
         assertFalse(myList.permitsStaticFieldGet(staticF));
-        assertEquals(Boolean.FALSE, myList.permittedCache.get(staticFSig.toString()));
-
-        // Now we clear, add matching signatures, and precache
-        myList.clearCache();
-        assertTrue(myList.permittedCache.isEmpty());
-        myList.methodSignatures.add(mSig);
-        myList.staticMethodSignatures.add(staticMSig);
-        myList.newSignatures.add(conSig);
-        myList.fieldSignatures.add(fSig);
-        myList.staticFieldSignatures.add(staticFSig);
-        myList.precache();
-
-        // Just confirms we cached right
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(mSig.toString()));
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(staticMSig.toString()));
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(conSig.toString()));
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(fSig.toString()));
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(staticFSig.toString()));
     }
 
     @Test
@@ -189,12 +161,17 @@ public class EnumeratingWhitelistTest {
         Field f = C.class.getField("myField");
         myList.fieldSignatures.add(new EnumeratingWhitelist.FieldSignature(C.class, "*"));
 
-        myList.precache();
-        assertTrue(myList.permittedCache.isEmpty());  // We cannot cache Wildcard matches directly, only when we see a method they permit
-
         assertTrue(myList.permitsFieldGet(f, new C()));  // No cache, so we fall back to direct search and hit the wildcard, then cache permitted
         assertTrue(myList.permitsFieldGet(f, new C()));  // Should hit cache for that specific method
-        assertEquals(Boolean.TRUE, myList.permittedCache.get(EnumeratingWhitelist.canonicalFieldSig(f)));  // Verifies it can cache that
+    }
+
+    @Issue("JENKINS-42214")
+    @Test public void fieldExists() throws Exception {
+        assertTrue(new EnumeratingWhitelist.FieldSignature("hudson.model.Result", "color").exists());
+        assertTrue(new EnumeratingWhitelist.StaticFieldSignature("hudson.model.Result", "ABORTED").exists());
+
+        assertFalse(new EnumeratingWhitelist.StaticFieldSignature("hudson.model.Result", "color").exists());
+        assertFalse(new EnumeratingWhitelist.FieldSignature("hudson.model.Result", "ABORTED").exists());
     }
 
 }
