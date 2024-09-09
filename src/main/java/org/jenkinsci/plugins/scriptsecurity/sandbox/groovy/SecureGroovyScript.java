@@ -33,6 +33,7 @@ import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
@@ -370,7 +371,16 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                     memoryProtectedLoader = new CleanGroovyClassLoader(loader);
                     loaderF.set(sh, memoryProtectedLoader);
                 }
-                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get()));
+                String origin = "UNKNOWN";
+                if (binding.hasVariable("build")) {
+                    Run run = (Run) binding.getVariable("build");
+
+                    origin = String.format("build '%s'", run.getExternalizableId());
+                } else {
+                    LOGGER.log(Level.INFO, "Could not determine origin of the groovy script - missing implementation. Please open an issue for this!");
+                }
+
+                return sh.evaluate(ScriptApproval.get().using(script, GroovyLanguage.get(), origin));
             }
 
         } finally {

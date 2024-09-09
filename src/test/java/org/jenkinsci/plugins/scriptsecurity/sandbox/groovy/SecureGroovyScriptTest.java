@@ -224,7 +224,7 @@ public class SecureGroovyScriptTest {
         assertEquals(1, pendingScripts.size());
 
         // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get(), "Testing"));
     }
 
     /**
@@ -269,7 +269,7 @@ public class SecureGroovyScriptTest {
 
         // We didn't add the approved classpath so ...
         final UnapprovedUsageException e = assertThrows(UnapprovedUsageException.class,
-                () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+                () -> ScriptApproval.get().using(groovy, GroovyLanguage.get(), "Testing"));
         assertEquals("script not yet approved for use", e.getMessage());
     }
 
