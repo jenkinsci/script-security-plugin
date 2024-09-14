@@ -15,7 +15,15 @@
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.387.3</jenkins.version>
+    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+    <jenkins.baseline>2.462</jenkins.baseline>
+    <!-- TODO Replace with the standard jenkins.baseline references after LTS requires Java 17  -->
+    <!-- <jenkins.version>${jenkins.baseline}.1</jenkins.version> -->
+    <!-- <jenkins.version>2.476</jenkins.version> -->
+    <jenkins.version>2.477-rc35350.7ff5a_a_a_0fdc3</jenkins.version>
+    <!-- TODO JENKINS-73339 until in parent POM -->
+    <jenkins-test-harness.version>2265.v3da_49c8134d6</jenkins-test-harness.version>
+    <maven.compiler.release>17</maven.compiler.release>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
   <licenses>
@@ -49,10 +57,16 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.387.x</artifactId>
-        <version>2543.vfb_1a_5fb_9496d</version>
-        <scope>import</scope>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
+        <version>3358.vea_fa_1f41504d</version>
         <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- TODO JENKINS-73339 until in parent POM, work around https://github.com/jenkinsci/plugin-pom/issues/936 -->
+      <dependency>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>5.0.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
