@@ -156,6 +156,10 @@ public class StaticWhitelistTest {
             new MethodSignature(MatchResult.class, "hasMatch"),
             new MethodSignature(MatchResult.class, "namedGroups"),
             new MethodSignature(MatchResult.class, "start", String.class),
+            // TODO No longer exists after Jenkins includes https://github.com/jenkinsci/jenkins/pull/9674
+            // Remove once plugin depends on Jenkins 2.477 or newer
+            // Remove from jenkins-whitelist at the same time
+            new MethodSignature("hudson.model.Run", "getFullDisplayName"),
             // TODO Do not exist until Jenkins includes https://github.com/jenkinsci/jenkins/pull/9674
             new MethodSignature("jenkins.model.HistoricalBuild", "getFullDisplayName")
     ));
