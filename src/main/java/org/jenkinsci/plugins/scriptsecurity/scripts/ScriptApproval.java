@@ -622,6 +622,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                pendingClasspathEntries.isEmpty();
     }
 
+
     /**
      * Used when someone is configuring a script.
      * Typically you would call this from a {@link DataBoundConstructor}.
@@ -635,36 +636,49 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      * @param language the language in which it is written
      * @param context any additional information about how where or by whom this is being configured
      * @param approveIfAdmin indicates whether script should be approved if current user has admin permissions
+     * @param ignoreAdmin indicates whether an admin's ability to approve a script without visiting the script approval site should be ignored, regardless of any configurations.
      * @return {@code script}, for convenience
      */
-    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin, boolean ignoreAdmin) {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
-        if (!result.approved) {
-            if (!Jenkins.get().isUseSecurity() || 
-                    (ALLOW_ADMIN_APPROVAL_ENABLED &&
-                    ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
-                            && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin)))) {
-                approvedScriptHashes.add(result.newHash);
-                //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
-                removePendingScript(result.newHash);
-            } else {
-                String key = context.getKey();
-                if (key != null) {
-                    pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
-                }
-                pendingScripts.add(new PendingScript(script, language, context));
-            }
-            save();
+        if (result.approved) {
+            return script;
         }
+        // Security is disabled globally.
+        boolean securityIsDisabled = !Jenkins.get().isUseSecurity();
+        // Has to be an actual user and the user must be admin. System-triggered jobs should not auto-approve. (I guess that is the reasonf or this boolean?)
+        boolean isAdminUser = Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER);
+        boolean implicitAdminApproval = ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin;
+        if (securityIsDisabled ||
+                (ALLOW_ADMIN_APPROVAL_ENABLED && isAdminUser && implicitAdminApproval && !ignoreAdmin)) {
+            approvedScriptHashes.add(result.newHash);
+            // Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
+            removePendingScript(result.newHash);
+        } else {
+            String key = context.getKey();
+            if (key != null) {
+                pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
+            }
+            pendingScripts.add(new PendingScript(script, language, context));
+        }
+        save();
         return script;
     }
 
     /**
-     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean)} instead
+     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean, boolean)} instead
+     */
+    @Deprecated
+    public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
+        return configuring(script, language, context, approveIfAdmin, false);
+    }
+
+    /**
+     * @deprecated Use {@link #configuring(String, Language, ApprovalContext, boolean, boolean)} instead
      */
     @Deprecated
     public String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context) {
-        return this.configuring(script, language, context, false);
+        return this.configuring(script, language, context, false, false);
     }
 
     /**
@@ -682,7 +696,12 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
         ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
-            // Probably need not add to pendingScripts, since generally that would have happened already in configuring.
+            // Usually. this method is called once the job configuration with the script is saved.
+            // If a script was previously pending and is now deleted, however, it would require to re-configure the job.
+            // That's why we call it again if it is unapproved in a running job.
+            // 'ignoreAdmin' is set to true, so that administrators
+            // do not accidentally approve scripts when running a job.
+            this.configuring(script, language, ApprovalContext.create(), false, true);
             throw new UnapprovedUsageException(result.newHash);
         }
         return script;

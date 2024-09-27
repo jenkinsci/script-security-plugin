@@ -141,7 +141,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     public SecureGroovyScript configuring(ApprovalContext context) {
         calledConfiguring = true;
         if (!sandbox) {
-            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context, !StringUtils.equals(this.oldScript, this.script));
+            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context,
+                    !StringUtils.equals(this.oldScript, this.script), false);
         }
         for (ClasspathEntry entry : getClasspath()) {
             ScriptApproval.get().configuring(entry, context);
