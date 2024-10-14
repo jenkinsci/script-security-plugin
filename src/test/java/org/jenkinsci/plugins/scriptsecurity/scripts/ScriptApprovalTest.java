@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
@@ -66,6 +67,41 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     private static final String WHITELISTED_SIGNATURE = "method java.lang.String trim";
     private static final String DANGEROUS_SIGNATURE = "staticMethod hudson.model.User current";
+
+    private String approveIfExists(String script, ScriptApproval sa) throws IOException {
+        for (ScriptApproval.PendingScript pending : sa.getPendingScripts()) {
+            if(pending.script.equals(script)) {
+                String hash = pending.getHash();
+                sa.approveScript(hash);
+                return hash;
+            }
+        }
+        return null;
+    }
+
+    @Test
+    public void afterDenyScriptShouldBePending() throws Exception {
+        configureSecurity();
+        final ScriptApproval sa = ScriptApproval.get();
+        FreeStyleProject p = r.createFreeStyleProject();
+        String testScript = "jenkins.model.Jenkins.instance";
+        p.getPublishersList().add(new TestGroovyRecorder(
+                new SecureGroovyScript(testScript, false, null)));
+
+        String approvedHash = approveIfExists(testScript, sa);
+        assertNotNull(approvedHash);
+        r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get());
+
+        sa.denyScript(approvedHash);
+
+        /*
+            * The script is not approved but should be pending.
+         */
+        r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+        approvedHash = approveIfExists(testScript, sa);
+        assertNotNull(approvedHash);
+        r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0).get());
+    }
 
     @Test public void emptyScript() throws Exception {
         configureSecurity();
@@ -220,7 +256,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
         Script(String groovy) {
             final ApprovalContext ac = ApprovalContext.create();
-            this.groovy = ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ac, true);
+            this.groovy = ScriptApproval.get().configuring(groovy, GroovyLanguage.get(), ac, true,
+                    false);
             this.hash = new ScriptApproval.PendingScript(groovy, GroovyLanguage.get(), ac).getHash();
         }
 
