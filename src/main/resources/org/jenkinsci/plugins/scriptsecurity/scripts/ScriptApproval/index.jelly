@@ -27,176 +27,8 @@ THE SOFTWARE.
     <l:layout title="In-process Script Approval" permission="${app.ADMINISTER}">
         <st:include page="sidepanel.jelly" it="${app}"/>
         <l:main-panel>
-            <script>
-                var mgr = <st:bind value="${it}"/>;
-                function hideScript(hash) {
-                    document.getElementById('ps-' + hash).remove();
-                }
-                function approveScript(hash) {
-                    mgr.approveScript(hash);
-                    hideScript(hash);
-                }
-                function denyScript(hash) {
-                    mgr.denyScript(hash);
-                    hideScript(hash);
-                }
-                function hideSignature(hash) {
-                    document.getElementById('s-' + hash).style.display = 'none';
-                }
-                function updateApprovedSignatures(r) {
-                    var both = r.responseObject();
-                    document.getElementById('approvedSignatures').value = both[0].join('\n');
-                    document.getElementById('aclApprovedSignatures').value = both[1].join('\n');
-                    if (document.getElementById('dangerousApprovedSignatures')) {
-                        document.getElementById('dangerousApprovedSignatures').value = both[2].join('\n');
-                    }
-                }
-                function approveSignature(signature, hash) {
-                    mgr.approveSignature(signature, function(r) {
-                        updateApprovedSignatures(r);
-                    });
-                    hideSignature(hash);
-                }
-                function aclApproveSignature(signature, hash) {
-                    mgr.aclApproveSignature(signature, function(r) {
-                        updateApprovedSignatures(r);
-                    });
-                    hideSignature(hash);
-                }
-                function denySignature(signature, hash) {
-                    mgr.denySignature(signature);
-                    hideSignature(hash);
-                }
-                function clearApprovedSignatures() {
-                    mgr.clearApprovedSignatures(function(r) {
-                        updateApprovedSignatures(r);
-                    });
-                }
-                function clearDangerousApprovedSignatures() {
-                    mgr.clearDangerousApprovedSignatures(function(r) {
-                        updateApprovedSignatures(r);
-                    });
-                }
-                
-                function renderPendingClasspathEntries(pendingClasspathEntries) {
-                    if (pendingClasspathEntries.length == 0) {
-                        document.getElementById('pendingClasspathEntries-none').style.display = '';
-                        Array.from(document.getElementById('pendingClasspathEntries').children).forEach(function(e){e.remove()});
-                        document.getElementById('pendingClasspathEntries').style.display = 'none';
-                    } else {
-                        document.getElementById('pendingClasspathEntries-none').style.display = 'none';
-                        Array.from(document.getElementById('pendingClasspathEntries').children).forEach(function(e){e.remove()});
-                        /*
-                           Create a list like:
-                            <p id="pcp-${pcp.hash}">
-                                <button class="approve" onclick="approveClasspathEntry('${pcp.hash}')">Approve</button> /
-                                <button class="deny"    onclick="denyClasspathEntry('${pcp.hash}')">Deny</button> 
-                                ${pcp.hash} (${pcp.path})
-                            </p>
-                         */
-                        pendingClasspathEntries.forEach(function(e) {
-                            var block = document.createElement('p');
-                            block.setAttribute('id', 'pcp-' + e.hash);
-                            var approveButton = document.createElement('button');
-                            approveButton.setAttribute('class', 'approve');
-                            approveButton.setAttribute('hash', e.hash);
-                            approveButton.textContent = 'Approve';
-                            approveButton.addEventListener('click', function() {
-                                approveClasspathEntry(this.getAttribute('hash'));
-                            });
-                            var denyButton = document.createElement('button');
-                            denyButton.setAttribute('class', 'deny');
-                            denyButton.setAttribute('hash', e.hash);
-                            denyButton.textContent = 'Deny';
-                            denyButton.addEventListener('click', function() {
-                                denyClasspathEntry(this.getAttribute('hash'));
-                            });
-                            block.appendChild(approveButton);
-                            block.appendChild(denyButton);
-                            var code = document.createElement('code');
-                            code.setAttribute('title', e.hash);
-                            code.textContent = e.path;
-                            block.appendChild(code);
-                            
-                            document.getElementById('pendingClasspathEntries').appendChild(block);
-                        });
-                        document.getElementById('pendingClasspathEntries').style.display = '';
-                    }
-                }
-                
-                function renderApprovedClasspathEntries(approvedClasspathEntries) {
-                    if (approvedClasspathEntries.length == 0) {
-                        document.getElementById('approvedClasspathEntries-none').style.display = '';
-                        Array.from(document.getElementById('approvedClasspathEntries').children).forEach(function(e){e.remove()});
-                        document.getElementById('approvedClasspathEntries').style.display = 'none';
-                        document.getElementById('approvedClasspathEntries-clear').style.display = 'none';
-                    } else {
-                        document.getElementById('approvedClasspathEntries-none').style.display = 'none';
-                        Array.from(document.getElementById('approvedClasspathEntries').children).forEach(function(e){e.remove()});
-                        /*
-                           Create a list like:
-                            <p id="acp-${acp.hash}">
-                                <button class="delete" onclick="denyApprovedClasspathEntry('${pcp.hash}')">Delete</button> 
-                                ${acp.hash} (${acp.path})
-                            </p>
-                         */
-                        approvedClasspathEntries.forEach(function(e) {
-                            var block = document.createElement('p');
-                            block.setAttribute('id', 'acp-' + e.hash);
-                            var deleteButton = document.createElement('button');
-                            deleteButton.setAttribute('class', 'delete');
-                            deleteButton.setAttribute('hash', e.hash);
-                            deleteButton.textContent = 'Delete';
-                            deleteButton.addEventListener('click', function() {
-                                if (confirm('Really delete this approved classpath entry? Any existing scripts using it will need to be rerun and the entry reapproved.')) {
-                                    denyApprovedClasspathEntry(this.getAttribute('hash'));
-                                }
-                            });
-                            block.appendChild(deleteButton);
-                            var code = document.createElement('code');
-                            code.setAttribute('title', e.hash);
-                            code.textContent = e.path;
-                            block.appendChild(code);
-                            
-                            document.getElementById('approvedClasspathEntries').appendChild(block);
-                        });
-                        document.getElementById('approvedClasspathEntries').style.display = '';
-                        document.getElementById('approvedClasspathEntries-clear').style.display = '';
-                    }
-                }
-                
-                function renderClasspaths(r) {
-                    renderPendingClasspathEntries(r.responseObject()[0]);
-                    renderApprovedClasspathEntries(r.responseObject()[1]);
-                }
-                
-                function approveClasspathEntry(hash) {
-                    mgr.approveClasspathEntry(hash, function(r) {
-                        renderClasspaths(r);
-                    });
-                }
-                function denyClasspathEntry(hash) {
-                    mgr.denyClasspathEntry(hash, function(r) {
-                        renderClasspaths(r);
-                    });
-                }
-                function denyApprovedClasspathEntry(hash) {
-                    mgr.denyApprovedClasspathEntry(hash, function(r) {
-                        renderClasspaths(r);
-                    });
-                }
-                function clearApprovedClasspathEntries() {
-                    mgr.clearApprovedClasspathEntries(function(r) {
-                        renderClasspaths(r);
-                    });
-                }
-                
-                window.addEventListener("load", function(){
-                    mgr.getClasspathRenderInfo(function(r) {
-                        renderClasspaths(r);
-                    });
-                });
-            </script>
+            <st:bind value="${it}" var="mgr"/>
+            <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval.script-approval"/>
             <j:choose>
                 <j:when test="${it.pendingScripts.isEmpty()}">
                     <p>
@@ -207,7 +39,7 @@ THE SOFTWARE.
                     <j:forEach var="ps" items="${it.pendingScripts}">
                         <div id="ps-${ps.hash}" class="pending-script">
                             <p class="ps-context">
-                                <button class="approve" onclick="approveScript('${ps.hash}')">Approve</button> / <button class="deny" onclick="denyScript('${ps.hash}')">Deny</button> ${ps.language.displayName} script
+                                <button class="approve" data-hash="${ps.hash}">Approve</button> / <button class="deny" data-hash="${ps.hash}">Deny</button> ${ps.language.displayName} script
                                 <st:include it="${ps.context}" page="index.jelly"/>:
                             </p>
                             <f:textarea readonly="readonly" codemirror-mode="${ps.language.codeMirrorMode}" codemirror-config='"readOnly": true' rows="10" cols="80" value="${ps.script}"/>
@@ -218,7 +50,7 @@ THE SOFTWARE.
             <j:if test="${it.hasDeprecatedApprovedScriptHashes()}">
                 <p id="deprecated-approvedScripts-clear">
                     You have <st:out value="${it.countDeprecatedApprovedScriptHashes()}"/> script approvals with deprecated hashes:
-                    <button onclick="if (confirm('Really delete all deprecated approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearDeprecatedApprovedScripts(); document.getElementById('deprecated-approvedScripts-clear').style.display = 'none';}">Clear Deprecated Approvals</button>
+                    <button>Clear Deprecated Approvals</button>
                 </p>
                 <p class="setting-description">
                     Script approvals are stored in Jenkins as the hashed value of the script. Old approvals were hashed using SHA-1, which is deprecated.
@@ -228,7 +60,7 @@ THE SOFTWARE.
             </j:if>
             <p id="approvedScripts-clear">
                 You can also remove all previous script approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be requeued and reapproved.')) {mgr.clearApprovedScripts()}">Clear Approvals</button>
+                <button>Clear Approvals</button>
             </p>
             <hr/>
             <j:choose>
@@ -240,12 +72,12 @@ THE SOFTWARE.
                 <j:otherwise>
                     <j:forEach var="s" items="${it.pendingSignatures}">
                         <div id="s-${s.hash}">
-                            <p>
-                                <button onclick="approveSignature('${s.signature}', '${s.hash}')">Approve</button> /
+                            <p class="s-context">
+                                <button data-signature="${s.signature}" data-hash="${s.hash}" class="approve">Approve</button> /
                                 <j:if test="${!s.signature.startsWith('field')}">
-                                    <button onclick="aclApproveSignature('${s.signature}', '${s.hash}')">Approve assuming permission check</button> /
+                                    <button data-signature="${s.signature}" data-hash="${s.hash}" class="acl-approve">Approve assuming permission check</button> /
                                 </j:if>
-                                <button onclick="denySignature('${s.signature}', '${s.hash}')">Deny</button> signature
+                                <button data-signature="${s.signature}" data-hash="${s.hash}" class="deny">Deny</button> signature
                                 <st:include it="${s.context}" page="index.jelly"/>:
                                 <code>${s.signature}</code>
                                 <j:if test="${s.dangerous}">
@@ -274,13 +106,15 @@ THE SOFTWARE.
                     <j:forEach var="line" items="${dangerousApprovedSignatures}">${line}<st:out value="&#10;"/></j:forEach>
                 </textarea>
             </j:if>
-            <p>
+            <p id="approvedSignatures-clear">
                 You can also remove all previous signature approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts will need to be rerun and signatures reapproved.')) {clearApprovedSignatures()}">Clear Approvals</button>
+                <button>Clear Approvals</button>
             </p>
             <j:if test="${!empty(dangerousApprovedSignatures)}">
-                Or you can just remove the dangerous ones:
-                <button onclick="clearDangerousApprovedSignatures()">Clear only dangerous Approvals</button>
+                <p id="dangerousApprovedSignatures-clear">
+                    Or you can just remove the dangerous ones:
+                    <button>Clear only dangerous Approvals</button>
+                </p>
             </j:if>
             <hr/>
             <p id="pendingClasspathEntries-none">
@@ -299,7 +133,7 @@ THE SOFTWARE.
                 <p id="deprecated-approvedClasspaths-clear">
                     You have ${it.countDeprecatedApprovedClasspathHashes()} approved classpath entries with deprecated hashes:
                     <span id="deprecated-approvedClasspaths-clear-btn">
-                        <button onclick="if (confirm('This will be scheduled on a background thread. You can follow the progress in the system log')) {mgr.convertDeprecatedApprovedClasspathEntries(); document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = 'none'; document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = '';}">Rehash Deprecated Approvals</button>
+                        <button>Rehash Deprecated Approvals</button>
                     </span>
                     <span id="deprecated-approvedClasspaths-clear-spinner">
                         <l:icon alt="${%Converting...}" class="${it.spinnerIconClassName} icon-md"/>
@@ -312,22 +146,16 @@ THE SOFTWARE.
                 </p>
                 <j:choose>
                     <j:when test="${it.isConvertingDeprecatedApprovedClasspathEntries()}">
-                        <script>
-                            document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = 'none';
-                            document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = '';
-                        </script>
+                        <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval.deprecated-approvedClasspaths-clear-btn-hide"/>
                     </j:when>
                     <j:otherwise>
-                        <script>
-                            document.getElementById('deprecated-approvedClasspaths-clear-btn').style.display = '';
-                            document.getElementById('deprecated-approvedClasspaths-clear-spinner').style.display = 'none';
-                        </script>
+                        <st:adjunct includes="org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval.deprecated-approvedClasspaths-clear-btn-show"/>
                     </j:otherwise>
                 </j:choose>
             </j:if>
             <p id="approvedClasspathEntries-clear">
                 You can also remove all previous classpath entry approvals:
-                <button onclick="if (confirm('Really delete all approvals? Any existing scripts using a classpath will need to be rerun and entries reapproved.')) {clearApprovedClasspathEntries()}">Clear Classpath Entries</button>
+                <button>Clear Classpath Entries</button>
             </p>
         </l:main-panel>
     </l:layout>
