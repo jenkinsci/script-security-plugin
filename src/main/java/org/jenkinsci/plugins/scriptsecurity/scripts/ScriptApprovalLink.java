@@ -37,7 +37,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Extension public final class ScriptApprovalLink extends ManagementLink {
 
     @Override public String getIconFileName() {
-        if (ScriptApproval.get().isEmpty() || ScriptApproval.get().isHideSandbox()) {
+        if (ScriptApproval.get().isForceSandbox() || ScriptApproval.get().isEmpty()) {
             return null;
         }
         return "symbol-edit-note";
