@@ -85,6 +85,9 @@ Administrators in security-sensitive environments should carefully consider whic
 operations to whitelist. Operations which change state of persisted objects (such as 
 Jenkins jobs) should generally be denied. Most `getSomething` methods are harmless.
 
+In case of highly secured environments, where only sandbox scripts are allowed, the option
+"System Sandbox enablement" allows you to disable the "In-process Script Approval screen".
+
 ### ACL-aware methods
 Be aware however that even some “getter” methods are designed to check specific 
 permissions (using an ACL: access control list), whereas scripts are often run by a system 
