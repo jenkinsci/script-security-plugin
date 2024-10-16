@@ -1,4 +1,10 @@
 <!-- Just ti satisfy GlobalConfiguration.getGlobalConfigPage() -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form">
+    <f:section title="${%System Sandbox enablement}">
+        <f:entry field="hideSandbox" title="${%Hide Sandbox checkboxes in the system}">
+            <f:checkbox/>
+        </f:entry>
+    </f:section>
 </j:jelly>
+

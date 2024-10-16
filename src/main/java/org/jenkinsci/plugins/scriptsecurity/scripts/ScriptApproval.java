@@ -285,6 +285,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     /** All external classpath entries allowed used for scripts. */
     private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
 
+    /** when this mode is enabled, the full logic for accepting/rejecting scripts will be hidden **/
+    private boolean hideSandbox;
+
     /* for test */ synchronized void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
         approvedClasspathEntries.add(acp);
     }
@@ -980,6 +983,16 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
         save();
         reconfigure();
+    }
+
+    @DataBoundSetter
+    public synchronized void setHideSandbox(boolean hideSandbox) {
+        this.hideSandbox = hideSandbox;
+        save();
+    }
+
+    public boolean isHideSandbox() {
+        return hideSandbox;
     }
 
     @Restricted(NoExternalUse.class) // Jelly, tests, implementation
