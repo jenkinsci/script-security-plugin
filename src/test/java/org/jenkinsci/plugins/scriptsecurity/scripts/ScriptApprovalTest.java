@@ -31,6 +31,7 @@ import hudson.model.Result;
 import hudson.util.VersionNumber;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
@@ -44,6 +45,7 @@ import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -54,6 +56,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
@@ -193,6 +196,47 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.load();
         r.assertLogContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
                 r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
+    }
+
+    @LocalData
+    @Test
+    public void forceSandboxAddScript() throws Exception {
+        configureSecurity();
+        ScriptApproval sa = ScriptApproval.get();
+
+        final ApprovalContext ac = ApprovalContext.create();
+        sa.configuring("testScript", GroovyLanguage.get(), ac, true);
+
+        assertTrue(sa.getPendingScripts().isEmpty());
+    }
+
+    @LocalData
+    @Test
+    public void forceSandboxAddClasspath() throws Exception {
+        configureSecurity();
+        ScriptApproval sa = ScriptApproval.get();
+
+        final ApprovalContext ac = ApprovalContext.create();
+        ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
+
+        sa.configuring(cpe, ac);
+        sa.addPendingClasspathEntry(new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
+        assertThrows(UnapprovedClasspathException.class, () -> sa.using(cpe));
+
+        //As we are forcing sandbox, none of the previous operations are able to crete new pending ClasspathEntries
+        assertTrue(sa.getPendingClasspathEntries().isEmpty());
+    }
+
+    @LocalData
+    @Test
+    public void forceSandboxAddPendingSignature() throws Exception {
+        configureSecurity();
+        ScriptApproval sa = ScriptApproval.get();
+
+        final ApprovalContext ac = ApprovalContext.create();
+        sa.accessRejected(new RejectedAccessException("testSignatureType", "testSignatureDetails"),ac);
+
+        assertTrue(sa.getPendingSignatures().isEmpty());
     }
 
     private Script script(String groovy) {
