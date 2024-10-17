@@ -285,6 +285,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     /** All external classpath entries allowed used for scripts. */
     private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
 
+    /** when this mode is enabled, the full logic for accepting/rejecting scripts will be hidden **/
+    private boolean forceSandbox;
+
     /* for test */ synchronized void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
         approvedClasspathEntries.add(acp);
     }
@@ -514,7 +517,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     /* for test */ void addPendingClasspathEntry(PendingClasspathEntry pcp) {
-        pendingClasspathEntries.add(pcp);
+        if(!isForceSandbox()) {
+            pendingClasspathEntries.add(pcp);
+        }
     }
 
     @DataBoundConstructor
@@ -652,7 +657,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                 if (key != null) {
                     pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
-                pendingScripts.add(new PendingScript(script, language, context));
+                if(!isForceSandbox()) {
+                    pendingScripts.add(new PendingScript(script, language, context));
+                }
             }
             save();
         }
@@ -733,7 +740,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                 approvedClasspathEntries.add(acp);
                 shouldSave = true;
             } else {
-                if (pendingClasspathEntries.add(pcp)) {
+                if (!isForceSandbox() && pendingClasspathEntries.add(pcp)) {
                     LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, result.newHash});
                     shouldSave = true;
                 }
@@ -784,7 +791,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         if (!result.approved) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
-            if (pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
+            if (!isForceSandbox() && pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
                 LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[]{url, result.newHash});
                 save();
             }
@@ -888,7 +895,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Deprecated
     public synchronized RejectedAccessException accessRejected(@NonNull RejectedAccessException x, @NonNull ApprovalContext context) {
         String signature = x.getSignature();
-        if (signature != null && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
+        if (signature != null && !isForceSandbox() && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             save();
         }
         return x;
@@ -980,6 +987,16 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
         save();
         reconfigure();
+    }
+
+    @DataBoundSetter
+    public synchronized void setforceSandbox(boolean forceSandbox) {
+        this.forceSandbox = forceSandbox;
+        save();
+    }
+
+    public boolean isForceSandbox() {
+        return forceSandbox;
     }
 
     @Restricted(NoExternalUse.class) // Jelly, tests, implementation
