@@ -87,7 +87,8 @@ Jenkins jobs) should generally be denied. Most `getSomething` methods are harmle
 
 In case of highly secured environments, where only sandbox scripts are allowed, the 
 option "Force to use the Sandbox globally in the system" allows forcing the use of the 
-sandbox globally in the system and will disable the "In-process Script Approval" screen.
+sandbox globally in the system and will block the creation of new items in the 
+"In-process Script Approval" screen.
 
 ### ACL-aware methods
 Be aware however that even some “getter” methods are designed to check specific 
