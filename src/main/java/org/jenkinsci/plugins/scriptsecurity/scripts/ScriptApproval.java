@@ -791,8 +791,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         if (!result.approved) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
-            if (!isForceSandbox() && pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url,
-                                                                                           context))) {
+            if (!isForceSandbox() && pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
                 LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[]{url, result.newHash});
                 save();
             }
@@ -896,8 +895,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Deprecated
     public synchronized RejectedAccessException accessRejected(@NonNull RejectedAccessException x, @NonNull ApprovalContext context) {
         String signature = x.getSignature();
-        if (signature != null && !isForceSandbox() && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(),
-                                                                                                 context))) {
+        if (signature != null && !isForceSandbox() && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             save();
         }
         return x;
