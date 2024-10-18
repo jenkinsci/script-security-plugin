@@ -995,8 +995,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         save();
     }
 
+    //ForceSandbox restrictions does not apply to ADMINISTER users.
     public boolean isForceSandbox() {
-        return forceSandbox;
+        return forceSandbox && !Jenkins.get().hasPermission(Jenkins.ADMINISTER);
     }
 
     @Restricted(NoExternalUse.class) // Jelly, tests, implementation
