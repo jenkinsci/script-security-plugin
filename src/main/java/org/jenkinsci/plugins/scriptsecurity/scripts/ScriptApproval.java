@@ -822,7 +822,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
 
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
-            return FormValidation.warningWithMarkup("A Jenkins administrator will need to approve this script before it can be used");
+            return FormValidation.warningWithMarkup(forceSandboxForCurrentUser()?
+                                                    Messages.ScriptApproval_ForceSandBoxMessage():
+                                                    Messages.ScriptApproval_PipelineMessage());
         } else {
             if ((ALLOW_ADMIN_APPROVAL_ENABLED && (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED)) || !Jenkins.get().isUseSecurity()) {
                 return FormValidation.okWithMarkup("The script has not yet been approved, but it will be approved on save.");

@@ -51,7 +51,8 @@ public class ScriptApprovalNote extends ConsoleNote<Object> {
 
     public static void print(TaskListener listener, RejectedAccessException x) {
         try {
-            String text = Messages.ScriptApprovalNote_message();
+            String text =  ScriptApproval.get().forceSandboxForCurrentUser()?
+                           Messages.ScriptApprovalNoteForceSandBox_message():Messages.ScriptApprovalNote_message();
             listener.getLogger().println(x.getMessage() + ". " + new ScriptApprovalNote(text.length()).encode() + text);
         } catch (IOException x2) {
             LOGGER.log(Level.WARNING, null, x2);
