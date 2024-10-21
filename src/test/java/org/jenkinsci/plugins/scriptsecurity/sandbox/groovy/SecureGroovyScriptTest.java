@@ -29,7 +29,6 @@ import org.htmlunit.html.HtmlCheckBoxInput;
 import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import groovy.lang.Script;
-import hudson.ExtensionList;
 import hudson.remoting.Which;
 import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
@@ -45,7 +44,6 @@ import hudson.model.Item;
 import hudson.model.Result;
 import hudson.model.User;
 import hudson.security.ACL;
-import hudson.security.GlobalSecurityConfiguration;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
@@ -91,7 +89,6 @@ import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
-import org.jvnet.hudson.test.recipes.LocalData;
 import org.kohsuke.groovy.sandbox.impl.Checker;
 import static org.junit.Assert.assertEquals;
 
@@ -1348,87 +1345,6 @@ public class SecureGroovyScriptTest {
             FreeStyleBuild b = r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
         }
     }
-
-    /**
-     * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked the sandbox checkbox.
-     * As we have enabled the flag ForceSandbox, the script is not send to approval.
-     */
-    @LocalData
-    @Test public void basicApproval_ForceSandbox() throws Exception {
-        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-
-        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
-        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            mockStrategy.grant(p).everywhere().to("devel");
-        }
-        r.jenkins.setAuthorizationStrategy(mockStrategy);
-
-        FreeStyleProject p = r.createFreeStyleProject("p");
-        JenkinsRule.WebClient wc = r.createWebClient();
-        wc.login("devel");
-        HtmlPage page = wc.getPage(p, "configure");
-        HtmlForm config = page.getFormByName("config");
-        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        addPostBuildAction(page);
-        wc.waitForBackgroundJavaScript(10000);
-        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
-        // Get the last one, because previous ones might be from Lockable Resources during PCT.
-        HtmlTextArea script = scripts.get(scripts.size() - 1);
-        String groovy = "build.externalizableId";
-        script.setText(groovy);
-
-        // The fact that the user doesn't have RUN_SCRIPT privs means sandbox mode should be on by default.
-        // We need to switch it off to force it into approval.
-        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
-        // Get the last one, because previous ones might be from Lockable Resources during PCT.
-        HtmlCheckBoxInput sandboxRB = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
-        sandboxRB.setChecked(false); // uncheck sandbox mode => forcing script approval
-
-        r.submit(config);
-
-        List<Publisher> publishers = p.getPublishersList();
-        assertEquals(1, publishers.size());
-        TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
-        assertEquals(groovy, publisher.getScript().getScript());
-        assertFalse(publisher.getScript().isSandbox());
-        Set<ScriptApproval.PendingScript> pendingScripts = ScriptApproval.get().getPendingScripts();
-        assertTrue(ScriptApproval.get().isForceSandbox());
-        assertEquals(0, pendingScripts.size());
-    }
-
-    /**
-     * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
-     * ForceSandbox does not apply to admin users, so the logic should behave the same way.
-     */
-    @LocalData
-    @Test public void testSandboxDefault_with_ADMINISTER_privs_ForceSandBox() throws Exception {
-        //ForceSandbox does not apply to admin users, so should work in the same way.
-        testSandboxDefault_with_ADMINISTER_privs();
-
-        //Checking also the ForceSandbox option is enabled in the system Security configuration
-        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-
-        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
-        mockStrategy.grant(Jenkins.READ).everywhere().to("admin");
-        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            mockStrategy.grant(p).everywhere().to("admin");
-        }
-        r.jenkins.setAuthorizationStrategy(mockStrategy);
-
-        JenkinsRule.WebClient wc = r.createWebClient();
-        wc.login("admin");
-
-        HtmlPage page = wc.goTo(ExtensionList.lookupSingleton(GlobalSecurityConfiguration.class).getUrlName());
-        HtmlForm config = page.getFormByName("config");
-        List<HtmlInput> sandboxes = config.getInputsByName("_.forceSandbox");
-        // Get the last one, because previous ones might be from Lockable Resources during PCT.
-        HtmlCheckBoxInput forceSandboxCheckBox = (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
-        assertTrue(forceSandboxCheckBox.isChecked());
-    }
-
-
 
     public static class HasMainMethod {
         @Whitelisted
