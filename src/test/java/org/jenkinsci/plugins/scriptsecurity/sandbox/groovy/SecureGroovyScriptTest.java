@@ -34,6 +34,7 @@ import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
+import org.jenkinsci.plugins.scriptsecurity.scripts.Messages;
 import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlFormUtil;
 import org.htmlunit.html.HtmlPage;
@@ -224,7 +225,14 @@ public class SecureGroovyScriptTest {
         assertEquals(1, pendingScripts.size());
 
         // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        Exception ex = assertThrows(UnapprovedUsageException.class,
+                                    () -> ScriptApproval.get().using(groovy,GroovyLanguage.get()));
+        assertEquals(Messages.UnapprovedUsage_NonApproved(), ex.getMessage());
+
+        ScriptApproval.get().setforceSandbox(true);
+        ex = assertThrows(UnapprovedUsageException.class,
+                                    () -> ScriptApproval.get().using(groovy,GroovyLanguage.get()));
+        assertEquals(Messages.UnapprovedUsage_ForceSandBox(), ex.getMessage());
     }
 
     /**

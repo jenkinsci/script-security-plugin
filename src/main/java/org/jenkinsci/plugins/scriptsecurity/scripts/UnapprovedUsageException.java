@@ -32,7 +32,7 @@ public final class UnapprovedUsageException extends SecurityException {
     private final String hash;
 
     UnapprovedUsageException(String hash) {
-        super("script not yet approved for use");
+        super(ScriptApproval.get().isForceSandbox()?Messages.UnapprovedUsage_ForceSandBox():Messages.UnapprovedUsage_NonApproved());
         this.hash = hash;
     }
 
