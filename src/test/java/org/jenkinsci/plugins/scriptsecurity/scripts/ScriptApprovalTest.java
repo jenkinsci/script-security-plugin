@@ -205,10 +205,11 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
     }
 
-    @LocalData
     @Test
     public void forceSandboxTests() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+
+        ScriptApproval.get().setforceSandbox(true);
 
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
@@ -228,55 +229,60 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
             assertTrue(ScriptApproval.get().isForceSandbox());
             assertTrue(ScriptApproval.get().forceSandboxForCurrentUser());
 
-            //Insert new PendingScript - As the user is not admin and ForceSandbox is enabled, nothing should be added
             final ApprovalContext ac = ApprovalContext.create();
 
-            ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
-
-            assertTrue(ScriptApproval.get().getPendingScripts().isEmpty());
+            //Insert new PendingScript - As the user is not admin and ForceSandbox is enabled, nothing should be added
+            {
+                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                assertTrue(ScriptApproval.get().getPendingScripts().isEmpty());
+            }
 
             //Insert new PendingSignature - As the user is not admin and ForceSandbox is enabled, nothing should be added
-            ScriptApproval.get().accessRejected(new RejectedAccessException("testSignatureType", "testSignatureDetails"),ac);
-
-            assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
+            {
+                ScriptApproval.get().accessRejected(
+                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
+            }
 
             //Insert new Pending ClassPatch - As the user is not admin and ForceSandbox is enabled, nothing should be added
-            ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
-
-            ScriptApproval.get().configuring(cpe, ac);
-            ScriptApproval.get().addPendingClasspathEntry(
-                    new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
-            assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
-
-            //As we are forcing sandbox, none of the previous operations are able to crete new pending ClasspathEntries
-            assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
+            {
+                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
+                ScriptApproval.get().configuring(cpe, ac);
+                ScriptApproval.get().addPendingClasspathEntry(
+                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
+                assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
+                //As we are forcing sandbox, none of the previous operations are able to crete new pending ClasspathEntries
+                assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
+            }
         }
 
         try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
             assertTrue(ScriptApproval.get().isForceSandbox());
             assertFalse(ScriptApproval.get().forceSandboxForCurrentUser());
 
-            //Insert new PendingScript - As the user is admin, the behavior does not change
             final ApprovalContext ac = ApprovalContext.create();
 
-            ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
-
-            assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+            //Insert new PendingScript - As the user is admin, the behavior does not change
+            {
+                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+            }
 
             //Insert new PendingSignature -  - As the user is admin, the behavior does not change
-            ScriptApproval.get().accessRejected(new RejectedAccessException("testSignatureType", "testSignatureDetails"),ac);
-
-            assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
+            {
+                ScriptApproval.get().accessRejected(
+                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
+            }
 
             //Insert new Pending ClassPatch -  - As the user is admin, the behavior does not change
-            ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
-
-            ScriptApproval.get().configuring(cpe, ac);
-            ScriptApproval.get().addPendingClasspathEntry(
-                    new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
-
-            //As we are forcing sandbox, none of the previous operations are able to crete new pending ClasspathEntries
-            assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
+            {
+                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
+                ScriptApproval.get().configuring(cpe, ac);
+                ScriptApproval.get().addPendingClasspathEntry(
+                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
+                assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
+            }
         }
     }
 
