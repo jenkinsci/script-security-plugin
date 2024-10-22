@@ -992,7 +992,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     @DataBoundSetter
-    public synchronized void setforceSandbox(boolean forceSandbox) {
+    public synchronized void setForceSandbox(boolean forceSandbox) {
         this.forceSandbox = forceSandbox;
         save();
     }

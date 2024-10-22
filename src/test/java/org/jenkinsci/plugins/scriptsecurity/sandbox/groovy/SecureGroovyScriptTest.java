@@ -229,7 +229,7 @@ public class SecureGroovyScriptTest {
                                     () -> ScriptApproval.get().using(groovy,GroovyLanguage.get()));
         assertEquals(Messages.UnapprovedUsage_NonApproved(), ex.getMessage());
 
-        ScriptApproval.get().setforceSandbox(true);
+        ScriptApproval.get().setForceSandbox(true);
         ex = assertThrows(UnapprovedUsageException.class,
                                     () -> ScriptApproval.get().using(groovy,GroovyLanguage.get()));
         assertEquals(Messages.UnapprovedUsage_ForceSandBox(), ex.getMessage());

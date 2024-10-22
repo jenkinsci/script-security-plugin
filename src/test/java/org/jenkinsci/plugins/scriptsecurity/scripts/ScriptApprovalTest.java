@@ -211,7 +211,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     public void forceSandboxTests() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
 
-        ScriptApproval.get().setforceSandbox(true);
+        ScriptApproval.get().setForceSandbox(true);
 
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
@@ -290,7 +290,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @Test
     public void forceSandboxScriptSignatureException() throws Exception {
-        ScriptApproval.get().setforceSandbox(true);
+        ScriptApproval.get().setForceSandbox(true);
         FreeStyleProject p = r.createFreeStyleProject("p");
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
         FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
@@ -304,14 +304,14 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
             grant(Jenkins.READ, Item.READ).everywhere().to("dev"));
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
-            ScriptApproval.get().setforceSandbox(true);
+            ScriptApproval.get().setForceSandbox(true);
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.WARNING, result.kind);
                 assertEquals(Messages.ScriptApproval_ForceSandBoxMessage(), result.getMessage());
             }
 
-            ScriptApproval.get().setforceSandbox(false);
+            ScriptApproval.get().setForceSandbox(false);
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.WARNING, result.kind);
