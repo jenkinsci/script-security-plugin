@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
+import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Result;
@@ -34,6 +35,7 @@ import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.Permission;
 import hudson.util.VersionNumber;
+import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -282,6 +284,38 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 ScriptApproval.get().addPendingClasspathEntry(
                         new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
                 assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
+            }
+        }
+    }
+
+    @Test
+    public void forceSandboxScriptSignatureException() throws Exception {
+        ScriptApproval.get().setforceSandbox(true);
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+        r.assertLogContains("Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance. " + Messages.ScriptApprovalNoteForceSandBox_message(), b);
+    }
+
+    @Test
+    public void forceSandboxFormValidation() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
+            grant(Jenkins.READ, Item.READ).everywhere().to("dev"));
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            ScriptApproval.get().setforceSandbox(true);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.WARNING, result.kind);
+                assertEquals(Messages.ScriptApproval_ForceSandBoxMessage(), result.getMessage());
+            }
+
+            ScriptApproval.get().setforceSandbox(false);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.WARNING, result.kind);
+                assertEquals(Messages.ScriptApproval_PipelineMessage(), result.getMessage());
             }
         }
     }
