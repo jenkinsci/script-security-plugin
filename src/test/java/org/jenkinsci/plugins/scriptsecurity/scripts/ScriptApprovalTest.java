@@ -246,14 +246,14 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
             }
 
-            //Insert new Pending ClassPatch - As the user is not admin and ForceSandbox is enabled, nothing should be added
+            //Insert new Pending Classpath - As the user is not admin and ForceSandbox is enabled, nothing should be added
             {
                 ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
                 ScriptApproval.get().configuring(cpe, ac);
                 ScriptApproval.get().addPendingClasspathEntry(
                         new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
                 assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
-                //As we are forcing sandbox, none of the previous operations are able to crete new pending ClasspathEntries
+                // As we are forcing sandbox, none of the previous operations are able to create new pending ClasspathEntries
                 assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
             }
         }

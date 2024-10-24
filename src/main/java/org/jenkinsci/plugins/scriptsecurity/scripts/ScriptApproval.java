@@ -517,7 +517,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     /* for test */ void addPendingClasspathEntry(PendingClasspathEntry pcp) {
-        if(!forceSandboxForCurrentUser()) {
+        if (!forceSandboxForCurrentUser()) {
             pendingClasspathEntries.add(pcp);
         }
     }
@@ -657,7 +657,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                 if (key != null) {
                     pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
-                if(!forceSandboxForCurrentUser()) {
+                if (!forceSandboxForCurrentUser()) {
                     pendingScripts.add(new PendingScript(script, language, context));
                 }
             }
@@ -822,8 +822,8 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
 
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
-            return FormValidation.warningWithMarkup(forceSandboxForCurrentUser()?
-                                                    Messages.ScriptApproval_ForceSandBoxMessage():
+            return FormValidation.warningWithMarkup(forceSandboxForCurrentUser() ?
+                                                    Messages.ScriptApproval_ForceSandBoxMessage() :
                                                     Messages.ScriptApproval_PipelineMessage());
         } else {
             if ((ALLOW_ADMIN_APPROVAL_ENABLED && (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED)) || !Jenkins.get().isUseSecurity()) {
@@ -1003,7 +1003,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     //ForceSandbox restrictions does not apply to ADMINISTER users.
-    public boolean forceSandboxForCurrentUser() {
+    public boolean isForceSandboxForCurrentUser() {
         return forceSandbox && !Jenkins.get().hasPermission(Jenkins.ADMINISTER);
     }
 
