@@ -229,7 +229,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
             assertTrue(ScriptApproval.get().isForceSandbox());
-            assertTrue(ScriptApproval.get().forceSandboxForCurrentUser());
+            assertTrue(ScriptApproval.get().isForceSandboxForCurrentUser());
 
             final ApprovalContext ac = ApprovalContext.create();
 
@@ -260,7 +260,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
         try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
             assertTrue(ScriptApproval.get().isForceSandbox());
-            assertFalse(ScriptApproval.get().forceSandboxForCurrentUser());
+            assertFalse(ScriptApproval.get().isForceSandboxForCurrentUser());
 
             final ApprovalContext ac = ApprovalContext.create();
 

@@ -517,7 +517,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     }
 
     /* for test */ void addPendingClasspathEntry(PendingClasspathEntry pcp) {
-        if (!forceSandboxForCurrentUser()) {
+        if (!isForceSandboxForCurrentUser()) {
             pendingClasspathEntries.add(pcp);
         }
     }
@@ -657,7 +657,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                 if (key != null) {
                     pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
-                if (!forceSandboxForCurrentUser()) {
+                if (!isForceSandboxForCurrentUser()) {
                     pendingScripts.add(new PendingScript(script, language, context));
                 }
             }
@@ -740,7 +740,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                 approvedClasspathEntries.add(acp);
                 shouldSave = true;
             } else {
-                if (!forceSandboxForCurrentUser() && pendingClasspathEntries.add(pcp)) {
+                if (!isForceSandboxForCurrentUser() && pendingClasspathEntries.add(pcp)) {
                     LOG.log(Level.FINE, "{0} ({1}) is pending", new Object[] {url, result.newHash});
                     shouldSave = true;
                 }
@@ -791,7 +791,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         if (!result.approved) {
             // Never approve classpath here.
             ApprovalContext context = ApprovalContext.create();
-            if (!forceSandboxForCurrentUser() && pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
+            if (!isForceSandboxForCurrentUser() && pendingClasspathEntries.add(new PendingClasspathEntry(result.newHash, url, context))) {
                 LOG.log(Level.FINE, "{0} ({1}) is pending.", new Object[]{url, result.newHash});
                 save();
             }
@@ -822,7 +822,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
 
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
-            return FormValidation.warningWithMarkup(forceSandboxForCurrentUser() ?
+            return FormValidation.warningWithMarkup(isForceSandboxForCurrentUser() ?
                                                     Messages.ScriptApproval_ForceSandBoxMessage() :
                                                     Messages.ScriptApproval_PipelineMessage());
         } else {
@@ -897,7 +897,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Deprecated
     public synchronized RejectedAccessException accessRejected(@NonNull RejectedAccessException x, @NonNull ApprovalContext context) {
         String signature = x.getSignature();
-        if (signature != null && !forceSandboxForCurrentUser() && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
+        if (signature != null && !isForceSandboxForCurrentUser() && pendingSignatures.add(new PendingSignature(signature, x.isDangerous(), context))) {
             save();
         }
         return x;
