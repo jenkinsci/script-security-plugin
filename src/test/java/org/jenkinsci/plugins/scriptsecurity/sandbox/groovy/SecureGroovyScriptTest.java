@@ -256,6 +256,11 @@ public class SecureGroovyScriptTest {
         HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        HtmlCheckBoxInput sandboxcb =  (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
+        assertTrue(sandboxcb.isChecked());
+        sandboxcb.setChecked(false);
+
         r.submit(config);
         List<Publisher> publishers = p.getPublishersList();
         assertEquals(1, publishers.size());
@@ -1386,6 +1391,9 @@ public class SecureGroovyScriptTest {
             HtmlTextArea script = scripts.get(scripts.size() - 1);
             String groovy = "build.externalizableId";
             script.setText(groovy);
+            List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+            HtmlCheckBoxInput sandboxcb =  (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
+            sandboxcb.setChecked(false);
             // nothing is approved or pending (no save)
             assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
             assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(emptyArray()));
