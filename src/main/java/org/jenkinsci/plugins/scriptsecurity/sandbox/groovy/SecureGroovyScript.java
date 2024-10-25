@@ -463,6 +463,14 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get(), !StringUtils.equals(oldScript, value));
         }
 
+        @Restricted(NoExternalUse.class) // stapler
+        public boolean shouldHideSandbox(@CheckForNull SecureGroovyScript instance) {
+            // sandbox checkbox is shown to admins even if the global configuration says otherwise
+            // it's also shown when sandbox == false, so regular users can enable it
+            return ScriptApproval.get().isForceSandboxForCurrentUser()
+                   && (instance == null || instance.sandbox);
+        }
+
     }
 
 }

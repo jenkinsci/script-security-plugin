@@ -31,10 +31,12 @@ THE SOFTWARE.
         <!-- TODO https://github.com/stapler/stapler-adjunct-codemirror/issues/1 means no true Groovy support -->
         <f:textarea checkMethod="post"/> <!-- TODO codemirror-mode="clike" codemirror-config="'onBlur': cmChange" -->
     </f:entry>
-    <f:entry field="sandbox">
-        <f:checkbox title="${%Use Groovy Sandbox}" default="${!h.hasPermission(app.ADMINISTER)}" />
+    <f:entry field="sandbox" class="${descriptor.shouldHideSandbox(instance) ? 'jenkins-hidden' : ''}">
+        <f:checkbox title="${%Use Groovy Sandbox}"
+                    default="${!h.hasPermission(app.ADMINISTER) || descriptor.shouldHideSandbox(instance)}" />
     </f:entry>
-    <f:entry title="${%Additional classpath}" field="classpath">
+    <f:entry title="${%Additional classpath}" field="classpath"
+             class="${descriptor.shouldHideSandbox(instance) ?'jenkins-hidden' : ''}">
         <f:repeatableProperty add="${%Add entry}" header="${%Classpath entry}" field="classpath"/>
     </f:entry>
 </j:jelly>
