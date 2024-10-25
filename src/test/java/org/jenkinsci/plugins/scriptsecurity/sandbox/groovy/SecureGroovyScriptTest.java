@@ -34,6 +34,7 @@ import hudson.security.ACLContext;
 import org.apache.tools.ant.AntClassLoader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
+import org.jenkinsci.plugins.scriptsecurity.scripts.Messages;
 import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlFormUtil;
 import org.htmlunit.html.HtmlPage;
@@ -182,6 +183,51 @@ public class SecureGroovyScriptTest {
         assertEquals("P#3", r.assertBuildStatusSuccess(p.scheduleBuild2(0)).getDescription());
     }
 
+    /**
+     * Basic approval test where the user doesn't have ADMINISTER privs and forceSandbox is enabled
+     * Sandbox checkbox should not be visible, but set to true by default
+     */
+    @Test public void basicApproval_ForceSandbox() throws Exception {
+        ScriptApproval.get().setForceSandbox(true);
+
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        JenkinsRule.WebClient wc = r.createWebClient();
+        wc.login("devel");
+        HtmlPage page = wc.getPage(p, "configure");
+        HtmlForm config = page.getFormByName("config");
+        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
+        addPostBuildAction(page);
+        wc.waitForBackgroundJavaScript(10000);
+        List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
+        // Get the last one, because previous ones might be from Lockable Resources during PCT.
+        HtmlTextArea script = scripts.get(scripts.size() - 1);
+        String groovy = "build.externalizableId";
+        script.setText(groovy);
+
+        //As the user is not admin and we are forcing Sandbox use,
+        // the Sandbox checkbox should be hidden and enabled by default.
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        HtmlCheckBoxInput sandboxcb =  (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
+        assertTrue(sandboxcb.isChecked());
+
+        r.submit(config);
+
+        List<Publisher> publishers = p.getPublishersList();
+        assertEquals(1, publishers.size());
+        TestGroovyRecorder publisher = (TestGroovyRecorder) publishers.get(0);
+        assertEquals(groovy, publisher.getScript().getScript());
+        assertTrue(publisher.getScript().isSandbox());
+    }
+
 
     /**
      * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
@@ -210,6 +256,11 @@ public class SecureGroovyScriptTest {
         HtmlTextArea script = scripts.get(scripts.size() - 1);
         String groovy = "build.externalizableId";
         script.setText(groovy);
+        List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+        HtmlCheckBoxInput sandboxcb =  (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
+        assertTrue(sandboxcb.isChecked());
+        sandboxcb.setChecked(false);
+
         r.submit(config);
         List<Publisher> publishers = p.getPublishersList();
         assertEquals(1, publishers.size());
@@ -224,7 +275,22 @@ public class SecureGroovyScriptTest {
         assertEquals(1, pendingScripts.size());
 
         // Test that the script is executable. If it's not, we will get an UnapprovedUsageException
-        assertThrows(UnapprovedUsageException.class, () -> ScriptApproval.get().using(groovy, GroovyLanguage.get()));
+        Exception ex = assertThrows(UnapprovedUsageException.class,
+                                    () -> ScriptApproval.get().using(groovy,GroovyLanguage.get()));
+        assertEquals(ScriptApproval.get().isForceSandbox()
+                     ? Messages.UnapprovedUsage_ForceSandBox()
+                     : Messages.UnapprovedUsage_NonApproved()
+                 , ex.getMessage());
+    }
+
+    /**
+     * Test where the user has ADMINISTER privs + forceSandboxEnabled
+     * logic should not change to the default admin behavior
+     * Except for the messages
+     */
+    @Test public void testSandboxDefault_with_ADMINISTER_privs_ForceSandbox() throws Exception {
+        ScriptApproval.get().setForceSandbox(true);
+        testSandboxDefault_with_ADMINISTER_privs();
     }
 
     /**
@@ -1325,6 +1391,9 @@ public class SecureGroovyScriptTest {
             HtmlTextArea script = scripts.get(scripts.size() - 1);
             String groovy = "build.externalizableId";
             script.setText(groovy);
+            List<HtmlInput> sandboxes = config.getInputsByName("_.sandbox");
+            HtmlCheckBoxInput sandboxcb =  (HtmlCheckBoxInput) sandboxes.get(sandboxes.size() - 1);
+            sandboxcb.setChecked(false);
             // nothing is approved or pending (no save)
             assertThat(ScriptApproval.get().getPendingScripts(), is(empty()));
             assertThat(ScriptApproval.get().getApprovedScriptHashes(), is(emptyArray()));

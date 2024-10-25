@@ -4,3 +4,4 @@ security:
     - method java.net.URI getHost
     approvedScriptHashes:
     - fccae58c5762bdd15daca97318e9d74333203106
+    forceSandbox: true

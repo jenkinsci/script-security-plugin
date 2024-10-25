@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JcascTest {
 
@@ -43,6 +44,7 @@ public class JcascTest {
         assertThat(logger.getMessages(), containsInAnyOrder(
                 containsString("Adding deprecated script hash " +
                         "that will be converted on next use: fccae58c5762bdd15daca97318e9d74333203106")));
+        assertTrue(ScriptApproval.get().isForceSandbox());
     }
 
     @Test

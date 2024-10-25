@@ -26,11 +26,19 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
+import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Item;
 import hudson.model.Result;
+import hudson.model.User;
+import hudson.security.ACL;
+import hudson.security.ACLContext;
+import hudson.security.Permission;
 import hudson.util.VersionNumber;
+import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
@@ -40,10 +48,12 @@ import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -53,7 +63,9 @@ import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
@@ -193,6 +205,119 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         sa.load();
         r.assertLogContains("org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException: script not yet approved for use",
                 r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
+    }
+
+    @Test
+    public void forceSandboxTests() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+
+        ScriptApproval.get().setForceSandbox(true);
+
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+
+        mockStrategy.grant(Jenkins.READ).everywhere().to("admin");
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+        }
+
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            assertTrue(ScriptApproval.get().isForceSandbox());
+            assertTrue(ScriptApproval.get().isForceSandboxForCurrentUser());
+
+            final ApprovalContext ac = ApprovalContext.create();
+
+            //Insert new PendingScript - As the user is not admin and ForceSandbox is enabled, nothing should be added
+            {
+                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                assertTrue(ScriptApproval.get().getPendingScripts().isEmpty());
+            }
+
+            //Insert new PendingSignature - As the user is not admin and ForceSandbox is enabled, nothing should be added
+            {
+                ScriptApproval.get().accessRejected(
+                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
+            }
+
+            //Insert new Pending Classpath - As the user is not admin and ForceSandbox is enabled, nothing should be added
+            {
+                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
+                ScriptApproval.get().configuring(cpe, ac);
+                ScriptApproval.get().addPendingClasspathEntry(
+                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
+                assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
+                // As we are forcing sandbox, none of the previous operations are able to create new pending ClasspathEntries
+                assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
+            }
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            assertTrue(ScriptApproval.get().isForceSandbox());
+            assertFalse(ScriptApproval.get().isForceSandboxForCurrentUser());
+
+            final ApprovalContext ac = ApprovalContext.create();
+
+            //Insert new PendingScript - As the user is admin, the behavior does not change
+            {
+                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+            }
+
+            //Insert new PendingSignature -  - As the user is admin, the behavior does not change
+            {
+                ScriptApproval.get().accessRejected(
+                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
+            }
+
+            //Insert new Pending ClassPatch -  - As the user is admin, the behavior does not change
+            {
+                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
+                ScriptApproval.get().configuring(cpe, ac);
+                ScriptApproval.get().addPendingClasspathEntry(
+                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
+                assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
+            }
+        }
+    }
+
+    @Test
+    public void forceSandboxScriptSignatureException() throws Exception {
+        ScriptApproval.get().setForceSandbox(true);
+        FreeStyleProject p = r.createFreeStyleProject("p");
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+        r.assertLogContains("Scripts not permitted to use staticMethod jenkins.model.Jenkins getInstance. " + Messages.ScriptApprovalNoteForceSandBox_message(), b);
+    }
+
+    @Test
+    public void forceSandboxFormValidation() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
+            grant(Jenkins.READ, Item.READ).everywhere().to("dev"));
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            ScriptApproval.get().setForceSandbox(true);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.WARNING, result.kind);
+                assertEquals(Messages.ScriptApproval_ForceSandBoxMessage(), result.getMessage());
+            }
+
+            ScriptApproval.get().setForceSandbox(false);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.WARNING, result.kind);
+                assertEquals(Messages.ScriptApproval_PipelineMessage(), result.getMessage());
+            }
+        }
     }
 
     private Script script(String groovy) {
