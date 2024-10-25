@@ -285,7 +285,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     /** All external classpath entries allowed used for scripts. */
     private /*final*/ TreeSet<ApprovedClasspathEntry> approvedClasspathEntries;
 
-    /** when this mode is enabled, the full logic for accepting/rejecting scripts will be hidden **/
+    /** when this mode is enabled, the full logic for accepting/rejecting scripts will be hidden */
     private boolean forceSandbox;
 
     /* for test */ synchronized void addApprovedClasspathEntry(ApprovedClasspathEntry acp) {
