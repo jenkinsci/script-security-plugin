@@ -39,6 +39,7 @@ import org.htmlunit.html.HtmlForm;
 import org.htmlunit.html.HtmlFormUtil;
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
+import hudson.model.Descriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.FreeStyleBuild;
 import hudson.model.Item;
@@ -945,6 +946,39 @@ public class SecureGroovyScriptTest {
             }
             assertEquals(0, ScriptApproval.get().getPendingClasspathEntries().size());
             assertEquals(0, ScriptApproval.get().getApprovedClasspathEntries().size());
+        }
+    }
+
+    /**
+     * When forceSandbox logic is enabled, and nonAdmin users trying to save non Sandbox groovyScripts
+     * Then the system will fail with Descriptor.FormException.
+     * @throws Exception
+     */
+    @Test
+    public void forceSandbox_NonAdminSaveNonSandbox() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        ScriptApproval.get().setForceSandbox(true);
+
+        //Nonadmin users creating a nonSandbox SecureGroovyScript should fail.
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            Exception ex = assertThrows (Descriptor.FormException.class, () ->
+                new SecureGroovyScript("testScript", false, new ArrayList<>()));
+
+            assertEquals(Messages.ScriptApproval_SandboxCantBeDisabled(), ex.getMessage());
+        }
+
+        //adminUsers can create a nonSandbox SecureGroovyScript with no issues.
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            new SecureGroovyScript("testScript", false, new ArrayList<>());
         }
     }
 
