@@ -326,22 +326,22 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.OK, result.kind);
-                assertTrue(result.getMessage().contains(Messages.ScriptApproval_ForceSandBoxMessage()));
+                assertTrue(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
 
                 result = ScriptApproval.get().checking("test", GroovyLanguage.get(), true);
                 assertEquals(FormValidation.Kind.OK, result.kind);
-                assertTrue(result.getMessage().contains(Messages.ScriptApproval_ForceSandBoxMessage()));
+                assertTrue(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
             }
 
             ScriptApproval.get().setForceSandbox(false);
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.OK, result.kind);
-                assertFalse(result.getMessage().contains(Messages.ScriptApproval_ForceSandBoxMessage()));
+                assertFalse(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
 
                 result = ScriptApproval.get().checking("test", GroovyLanguage.get(), true);
                 assertEquals(FormValidation.Kind.OK, result.kind);
-                assertFalse(result.getMessage().contains(Messages.ScriptApproval_ForceSandBoxMessage()));
+                assertFalse(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
             }
         }
     }

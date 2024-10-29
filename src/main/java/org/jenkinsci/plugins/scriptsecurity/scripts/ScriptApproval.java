@@ -829,7 +829,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                                                     Messages.ScriptApproval_PipelineMessage());
         } else {
             String forceSandboxMessage = isForceSandbox() ?
-                                         Messages.ScriptApproval_ForceSandBoxMessage() + System.lineSeparator() :
+                                         Messages.ScriptApproval_AdminUserAlert() :
                                          "";
 
             if ((ALLOW_ADMIN_APPROVAL_ENABLED && (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED)) || !Jenkins.get().isUseSecurity()) {
