@@ -818,7 +818,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (result.approved) {
-            return FormValidation.okWithMarkup("The script is already approved");
+            return FormValidation.okWithMarkup(isForceSandboxForCurrentUser() ?
+                                               Messages.ScriptApproval_ForceSandBoxMessage() :
+                                               "The script is already approved");
         }
 
         if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
@@ -826,11 +828,16 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
                                                     Messages.ScriptApproval_ForceSandBoxMessage() :
                                                     Messages.ScriptApproval_PipelineMessage());
         } else {
+            String forceSandboxMessage = isForceSandbox() ?
+                                         Messages.ScriptApproval_AdminUserAlert() :
+                                         "";
+
             if ((ALLOW_ADMIN_APPROVAL_ENABLED && (willBeApproved || ADMIN_AUTO_APPROVAL_ENABLED)) || !Jenkins.get().isUseSecurity()) {
-                return FormValidation.okWithMarkup("The script has not yet been approved, but it will be approved on save.");
+                return FormValidation.okWithMarkup(forceSandboxMessage + "The script has not yet been approved, "
+                                                   + "but it will be approved on save.");
             }
             String approveScript = "<a class='jenkins-button script-approval-approve-link' data-base-url='" + Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "' data-hash='" + result.newHash + "'>Approve script</a>";
-            return FormValidation.okWithMarkup("The script is not approved and will not be approved on save. " +
+            return FormValidation.okWithMarkup(forceSandboxMessage + "The script is not approved and will not be approved on save. " +
                     "Either modify the script to match an already approved script, approve it explicitly on the " +
                     "<a target='blank' href='"+ Jenkins.get().getRootUrl() + ScriptApproval.get().getUrlName() + "'>Script Approval Configuration</a> page after save, or approve this version of the script. " +
                     approveScript);

@@ -62,6 +62,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
+import org.jenkinsci.plugins.scriptsecurity.scripts.Messages;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedClasspathException;
 import org.jenkinsci.plugins.scriptsecurity.scripts.UnapprovedUsageException;
@@ -92,13 +93,18 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
 
     static final Logger LOGGER = Logger.getLogger(SecureGroovyScript.class.getName());
 
-    @DataBoundConstructor public SecureGroovyScript(@NonNull String script, boolean sandbox, @CheckForNull List<ClasspathEntry> classpath) {
+    @DataBoundConstructor public SecureGroovyScript(@NonNull String script, boolean sandbox,
+                                                    @CheckForNull List<ClasspathEntry> classpath)
+            throws Descriptor.FormException {
+        if (!sandbox && ScriptApproval.get().isForceSandboxForCurrentUser()) {
+            throw new Descriptor.FormException(Messages.ScriptApproval_SandboxCantBeDisabled(), "sandbox");
+        }
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
     }
 
-    @Deprecated public SecureGroovyScript(@NonNull String script, boolean sandbox) {
+    @Deprecated public SecureGroovyScript(@NonNull String script, boolean sandbox) throws Descriptor.FormException  {
         this(script, sandbox, null);
     }
 

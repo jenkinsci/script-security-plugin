@@ -301,7 +301,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     public void forceSandboxFormValidation() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
-            grant(Jenkins.READ, Item.READ).everywhere().to("dev"));
+            grant(Jenkins.READ, Item.READ).everywhere().to("dev").
+            grant(Jenkins.ADMINISTER).everywhere().to("admin"));
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
             ScriptApproval.get().setForceSandbox(true);
@@ -316,6 +317,31 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.WARNING, result.kind);
                 assertEquals(Messages.ScriptApproval_PipelineMessage(), result.getMessage());
+            }
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+
+            ScriptApproval.get().setForceSandbox(true);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.OK, result.kind);
+                assertTrue(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
+
+                result = ScriptApproval.get().checking("test", GroovyLanguage.get(), true);
+                assertEquals(FormValidation.Kind.OK, result.kind);
+                assertTrue(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
+            }
+
+            ScriptApproval.get().setForceSandbox(false);
+            {
+                FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
+                assertEquals(FormValidation.Kind.OK, result.kind);
+                assertFalse(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
+
+                result = ScriptApproval.get().checking("test", GroovyLanguage.get(), true);
+                assertEquals(FormValidation.Kind.OK, result.kind);
+                assertFalse(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
             }
         }
     }
