@@ -1006,12 +1006,19 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         save();
     }
 
-
+    /**
+     * Flag indicating whether the current system is blocking non sandbox operations for non Admin users.
+      * @return
+     */
     public boolean isForceSandbox() {
         return forceSandbox;
     }
 
-    //ForceSandbox restrictions does not apply to ADMINISTER users.
+    /**
+     * Logic to indicate if the flag {@link #isForceSandbox} applies for the current user. <br />
+     * It does not apply for admin users.
+     * @return
+     */
     public boolean isForceSandboxForCurrentUser() {
         return forceSandbox && !Jenkins.get().hasPermission(Jenkins.ADMINISTER);
     }
@@ -1338,11 +1345,29 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Extension
     public static class FormValidationPageDecorator extends PageDecorator {}
 
+    /**
+     * All sandbox checkboxes in the system should confirm their visibility based on this flag.<br />
+     * It depends on the current sandbox value in the affected instance and
+     * {@link org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval#isForceSandboxForCurrentUser}
+     * @param instance
+     * @param isSandbox
+     * method in the instance class confirming the sandbox current value for the instance.
+     * @return
+     * @param <T>
+     */
     public static <T> boolean shouldHideSandbox(@CheckForNull T instance, Predicate<T> isSandbox){
         return get().isForceSandboxForCurrentUser()
                && (instance == null || isSandbox.test(instance));
     }
 
+    /**
+     * All describable containing the Sandbox flag should invoke this method before saving.<br />
+     * It will confirm if the current user can persist the information in case the sandbox flag is disabled.
+     * It depends on {@link org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval#isForceSandboxForCurrentUser}
+     * In case the current user can't save it will raise a new {@link Descriptor.FormException}
+     * @param sandbox
+     * @throws Descriptor.FormException
+     */
     public static void validateSandbox(boolean sandbox) throws Descriptor.FormException{
         if (!sandbox && get().isForceSandboxForCurrentUser()) {
             throw new Descriptor.FormException(Messages.ScriptApproval_SandboxCantBeDisabled(), "sandbox");
