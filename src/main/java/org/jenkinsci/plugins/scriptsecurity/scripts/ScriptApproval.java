@@ -32,8 +32,6 @@ import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.util.SystemProperties;
-
-import gnu.crypto.hash.IMessageDigest;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
