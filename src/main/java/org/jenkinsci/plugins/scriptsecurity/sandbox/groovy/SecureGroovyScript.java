@@ -28,8 +28,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
-import groovy.lang.Script;
-
 import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
