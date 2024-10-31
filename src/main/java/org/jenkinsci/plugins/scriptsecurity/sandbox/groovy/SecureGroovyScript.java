@@ -28,6 +28,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+
 import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.AbstractDescribableImpl;
@@ -96,9 +98,8 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     @DataBoundConstructor public SecureGroovyScript(@NonNull String script, boolean sandbox,
                                                     @CheckForNull List<ClasspathEntry> classpath)
             throws Descriptor.FormException {
-        if (!sandbox && ScriptApproval.get().isForceSandboxForCurrentUser()) {
-            throw new Descriptor.FormException(Messages.ScriptApproval_SandboxCantBeDisabled(), "sandbox");
-        }
+        ScriptApproval.validateSandbox(sandbox);
+
         this.script = script;
         this.sandbox = sandbox;
         this.classpath = classpath;
@@ -473,8 +474,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         public boolean shouldHideSandbox(@CheckForNull SecureGroovyScript instance) {
             // sandbox checkbox is shown to admins even if the global configuration says otherwise
             // it's also shown when sandbox == false, so regular users can enable it
-            return ScriptApproval.get().isForceSandboxForCurrentUser()
-                   && (instance == null || instance.sandbox);
+            return ScriptApproval.shouldHideSandbox(instance,SecureGroovyScript::isSandbox);
         }
 
     }

@@ -26,11 +26,14 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BallColor;
+import hudson.model.Descriptor;
 import hudson.model.PageDecorator;
 import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
 import jenkins.util.SystemProperties;
+
+import gnu.crypto.hash.IMessageDigest;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +71,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -1335,4 +1339,15 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Restricted(NoExternalUse.class)
     @Extension
     public static class FormValidationPageDecorator extends PageDecorator {}
+
+    public static <T> boolean shouldHideSandbox(@CheckForNull T instance, Predicate<T> isSandbox){
+        return get().isForceSandboxForCurrentUser()
+               && (instance == null || isSandbox.test(instance));
+    }
+
+    public static void validateSandbox(boolean sandbox) throws Descriptor.FormException{
+        if (!sandbox && get().isForceSandboxForCurrentUser()) {
+            throw new Descriptor.FormException(Messages.ScriptApproval_SandboxCantBeDisabled(), "sandbox");
+        }
+    }
 }
