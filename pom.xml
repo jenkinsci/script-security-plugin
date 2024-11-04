@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>script-security</artifactId>
-  <version>${changelist}</version>
+  <version>1362.${changelist}</version>
   <packaging>hpi</packaging>
   <name>Script Security Plugin</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
