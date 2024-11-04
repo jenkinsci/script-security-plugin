@@ -28,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.Serializable;
 
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -204,6 +205,9 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
         }
         
         public FormValidation doCheckPath(@QueryParameter String value, @QueryParameter String oldPath, @QueryParameter boolean shouldBeApproved) {
+            if(!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                return FormValidation.ok();
+            }
             if (StringUtils.isBlank(value)) {
                 return FormValidation.warning("Enter a file path or URL."); // TODO I18N
             }
