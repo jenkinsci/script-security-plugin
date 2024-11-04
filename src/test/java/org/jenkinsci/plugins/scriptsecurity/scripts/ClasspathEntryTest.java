@@ -29,17 +29,50 @@ import hudson.Functions;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import jenkins.model.Jenkins;
+import org.htmlunit.html.HtmlPage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyString;
 import static org.junit.Assert.*;
-import org.jvnet.hudson.test.Issue;
+
+import org.jvnet.hudson.test.*;
 
 public class ClasspathEntryTest {
     @Rule public TemporaryFolder rule = new TemporaryFolder();
-    
+    @Rule public JenkinsRule jr = new JenkinsRule();
+
+    @Issue("SECURITY-3447")
+    @Test
+    public void testDoCheckPath() throws Exception {
+        jr.jenkins.setSecurityRealm(jr.createDummySecurityRealm());
+        jr.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
+                grant(Jenkins.ADMINISTER).everywhere().to("admin")
+                .grant(Jenkins.READ).everywhere().to("dev"));
+        Path path = Files.createTempDirectory("temp dir");
+        try(JenkinsRule.WebClient webClient = jr.createWebClient()) {
+            webClient.login("admin");
+            final HtmlPage adminPage = webClient.goTo("descriptor/org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry/checkPath?value=" + path.toUri());
+            final String adminContent = adminPage.asXml();
+            assertThat(adminContent, containsString("Class directories are not allowed as classpath entries."));
+        }
+        try (JenkinsRule.WebClient devWebClient = jr.createWebClient()) {
+            devWebClient.login("dev");
+            final HtmlPage devPage = devWebClient.goTo("descriptor/org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry/checkPath?value=" + path.toUri());
+            final String devContent = devPage.asNormalizedText();
+            assertThat(devContent, emptyString());
+        }
+        Files.deleteIfExists(path);
+
+    }
+
+    @WithoutJenkins
     @Test public void pathURLConversion() throws Exception {
         if (!Functions.isWindows()) {
             assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
@@ -54,6 +87,7 @@ public class ClasspathEntryTest {
         assertEquals(url, ClasspathEntry.pathToURL(path).toString());
     }
 
+    @WithoutJenkins
     @Test public void classDirDetected() throws Exception {
         final File tmpDir = rule.newFolder();
         assertTrue("Existing directory must be detected", ClasspathEntry.isClassDirectoryURL(tmpDir.toURI().toURL()));
@@ -67,6 +101,7 @@ public class ClasspathEntryTest {
         assertFalse("Generic URLs ending in / are not considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/file")));
     }
 
+    @WithoutJenkins
     @Issue("JENKINS-37599")
     @Test public void pathToURL() throws Exception {
         ClasspathEntry ignore = new ClasspathEntry("http://nowhere.net/");
