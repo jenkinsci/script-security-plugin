@@ -1359,8 +1359,6 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      * It will confirm if the current user can persist the information in case the sandbox flag is disabled.
      * It depends on {@link #isForceSandboxForCurrentUser}
      * In case the current user can't save it will raise a new {@link Descriptor.FormException}
-     * @param sandbox
-     * @throws Descriptor.FormException
      */
     public static void validateSandbox(boolean sandbox) throws Descriptor.FormException{
         if (!sandbox && get().isForceSandboxForCurrentUser()) {
