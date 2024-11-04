@@ -1346,7 +1346,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     /**
      * All sandbox checkboxes in the system should confirm their visibility based on this flag.<br />
      * It depends on the current sandbox value in the affected instance and
-     * {@link org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval#isForceSandboxForCurrentUser}
+     * {@link #isForceSandboxForCurrentUser}
      * @param isSandbox method handle in the instance class confirming the sandbox current value for the instance.
      */
     public static <T> boolean shouldHideSandbox(@CheckForNull T instance, Predicate<T> isSandbox){
