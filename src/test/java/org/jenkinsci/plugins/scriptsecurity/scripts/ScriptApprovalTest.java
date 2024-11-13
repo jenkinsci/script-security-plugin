@@ -26,6 +26,8 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
+
+import hudson.model.Descriptor;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
@@ -209,23 +211,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @Test
     public void forceSandboxTests() throws Exception {
-        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-
-        ScriptApproval.get().setForceSandbox(true);
-
-        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
-        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            mockStrategy.grant(p).everywhere().to("devel");
-        }
-
-        mockStrategy.grant(Jenkins.READ).everywhere().to("admin");
-        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
-        for (Permission p : Item.PERMISSIONS.getPermissions()) {
-            mockStrategy.grant(p).everywhere().to("admin");
-        }
-
-        r.jenkins.setAuthorizationStrategy(mockStrategy);
+        setBasicSecurity();
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
             assertTrue(ScriptApproval.get().isForceSandbox());
@@ -299,10 +285,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @Test
     public void forceSandboxFormValidation() throws Exception {
-        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
-            grant(Jenkins.READ, Item.READ).everywhere().to("dev").
-            grant(Jenkins.ADMINISTER).everywhere().to("admin"));
+        setBasicSecurity();
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
             ScriptApproval.get().setForceSandbox(true);
@@ -344,6 +327,98 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                 assertFalse(result.getMessage().contains(Messages.ScriptApproval_AdminUserAlert()));
             }
         }
+    }
+
+    @Test
+    public void shouldHideSandboxTest() throws Exception {
+        setBasicSecurity();
+
+        ScriptApproval.get().setForceSandbox(true);
+
+        SecureGroovyScript testSandboxTrue = new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null);
+        SecureGroovyScript testSandboxFalse = new SecureGroovyScript("jenkins.model.Jenkins.instance", false, null);
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            assertTrue(ScriptApproval.shouldHideSandbox(testSandboxTrue, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxFalse, SecureGroovyScript::isSandbox));
+            assertTrue(ScriptApproval.shouldHideSandbox(null, SecureGroovyScript::isSandbox));
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxTrue, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxFalse, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(null, SecureGroovyScript::isSandbox));
+        }
+
+        ScriptApproval.get().setForceSandbox(false);
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxTrue, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxFalse, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(null, SecureGroovyScript::isSandbox));
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxTrue, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(testSandboxFalse, SecureGroovyScript::isSandbox));
+            assertFalse(ScriptApproval.shouldHideSandbox(null, SecureGroovyScript::isSandbox));
+        }
+    }
+
+    @Test
+    public void validateSandboxTest() throws Exception {
+        setBasicSecurity();
+
+        ScriptApproval.get().setForceSandbox(true);
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            ScriptApproval.validateSandbox(true);
+            assertThrows(Descriptor.FormException.class,
+                         () -> ScriptApproval.validateSandbox(false));
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            ScriptApproval.validateSandbox(true);
+            ScriptApproval.validateSandbox(false);
+        }
+
+        ScriptApproval.get().setForceSandbox(false);
+
+        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+            ScriptApproval.validateSandbox(true);
+            ScriptApproval.validateSandbox(false);
+        }
+
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            ScriptApproval.validateSandbox(true);
+            ScriptApproval.validateSandbox(false);
+        }
+    }
+
+    /**
+     * Will configure a mock security settings with users:
+     * Devel: overall Read and write without admin permission
+     * admin: System administrator
+     */
+    private void setBasicSecurity()
+    {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+
+        ScriptApproval.get().setForceSandbox(true);
+
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+
+        mockStrategy.grant(Jenkins.READ).everywhere().to("admin");
+        mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("admin");
+        }
+
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
     }
 
     private Script script(String groovy) {

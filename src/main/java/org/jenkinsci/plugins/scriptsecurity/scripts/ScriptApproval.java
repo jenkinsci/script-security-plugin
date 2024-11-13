@@ -26,6 +26,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BallColor;
+import hudson.model.Descriptor;
 import hudson.model.PageDecorator;
 import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
@@ -68,6 +69,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -1004,12 +1006,17 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         save();
     }
 
-
+    /**
+     * Flag indicating whether the current system is blocking non sandbox operations for non Admin users.
+     */
     public boolean isForceSandbox() {
         return forceSandbox;
     }
 
-    //ForceSandbox restrictions does not apply to ADMINISTER users.
+    /**
+     * Logic to indicate if the flag {@link #isForceSandbox} applies for the current user. <br />
+     * It does not apply for admin users.
+     */
     public boolean isForceSandboxForCurrentUser() {
         return forceSandbox && !Jenkins.get().hasPermission(Jenkins.ADMINISTER);
     }
@@ -1335,4 +1342,27 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Restricted(NoExternalUse.class)
     @Extension
     public static class FormValidationPageDecorator extends PageDecorator {}
+
+    /**
+     * All sandbox checkboxes in the system should confirm their visibility based on this flag.<br />
+     * It depends on the current sandbox value in the affected instance and
+     * {@link #isForceSandboxForCurrentUser}
+     * @param isSandbox method handle in the instance class confirming the sandbox current value for the instance.
+     */
+    public static <T> boolean shouldHideSandbox(@CheckForNull T instance, Predicate<T> isSandbox){
+        return get().isForceSandboxForCurrentUser()
+               && (instance == null || isSandbox.test(instance));
+    }
+
+    /**
+     * All describable containing the Sandbox flag should invoke this method before saving.<br />
+     * It will confirm if the current user can persist the information in case the sandbox flag is disabled.
+     * It depends on {@link #isForceSandboxForCurrentUser}
+     * In case the current user can't save it will raise a new {@link Descriptor.FormException}
+     */
+    public static void validateSandbox(boolean sandbox) throws Descriptor.FormException{
+        if (!sandbox && get().isForceSandboxForCurrentUser()) {
+            throw new Descriptor.FormException(Messages.ScriptApproval_SandboxCantBeDisabled(), "sandbox");
+        }
+    }
 }
