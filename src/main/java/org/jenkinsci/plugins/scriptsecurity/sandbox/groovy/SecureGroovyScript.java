@@ -73,7 +73,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
@@ -155,7 +155,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     }
 
     private static @CheckForNull Item currentItem() {
-        StaplerRequest req = Stapler.getCurrentRequest();
+        StaplerRequest2 req = Stapler.getCurrentRequest2();
         return req != null ? req.findAncestorObject(Item.class) : null;
     }
 

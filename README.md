@@ -143,7 +143,7 @@ When unset, you need to call` ScriptApproval.configuring` in the `@DataBoundCons
 Use `ApprovalContext.withCurrentUser`, and also `withItemAsKey` where applicable (when 
 there is just one script per job); otherwise at least withItem where applicable, and/or 
 `withKey` when you can uniquely identify this usage from the context 
-(`StaplerRequest.findAncestorObject` is helpful here). This lets the system know a 
+(`StaplerRequest2.findAncestorObject` is helpful here). This lets the system know a 
 (possibly) new script has been configured by a particular person. You will also need a 
 `readResolve` that calls configuring to notify the system when a configurable with script 
 has been loaded from disk (and thus the configurer is unknown). Call 
