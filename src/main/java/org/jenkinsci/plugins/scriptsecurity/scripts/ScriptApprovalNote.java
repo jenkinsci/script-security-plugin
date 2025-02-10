@@ -39,7 +39,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Offers a link to {@link ScriptApproval}.
@@ -69,7 +69,7 @@ public class ScriptApprovalNote extends ConsoleNote<Object> {
     public ConsoleAnnotator<Object> annotate(Object context, MarkupText text, int charPos) {
         if (Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
             String url = ScriptApproval.get().getUrlName();
-            StaplerRequest req = Stapler.getCurrentRequest();
+            StaplerRequest2 req = Stapler.getCurrentRequest2();
             if (req != null) {
                 // if we are serving HTTP request, we want to use app relative URL
                 url = req.getContextPath() + "/" + url;
