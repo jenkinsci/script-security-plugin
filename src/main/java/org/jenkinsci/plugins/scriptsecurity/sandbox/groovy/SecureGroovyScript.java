@@ -24,7 +24,6 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
@@ -326,7 +325,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
      * @throws UnapprovedUsageException in case of a non-sandbox issue
      * @throws UnapprovedClasspathException in case some unapproved classpath entries were requested
      */
-    @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Managed by GroovyShell.")
     public Object evaluate(ClassLoader loader, Binding binding, @CheckForNull TaskListener listener) throws Exception {
         if (!calledConfiguring) {
             throw new IllegalStateException("you need to call configuring or a related method before using GroovyScript");
@@ -457,7 +455,6 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             return ""; // not intended to be displayed on its own
         }
 
-        @SuppressFBWarnings(value = "DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED", justification = "Irrelevant without SecurityManager.")
         @RequirePOST
         public FormValidation doCheckScript(@QueryParameter String value, @QueryParameter boolean sandbox, @QueryParameter String oldScript) {
             FormValidation validationResult = GroovySandbox.checkScriptForCompilationErrors(value,
