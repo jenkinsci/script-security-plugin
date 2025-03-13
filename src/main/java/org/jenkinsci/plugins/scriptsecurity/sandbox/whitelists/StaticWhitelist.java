@@ -45,7 +45,6 @@ import java.util.Set;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import org.apache.commons.io.input.SequenceReader;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException;
@@ -279,7 +278,6 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
 
     private static final Set<String> BLACKLIST;
 
-    @SuppressFBWarnings(value = "OS_OPEN_STREAM", justification = "https://sourceforge.net/p/findbugs/bugs/786/")
     private static Set<String> loadBlacklist() throws IOException {
         try (InputStream is = StaticWhitelist.class.getResourceAsStream("blacklist"); InputStreamReader isr = new InputStreamReader(is, StandardCharsets.US_ASCII); BufferedReader br = new BufferedReader(isr)) {
             Set<String> blacklist = new HashSet<>();
