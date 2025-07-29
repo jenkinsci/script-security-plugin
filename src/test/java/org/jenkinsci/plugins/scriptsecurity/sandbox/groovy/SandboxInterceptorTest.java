@@ -58,11 +58,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
@@ -460,37 +462,37 @@ public class SandboxInterceptorTest {
         rules = new ProxyWhitelist(new GenericWhitelist(), new StaticWhitelist("new java.awt.Point"));
         { // method access
             assertEvaluate(rules, 3,
-                    StringUtils.join(Arrays.asList(
+                    String.join("\n", List.of(
                             "class Dummy { def getX() { return 3; } }",
                             "def c = { -> getX() };",
                             "c.resolveStrategy = Closure.DELEGATE_ONLY;",
                             "c.delegate = new Dummy();",
                             "return c();"
-                    ), "\n"));
+                    )));
             assertRejected(rules, "method java.awt.geom.Point2D getX",
-                    StringUtils.join(Arrays.asList(
+                    String.join("\n", List.of(
                             "def c = { -> getX() };",
                             "c.resolveStrategy = Closure.DELEGATE_ONLY;",
                             "c.delegate = new java.awt.Point();",
                             "return c();"
-                    ), "\n"));
+                    )));
         }
         {// property access
             assertEvaluate(rules, 3,
-                    StringUtils.join(Arrays.asList(
+                    String.join("\n", List.of(
                             "class Dummy { def getX() { return 3; } }",
                             "def c = { -> x };",
                             "c.resolveStrategy = Closure.DELEGATE_ONLY;",
                             "c.delegate = new Dummy();",
                             "return c();"
-                    ), "\n"));
+                    )));
             assertRejected(rules, "method java.awt.geom.Point2D getX",
-                    StringUtils.join(Arrays.asList(
+                    String.join("\n", List.of(
                             "def c = { -> x };",
                             "c.resolveStrategy = Closure.DELEGATE_ONLY;",
                             "c.delegate = new java.awt.Point();",
                             "return c();"
-                    ), "\n"));
+                    )));
         }
     }
 
@@ -556,12 +558,13 @@ public class SandboxInterceptorTest {
         }
         @Whitelisted
         public static String join(String sep, String... vals) {
-            return StringUtils.join(vals, sep);
+            return Stream.of(vals).map(v -> v == null ? "" : v.toString()).collect(Collectors.joining(sep));
         }
         public static void explode(String... vals) {}
         @Whitelisted
         public static String varargsMethod(Integer i, Boolean b, StringContainer... s) {
-            return i.toString() + "-" + b.toString() + "-" + StringUtils.join(s, "-");
+            return i.toString() + "-" + b.toString() + "-"
+                    + Stream.of(s).map(v -> v == null ? "" : v.toString()).collect(Collectors.joining("-"));
         }
     }
 

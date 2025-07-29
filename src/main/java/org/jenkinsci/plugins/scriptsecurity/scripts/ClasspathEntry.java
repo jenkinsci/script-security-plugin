@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.Serializable;
 
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -208,7 +207,7 @@ public final class ClasspathEntry extends AbstractDescribableImpl<ClasspathEntry
             if(!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                 return FormValidation.ok();
             }
-            if (StringUtils.isBlank(value)) {
+            if (value == null || value.isBlank()) {
                 return FormValidation.warning("Enter a file path or URL."); // TODO I18N
             }
             try {

@@ -48,13 +48,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -145,7 +145,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
     public SecureGroovyScript configuring(ApprovalContext context) {
         calledConfiguring = true;
         if (!sandbox) {
-            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context, !StringUtils.equals(this.oldScript, this.script));
+            ScriptApproval.get().configuring(script, GroovyLanguage.get(), context, !Objects.equals(this.oldScript, this.script));
         }
         for (ClasspathEntry entry : getClasspath()) {
             ScriptApproval.get().configuring(entry, context);
@@ -462,7 +462,7 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             if (validationResult.kind != FormValidation.Kind.OK) {
                 return validationResult;
             }
-            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get(), !StringUtils.equals(oldScript, value));
+            return sandbox ? FormValidation.ok() : ScriptApproval.get().checking(value, GroovyLanguage.get(), !Objects.equals(oldScript, value));
         }
 
         @Restricted(NoExternalUse.class) // stapler

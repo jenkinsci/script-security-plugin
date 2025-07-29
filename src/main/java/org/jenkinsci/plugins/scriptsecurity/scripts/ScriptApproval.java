@@ -34,7 +34,6 @@ import jenkins.model.GlobalConfigurationCategory;
 import jenkins.util.SystemProperties;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AclAwareWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.ProxyWhitelist;
@@ -65,6 +64,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -735,7 +735,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             PendingClasspathEntry pcp = new PendingClasspathEntry(result.newHash, url, context);
             if (!Jenkins.get().isUseSecurity() ||
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
-                            && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !StringUtils.equals(entry.getOldPath(), entry.getPath())))) {
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !Objects.equals(entry.getOldPath(), entry.getPath())))) {
                 LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, result.newHash});
                 ApprovedClasspathEntry acp = new ApprovedClasspathEntry(result.newHash, url);
                 pendingClasspathEntries.remove(pcp);
@@ -815,7 +815,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      *          if script is approved
      */
     public synchronized FormValidation checking(@NonNull String script, @NonNull Language language, boolean willBeApproved) {
-        if (StringUtils.isEmpty(script)) {
+        if (script == null || script.isEmpty()) {
             return FormValidation.ok();
         }
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
@@ -976,7 +976,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         approvedScriptHashes.clear();
         for (String scriptHash : scriptHashes) {
-            if (StringUtils.isNotEmpty(scriptHash)) {
+            if (scriptHash != null && !scriptHash.isEmpty()) {
                 if (DEFAULT_HASHER.pattern().matcher(scriptHash).matches()) {
                     approvedScriptHashes.add(scriptHash);
                 } else {
