@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.lang.ClassUtils;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
@@ -74,7 +73,7 @@ class GroovyCallSiteSelector {
             if (
                     parameterTypes[i].isPrimitive()
                     && parameters[i] != null
-                    && isInstancePrimitive(ClassUtils.primitiveToWrapper(parameterTypes[i]), parameters[i])
+                    && isInstancePrimitive(Primitives.wrap(parameterTypes[i]), parameters[i])
             ) {
                 // Groovy passes primitive values as objects (for example, passes 0 as Integer(0))
                 // The prior test fails as int.class.isInstance(new Integer(0)) returns false.
@@ -99,7 +98,7 @@ class GroovyCallSiteSelector {
         Class<?> componentType = parameterTypes[fixedLen].getComponentType();
         assert componentType != null;
         if (componentType.isPrimitive()) {
-            componentType = ClassUtils.primitiveToWrapper(componentType);
+            componentType = Primitives.wrap(componentType);
         }
         int arrayLength = parameters.length - fixedLen;
 

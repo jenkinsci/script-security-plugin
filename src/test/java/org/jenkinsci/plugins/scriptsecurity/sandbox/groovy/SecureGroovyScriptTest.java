@@ -57,9 +57,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.Expand;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval;
@@ -341,7 +342,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllJarFiles() throws URISyntaxException {
-        String testClassPath = String.format(StringUtils.join(getClass().getName().split("\\."), "/"));
+        String testClassPath = Stream.of(getClass().getName().split("\\.")).collect(Collectors.joining("/"));
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         DirectoryScanner ds = new DirectoryScanner();
@@ -378,7 +379,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllUpdatedJarFiles() throws URISyntaxException {
-        String testClassPath = StringUtils.join(getClass().getName().split("\\."), "/");
+        String testClassPath = Stream.of(getClass().getName().split("\\.")).collect(Collectors.joining("/"));
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         File updatedDir = new File(testClassDir, "updated");
