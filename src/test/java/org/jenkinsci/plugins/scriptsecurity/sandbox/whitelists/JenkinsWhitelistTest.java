@@ -24,12 +24,12 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class JenkinsWhitelistTest {
-    
-    @Test public void sanity() throws Exception {
+class JenkinsWhitelistTest {
+
+    @Test
+    void sanity() throws Exception {
         StaticWhitelistTest.sanity(StaticWhitelist.class.getResource("jenkins-whitelist"));
     }
-
 }

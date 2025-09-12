@@ -26,9 +26,9 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 
 import hudson.Util;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import org.jvnet.hudson.test.WithoutJenkins;
 
 import java.io.File;
@@ -37,18 +37,19 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalTest.Entry> {
+class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalTest.Entry> {
 
-    @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
+    @TempDir
+    private File tmp;
 
     private final SecureRandom random = new SecureRandom();
 
     @Override
     Entry create() throws Exception {
-        final File file = tmpFolderRule.newFile();
+        final File file = File.createTempFile("junit", null, tmp);
         final byte[] bytes = new byte[1024];
         random.nextBytes(bytes);
         FileUtils.writeByteArrayToFile(file, bytes);
@@ -66,15 +67,17 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
     }
 
 
-    @Test public void classDirRejectedEvenWithNoSecurity() throws Exception {
-        entry(tmpFolderRule.newFolder());
-        assertTrue("Class directory shouldn't be pending", ScriptApproval.get().getPendingClasspathEntries().isEmpty());
-        assertTrue("Class directory shouldn't be accepted", ScriptApproval.get().getApprovedClasspathEntries().isEmpty());
+    @Test
+    void classDirRejectedEvenWithNoSecurity() throws Exception {
+        entry(newFolder(tmp, "junit"));
+        assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty(), "Class directory shouldn't be pending");
+        assertTrue(ScriptApproval.get().getApprovedClasspathEntries().isEmpty(), "Class directory shouldn't be accepted");
     }
 
     // http://stackoverflow.com/a/25393190/12916
     @WithoutJenkins
-    @Test public void getPendingClasspathEntry() throws Exception {
+    @Test
+    void getPendingClasspathEntry() throws Exception {
         TreeSet<ScriptApproval.PendingClasspathEntry> pendingClasspathEntries = new TreeSet<>();
         for (int i = 1; i < 100; i++) {
             pendingClasspathEntries.add(new ScriptApproval.PendingClasspathEntry(hashOf(i), new URL("file:/x" + i + ".jar"), ApprovalContext.create()));
@@ -84,6 +87,7 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
         assertEquals(real, dummy);
         assertEquals("file:/x77.jar", real.getURL().toString());
     }
+
     private static String hashOf(int i) {
         return Util.getDigestOf("hash #" + i);
     }
@@ -196,5 +200,14 @@ public final class EntryApprovalTest extends AbstractApprovalTest<EntryApprovalT
         public String toString() {
             return String.format("ClasspathEntry[%s]", entry.getURL());
         }
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 }

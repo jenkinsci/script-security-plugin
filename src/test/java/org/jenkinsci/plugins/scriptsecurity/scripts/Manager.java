@@ -32,9 +32,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Object representing the script approval page.
@@ -61,13 +59,13 @@ final class Manager {
     }
 
     Manager notFound(Approvable<?> a, String id) {
-        assertNull(String.format("%s : Element %s should not exist", a, id), page.getElementById(id));
+        assertNull(page.getElementById(id), String.format("%s : Element %s should not exist", a, id));
         return this;
     }
 
     private DomElement assertFound(Approvable<?> a, String id) {
         DomElement dom = page.getElementById(id);
-        assertNotNull(String.format("%s : Element %s should exist", this, id), dom);
+        assertNotNull(dom, String.format("%s : Element %s should exist", this, id));
         return dom;
     }
 
@@ -105,7 +103,7 @@ final class Manager {
         }
 
         T delete() throws IOException {
-            assertTrue(approvable + "must support deletion", approvable.canDelete());
+            assertTrue(approvable.canDelete(), approvable + "must support deletion");
             approvable.assertApproved();
             return click("delete");
         }
