@@ -119,6 +119,7 @@ staticMethod java.lang.Boolean parseBoolean java.lang.String
 staticMethod java.lang.Boolean valueOf boolean
 staticMethod java.lang.Boolean valueOf java.lang.String
 method java.lang.CharSequence charAt int
+method java.lang.CharSequence getChars int int char[] int
 method java.lang.CharSequence isEmpty
 method java.lang.CharSequence length
 method java.lang.CharSequence subSequence int int
