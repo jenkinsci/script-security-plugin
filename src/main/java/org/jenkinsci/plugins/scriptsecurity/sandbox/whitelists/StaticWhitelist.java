@@ -33,7 +33,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.Runtime;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -100,8 +99,6 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
         this(asList(lines));
     }
 
-    private static final int JAVA_VERSION = Runtime.version().feature();
-
     /**
      * Filters a line, returning the content that must be processed.
      * @param line Line to filter.
@@ -110,17 +107,6 @@ public final class StaticWhitelist extends EnumeratingWhitelist {
     static @CheckForNull String filter(@NonNull String line) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#")) {
-            return null;
-        }
-        /* String.getChars(int, int, char[], int) and
-         * AbstractStringBuilder.getChars(int, int, char[], int) implementations changed in Java 25.
-         * No longer allowed in the whitelist because they are now implemented in CharSequence.
-         */
-        if (JAVA_VERSION >= 25 && line.contains(" getChars int int char[] int") && line.contains("String")) {
-            return null;
-        }
-        /* CharSequence.getChars(int, int, char[], int) first appears in Java 25 */
-        if (JAVA_VERSION < 25 && line.contains("CharSequence getChars int int char[] int")) {
             return null;
         }
         return line;
