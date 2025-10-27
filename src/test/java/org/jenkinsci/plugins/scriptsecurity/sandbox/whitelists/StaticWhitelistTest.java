@@ -163,7 +163,7 @@ public class StaticWhitelistTest {
             // TODO Do not exist until Jenkins includes https://github.com/jenkinsci/jenkins/pull/9674
             new MethodSignature("jenkins.model.HistoricalBuild", "getFullDisplayName"),
             // Does not exist until Java 25+
-            new MethodSignature("java.lang.CharSequence", "getChars", "int", "int", "char[]", "int"),
+            new MethodSignature(CharSequence.class, "getChars", int.class, int.class, char[].class, int.class),
             // Override the corresponding CharSequence method in Java 25+
             new MethodSignature("java.lang.AbstractStringBuilder", "getChars", "int", "int", "char[]", "int"),
             new MethodSignature(String.class, "getChars", int.class, int.class, char[].class, int.class)
