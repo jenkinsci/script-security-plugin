@@ -11,33 +11,48 @@ import java.util.List;
 import java.util.logging.Level;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
-import org.junit.After;
-import static org.junit.Assert.*;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.LogRecorder;
 import org.jvnet.hudson.test.MemoryAssert;
+import org.jvnet.hudson.test.junit.jupiter.BuildWatcherExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * Tests for memory leak cleanup successfully purging the most common memory leak.
  */
-public class GroovyMemoryLeakTest {
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-    @Rule public LoggerRule logger = new LoggerRule().record(SecureGroovyScript.class, Level.FINER);
+@WithJenkins
+class GroovyMemoryLeakTest {
 
-    @After
-    public void clearLoaders() {
-        LOADERS.clear();
-    }
+    @SuppressWarnings("unused")
+    @RegisterExtension
+    private static final BuildWatcherExtension BUILD_WATCHER = new BuildWatcherExtension();
+
     private static final List<WeakReference<ClassLoader>> LOADERS = new ArrayList<>();
 
-    public static void register(Object o) {
+    @SuppressWarnings("unused")
+    private final LogRecorder logger = new LogRecorder().record(SecureGroovyScript.class, Level.FINER);
+
+    private JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
+
+    @AfterEach
+    void afterEach() {
+        LOADERS.clear();
+    }
+
+    @SuppressWarnings("unused")
+    private static void register(Object o) {
         System.err.println("registering " + o);
         for (ClassLoader loader = o.getClass().getClassLoader(); !(loader instanceof PluginManager.UberClassLoader); loader = loader.getParent()) {
             System.err.println("…from " + loader);
@@ -46,7 +61,7 @@ public class GroovyMemoryLeakTest {
     }
 
     @Test
-    public void loaderReleased() throws Exception {
+    void loaderReleased() throws Exception {
         FreeStyleProject p = r.jenkins.createProject(FreeStyleProject.class, "p");
         String cp = GroovyMemoryLeakTest.class.getResource("somejar.jar").toString();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(

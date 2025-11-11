@@ -24,22 +24,32 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public abstract class AbstractApprovalTest<T extends Approvable<T>> {
+@WithJenkins
+abstract class AbstractApprovalTest<T extends Approvable<T>> {
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    protected JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
 
     /** Creates a new approvable to test. */
     abstract T create() throws Exception;
 
-    @Test public void noSecurity() throws Exception {
+    @Test
+    void noSecurity() throws Exception {
         create().use();
     }
 
-    @Test public void withSecurity() throws Exception {
+    @Test
+    void withSecurity() throws Exception {
         configureSecurity();
         // Cannot use until approved
         create().assertCannotUse().approve().use();
@@ -64,7 +74,8 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
         return entries;
     }
 
-    @Test public void approveInternal() throws Exception {
+    @Test
+    void approveInternal() throws Exception {
         configureSecurity();
         final Approvable<?>[] entries = createFiveEntries();
         entries[0].approve().assertApproved();
@@ -82,7 +93,8 @@ public abstract class AbstractApprovalTest<T extends Approvable<T>> {
     }
 
 
-    @Test public void approveExternal() throws Exception {
+    @Test
+    void approveExternal() throws Exception {
         configureSecurity();
         final Approvable<?>[] entries = createFiveEntries();
 

@@ -26,44 +26,43 @@ package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ErrorCollector;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 
-public class GenericWhitelistTest {
-    
-    @Rule public ErrorCollector errors = new ErrorCollector();
+class GenericWhitelistTest {
 
-    @Test public void sanity() throws Exception {
+    @Test
+    void sanity() throws Exception {
         StaticWhitelistTest.sanity(StaticWhitelist.class.getResource("generic-whitelist"));
     }
 
     @Issue("SECURITY-538")
-    @Test public void dynamicSubscript() throws Exception {
+    @Test
+    void dynamicSubscript() throws Exception {
         String dangerous = Dangerous.class.getName();
         Whitelist wl = new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist());
         // Control cases—explicit method call:
-        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " isSecured", dangerous + ".isSecured()", errors);
-        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " setSecured boolean", dangerous + ".setSecured(false)", errors);
-        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " getSecret", "new " + dangerous + "().getSecret()", errors);
-        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " setSecret java.lang.String", "new " + dangerous + "().setSecret('')", errors);
+        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " isSecured", dangerous + ".isSecured()");
+        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " setSecured boolean", dangerous + ".setSecured(false)");
+        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " getSecret", "new " + dangerous + "().getSecret()");
+        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " setSecret java.lang.String", "new " + dangerous + "().setSecret('')");
         // Control cases—statically resolvable property accesses:
-        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " isSecured", dangerous + ".secured", errors);
-        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " setSecured boolean", dangerous + ".secured = false", errors);
-        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " getSecret", "new " + dangerous + "().secret", errors);
-        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " setSecret java.lang.String", "new " + dangerous + "().secret = ''", errors);
+        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " isSecured", dangerous + ".secured");
+        SandboxInterceptorTest.assertRejected(wl, "staticMethod " + dangerous + " setSecured boolean", dangerous + ".secured = false");
+        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " getSecret", "new " + dangerous + "().secret");
+        SandboxInterceptorTest.assertRejected(wl, "method " + dangerous + " setSecret java.lang.String", "new " + dangerous + "().secret = ''");
         // Test cases—dynamically resolved property accesses:
         String getAt = "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String";
         String putAt = "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object";
-        SandboxInterceptorTest.assertRejected(wl, getAt, dangerous + "['secured']", errors);
-        SandboxInterceptorTest.assertRejected(wl, putAt, dangerous + "['secured'] = false", errors);
-        SandboxInterceptorTest.assertRejected(wl, getAt, "new " + dangerous + "()['secret']", errors);
-        SandboxInterceptorTest.assertRejected(wl, putAt, "new " + dangerous + "()['secret'] = ''", errors);
+        SandboxInterceptorTest.assertRejected(wl, getAt, dangerous + "['secured']");
+        SandboxInterceptorTest.assertRejected(wl, putAt, dangerous + "['secured'] = false");
+        SandboxInterceptorTest.assertRejected(wl, getAt, "new " + dangerous + "()['secret']");
+        SandboxInterceptorTest.assertRejected(wl, putAt, "new " + dangerous + "()['secret'] = ''");
         // Test cases via JsonOutput.
-        SandboxInterceptorTest.assertRejected(wl, "staticMethod groovy.json.JsonOutput toJson java.lang.Object", "groovy.json.JsonOutput.toJson(new " + dangerous + "())", errors);
+        SandboxInterceptorTest.assertRejected(wl, "staticMethod groovy.json.JsonOutput toJson java.lang.Object", "groovy.json.JsonOutput.toJson(new " + dangerous + "())");
         // toJson(Closure) seems blocked anyway by lack of access to JsonDelegate.content, directly or via GroovyObject.setProperty
     }
+
     public static class Dangerous {
         @Whitelisted
         public Dangerous() {}
