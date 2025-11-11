@@ -164,7 +164,12 @@ class StaticWhitelistTest {
             // Remove from jenkins-whitelist at the same time
             new MethodSignature("hudson.model.Run", "getFullDisplayName"),
             // TODO Do not exist until Jenkins includes https://github.com/jenkinsci/jenkins/pull/9674
-            new MethodSignature("jenkins.model.HistoricalBuild", "getFullDisplayName")
+            new MethodSignature("jenkins.model.HistoricalBuild", "getFullDisplayName"),
+            // Does not exist until Java 25+
+            new MethodSignature(CharSequence.class, "getChars", int.class, int.class, char[].class, int.class),
+            // Override the corresponding CharSequence method in Java 25+
+            new MethodSignature("java.lang.AbstractStringBuilder", "getChars", "int", "int", "char[]", "int"),
+            new MethodSignature(String.class, "getChars", int.class, int.class, char[].class, int.class)
     ));
 
     @Test
