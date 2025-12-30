@@ -43,13 +43,13 @@ import org.kohsuke.stapler.DataBoundConstructor;
  * Sample of integrating {@link SecureGroovyScript}.
  * The result of the configured Groovy script is set as the build description.
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
 public final class TestGroovyRecorder extends Recorder {
 
     private final SecureGroovyScript script;
     private transient Binding binding;
 
-    @DataBoundConstructor public TestGroovyRecorder(SecureGroovyScript script) {
+    @DataBoundConstructor
+    public TestGroovyRecorder(SecureGroovyScript script) {
         this.script = script.configuringWithKeyItem();
     }
     
@@ -61,7 +61,8 @@ public final class TestGroovyRecorder extends Recorder {
         this.binding = binding;
     }
 
-    @Override public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    @Override
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         try {
             if (binding == null) {
                 binding = new Binding();
@@ -74,18 +75,22 @@ public final class TestGroovyRecorder extends Recorder {
         return true;
     }
     
-    @Override public BuildStepMonitor getRequiredMonitorService() {
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
     
-    @Extension public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
         @NonNull
-        @Override public String getDisplayName() {
+        @Override
+        public String getDisplayName() {
             return "Test Groovy Recorder";
         }
 
-        @Override public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
         }
         
