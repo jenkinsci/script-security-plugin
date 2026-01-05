@@ -47,13 +47,16 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitel
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.NewSignature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.Signature;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist.StaticMethodSignature;
-import org.junit.Assert;
-import org.junit.Test;
-import static org.junit.Assert.*;
 
-public class StaticWhitelistTest {
-    
-    @Test public void dangerous() throws Exception {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+class StaticWhitelistTest {
+
+    @Test
+    void dangerous() throws Exception {
         assertFalse(StaticWhitelist.rejectMethod(Collection.class.getMethod("clear")).isDangerous());
         assertTrue(StaticWhitelist.rejectNew(File.class.getConstructor(String.class)).isDangerous());
         assertTrue(StaticWhitelist.rejectMethod(GroovyObject.class.getMethod("invokeMethod", String.class, Object.class)).isDangerous());
@@ -81,7 +84,7 @@ public class StaticWhitelistTest {
                 hasDupes = true;
             }
         }
-        Assert.assertFalse("Whitelist contains duplicate entries, and this is not allowed!  Please see list above.", hasDupes);
+        assertFalse(hasDupes, "Whitelist contains duplicate entries, and this is not allowed!  Please see list above.");
 
         ArrayList<EnumeratingWhitelist.Signature> sorted = new ArrayList<>(sigs);
         Collections.sort(sorted);
@@ -95,7 +98,7 @@ public class StaticWhitelistTest {
                 isUnsorted = true;
             }
         }
-        Assert.assertFalse("Whitelist is out of order!  Please see issues above.", isUnsorted);
+        assertFalse(isUnsorted, "Whitelist is out of order!  Please see issues above.");
 
 
         for (EnumeratingWhitelist.Signature sig : sigs) {
@@ -103,7 +106,7 @@ public class StaticWhitelistTest {
                 continue;
             }
             try {
-                assertTrue(sig + " does not exist (or is an override)", sig.exists());
+                assertTrue(sig.exists(), sig + " does not exist (or is an override)");
             } catch (ClassNotFoundException x) {
                 // Wrapping exception to include the full signature in the error message.
                 throw new Exception("Unable to verify existence of " + sig, x);
@@ -169,7 +172,8 @@ public class StaticWhitelistTest {
             new MethodSignature(String.class, "getChars", int.class, int.class, char[].class, int.class)
     ));
 
-    @Test public void sanity() throws Exception {
+    @Test
+    void sanity() throws Exception {
         sanity(StaticWhitelist.class.getResource("blacklist"));
     }
 

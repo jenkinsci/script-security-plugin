@@ -57,8 +57,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.DirectoryScanner;
@@ -75,33 +74,37 @@ import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted;
 import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.BuildWatcherExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.kohsuke.groovy.sandbox.impl.Checker;
-import static org.junit.Assert.assertEquals;
 
-public class SecureGroovyScriptTest {
+@WithJenkins
+class SecureGroovyScriptTest {
 
-    @ClassRule public static BuildWatcher WATCHER = new BuildWatcher();
+    @SuppressWarnings("unused")
+    @RegisterExtension
+    private static final BuildWatcherExtension BUILD_WATCHER = new BuildWatcherExtension();
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    @TempDir
+    private File tmpFolderRule;
 
-    @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
+    private JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
 
     private void addPostBuildAction(HtmlPage page) throws IOException {
         String displayName = r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName();
@@ -111,14 +114,14 @@ public class SecureGroovyScriptTest {
             HtmlForm config = page.getFormByName("config");
             r.getButtonByCaption(config, displayName).click();
         }
-
     }
 
     /**
      * Basic approval test where the user doesn't have ADMINISTER privs but has unchecked
      * the sandbox checkbox. Should result in script going to pending approval.
      */
-    @Test public void basicApproval() throws Exception {
+    @Test
+    void basicApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -189,7 +192,8 @@ public class SecureGroovyScriptTest {
      * Basic approval test where the user doesn't have ADMINISTER privs and forceSandbox is enabled
      * Sandbox checkbox should not be visible, but set to true by default
      */
-    @Test public void basicApproval_ForceSandbox() throws Exception {
+    @Test
+    void basicApproval_ForceSandbox() throws Exception {
         ScriptApproval.get().setForceSandbox(true);
 
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
@@ -234,7 +238,8 @@ public class SecureGroovyScriptTest {
     /**
      * Test where the user has ADMINISTER privs, default to non sandbox mode, but require approval
      */
-    @Test public void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
+    @Test
+    void testSandboxDefault_with_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -290,7 +295,8 @@ public class SecureGroovyScriptTest {
      * logic should not change to the default admin behavior
      * Except for the messages
      */
-    @Test public void testSandboxDefault_with_ADMINISTER_privs_ForceSandbox() throws Exception {
+    @Test
+    void testSandboxDefault_with_ADMINISTER_privs_ForceSandbox() throws Exception {
         ScriptApproval.get().setForceSandbox(true);
         testSandboxDefault_with_ADMINISTER_privs();
     }
@@ -298,7 +304,8 @@ public class SecureGroovyScriptTest {
     /**
      * Test where the user doesn't have ADMINISTER privs, default to sandbox mode.
      */
-    @Test public void testSandboxDefault_without_ADMINISTER_privs() throws Exception {
+    @Test
+    void testSandboxDefault_without_ADMINISTER_privs() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -342,7 +349,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllJarFiles() throws URISyntaxException {
-        String testClassPath = Stream.of(getClass().getName().split("\\.")).collect(Collectors.joining("/"));
+        String testClassPath = String.join("/", getClass().getName().split("\\."));
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         DirectoryScanner ds = new DirectoryScanner();
@@ -360,7 +367,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> copy2TempDir(Iterable<File> files) throws IOException {
-        final File tempDir = tmpFolderRule.newFolder();
+        final File tempDir = newFolder(tmpFolderRule, "junit");
         final List<File> copies = new ArrayList<>();
         for (File f: files) {
             final File copy = new File(tempDir, f.getName());
@@ -379,7 +386,7 @@ public class SecureGroovyScriptTest {
     }
 
     private List<File> getAllUpdatedJarFiles() throws URISyntaxException {
-        String testClassPath = Stream.of(getClass().getName().split("\\.")).collect(Collectors.joining("/"));
+        String testClassPath = String.join("/", getClass().getName().split("\\."));
         File testClassDir = new File(ClassLoader.getSystemResource(testClassPath).toURI()).getAbsoluteFile();
         
         File updatedDir = new File(testClassDir, "updated");
@@ -398,7 +405,8 @@ public class SecureGroovyScriptTest {
         return ret;
     }
 
-    @Test public void testClasspathConfiguration() throws Exception {
+    @Test
+    void testClasspathConfiguration() throws Exception {
         List<ClasspathEntry> classpath = new ArrayList<>();
         for (File jarfile: getAllJarFiles()) {
             classpath.add(new ClasspathEntry(jarfile.getAbsolutePath()));
@@ -415,7 +423,8 @@ public class SecureGroovyScriptTest {
         r.assertEqualBeans(recorder.getScript(), recorder2.getScript(), "script,sandbox,classpath");
     }
 
-    @Test public void testClasspathInSandbox() throws Exception {
+    @Test
+    void testClasspathInSandbox() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -491,8 +500,9 @@ public class SecureGroovyScriptTest {
             assertEquals(testingDisplayName, b.getDisplayName());
         }
     }
-    
-    @Test public void testNonapprovedClasspathInSandbox() throws Exception {
+
+    @Test
+    void testNonapprovedClasspathInSandbox() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -577,8 +587,9 @@ public class SecureGroovyScriptTest {
             r.assertBuildStatusSuccess(p.scheduleBuild2(0));
         }
     }
-    
-    @Test public void testUpdatedClasspath() throws Exception {
+
+    @Test
+    void testUpdatedClasspath() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -589,7 +600,7 @@ public class SecureGroovyScriptTest {
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
         // Copy jar files to temporary directory, then overwrite them with updated jar files.
-        File tmpDir = tmpFolderRule.newFolder();
+        File tmpDir = newFolder(tmpFolderRule, "junit");
         
         for (File jarfile: getAllJarFiles()) {
             FileUtils.copyFileToDirectory(jarfile, tmpDir);
@@ -660,8 +671,9 @@ public class SecureGroovyScriptTest {
         // Success as approved.
         r.assertBuildStatusSuccess(p.scheduleBuild2(0));
     }
-    
-    @Test public void testClasspathWithClassDirectory() throws Exception {
+
+    @Test
+    void testClasspathWithClassDirectory() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -672,7 +684,7 @@ public class SecureGroovyScriptTest {
         r.jenkins.setAuthorizationStrategy(mockStrategy);
 
         // Copy jar files to temporary directory, then overwrite them with updated jar files.
-        File tmpDir = tmpFolderRule.newFolder();
+        File tmpDir = newFolder(tmpFolderRule, "junit");
         
         for (File jarfile: getAllJarFiles()) {
             Expand e = new Expand();
@@ -711,8 +723,9 @@ public class SecureGroovyScriptTest {
             assertEquals(0, pcps.size());
         }
     }
-    
-    @Test public void testDifferentClasspathButSameContent() throws Exception {
+
+    @Test
+    void testDifferentClasspathButSameContent() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -777,8 +790,9 @@ public class SecureGroovyScriptTest {
             assertEquals(testingDisplayName, b.getDisplayName());
         }
     }
-    
-    @Test public void testClasspathApproval() throws Exception {
+
+    @Test
+    void testClasspathApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
@@ -956,7 +970,7 @@ public class SecureGroovyScriptTest {
      * @throws Exception
      */
     @Test
-    public void forceSandbox_NonAdminSaveNonSandbox() throws Exception {
+    void forceSandbox_NonAdminSaveNonSandbox() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
@@ -983,8 +997,9 @@ public class SecureGroovyScriptTest {
         }
     }
 
-    @Test @Issue("SECURITY-2450")
-    public void testScriptApproval() throws Exception {
+    @Test
+    @Issue("SECURITY-2450")
+    void testScriptApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
@@ -1101,8 +1116,9 @@ public class SecureGroovyScriptTest {
         }
     }
 
-    @Test @Issue("JENKINS-25348")
-    public void testSandboxClassResolution() throws Exception {
+    @Test
+    @Issue("JENKINS-25348")
+    void testSandboxClassResolution() throws Exception {
         File jar = Which.jarFile(Checker.class);
 
         // this child-first classloader creates an environment in which another groovy-sandbox exists
@@ -1117,9 +1133,10 @@ public class SecureGroovyScriptTest {
                 () -> sgs.configuringWithKeyItem().evaluate(a, new Binding()));
         assertTrue(e.getMessage().contains("staticMethod java.lang.System gc"));
     }
-    
+
     @Issue("SECURITY-1186")
-    @Test public void testFinalizersForbiddenInSandbox() throws Exception {
+    @Test
+    void testFinalizersForbiddenInSandbox() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(
                 new SecureGroovyScript("class Test { public void finalize() { } }; null", true, null)));
@@ -1128,7 +1145,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-1186")
-    @Test public void testFinalizersAllowedWithWholeScriptApproval() throws Exception {
+    @Test
+    void testFinalizersAllowedWithWholeScriptApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.READ).everywhere().to("dev");
@@ -1157,21 +1175,23 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1292")
     @Test
-    public void blockASTTest() throws Exception {
+    void blockASTTest() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("import groovy.transform.*\n" +
-                "import jenkins.model.Jenkins\n" +
-                "import hudson.model.FreeStyleProject\n" +
-                "@ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
-                "@Field int x\n" +
-                "echo 'hello'\n", false, null).toString(), containsString("Annotation ASTTest cannot be used in the sandbox"));
+        assertThat(d.doCheckScript("""
+                import groovy.transform.*
+                import jenkins.model.Jenkins
+                import hudson.model.FreeStyleProject
+                @ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, "should-not-exist") })
+                @Field int x
+                echo 'hello'
+                """, false, null).toString(), containsString("Annotation ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
     @Issue("SECURITY-1292")
     @Test
-    public void blockGrab() throws Exception {
+    void blockGrab() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
         assertThat(d.doCheckScript("@Grab(group='foo', module='bar', version='1.0')\ndef foo\n", false, null).toString(),
                 containsString("Annotation Grab cannot be used in the sandbox"));
@@ -1179,7 +1199,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1318")
     @Test
-    public void blockGrapes() throws Exception {
+    void blockGrapes() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
         assertThat(d.doCheckScript("@Grapes([@Grab(group='foo', module='bar', version='1.0')])\ndef foo\n", false, null).toString(),
                 containsString("Annotation Grapes cannot be used in the sandbox"));
@@ -1187,7 +1207,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1318")
     @Test
-    public void blockGrabConfig() throws Exception {
+    void blockGrabConfig() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
         assertThat(d.doCheckScript("@GrabConfig(autoDownload=false)\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabConfig cannot be used in the sandbox"));
@@ -1195,7 +1215,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1318")
     @Test
-    public void blockGrabExclude() throws Exception {
+    void blockGrabExclude() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
         assertThat(d.doCheckScript("@GrabExclude(group='org.mortbay.jetty', module='jetty-util')\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabExclude cannot be used in the sandbox"));
@@ -1203,7 +1223,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1319")
     @Test
-    public void blockGrabResolver() throws Exception {
+    void blockGrabResolver() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
         assertThat(d.doCheckScript("@GrabResolver(name='restlet.org', root='http://maven.restlet.org')\ndef foo\n", false, null).toString(),
                 containsString("Annotation GrabResolver cannot be used in the sandbox"));
@@ -1211,7 +1231,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1318")
     @Test
-    public void blockArbitraryAnnotation() throws Exception {
+    void blockArbitraryAnnotation() {
         try {
             System.setProperty(RejectASTTransformsCustomizer.class.getName() + ".ADDITIONAL_BLOCKED_TRANSFORMS", "groovy.transform.Field,groovy.transform.Immutable");
             SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
@@ -1224,73 +1244,83 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1321")
     @Test
-    public void blockAnnotationCollector() throws Exception {
+    void blockAnnotationCollector() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("import groovy.transform.*\n" +
-                "import jenkins.model.Jenkins\n" +
-                "import hudson.model.FreeStyleProject\n" +
-                "@AnnotationCollector([ASTTest]) @interface Lol {}\n" +
-                "@Lol(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
-                "@Field int x\n" +
-                "echo 'hello'\n", false, null).toString(), containsString("Annotation AnnotationCollector cannot be used in the sandbox"));
+        assertThat(d.doCheckScript("""
+                import groovy.transform.*
+                import jenkins.model.Jenkins
+                import hudson.model.FreeStyleProject
+                @AnnotationCollector([ASTTest]) @interface Lol {}
+                @Lol(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, "should-not-exist") })
+                @Field int x
+                echo 'hello'
+                """, false, null).toString(), containsString("Annotation AnnotationCollector cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
     @Issue("SECURITY-1320")
     @Test
-    public void blockFQCN() throws Exception {
+    void blockFQCN() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("import groovy.transform.*\n" +
-                "import jenkins.model.Jenkins\n" +
-                "import hudson.model.FreeStyleProject\n" +
-                "@groovy.transform.ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
-                "@Field int x\n" +
-                "echo 'hello'\n", false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+        assertThat(d.doCheckScript("""
+                import groovy.transform.*
+                import jenkins.model.Jenkins
+                import hudson.model.FreeStyleProject
+                @groovy.transform.ASTTest(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, "should-not-exist") })
+                @Field int x
+                echo 'hello'
+                """, false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
     @Issue("SECURITY-1320")
     @Test
-    public void blockImportAsBlockedAnnotation() throws Exception {
+    void blockImportAsBlockedAnnotation() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("import groovy.transform.ASTTest as lolwut\n" +
-                "import jenkins.model.Jenkins\n" +
-                "import hudson.model.FreeStyleProject\n" +
-                "@lolwut(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\") })\n" +
-                "int x\n" +
-                "echo 'hello'\n", false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
+        assertThat(d.doCheckScript("""
+                import groovy.transform.ASTTest as lolwut
+                import jenkins.model.Jenkins
+                import hudson.model.FreeStyleProject
+                @lolwut(value={ assert Jenkins.getInstance().createProject(FreeStyleProject.class, "should-not-exist") })
+                int x
+                echo 'hello'
+                """, false, null).toString(), containsString("Annotation groovy.transform.ASTTest cannot be used in the sandbox"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
     @Issue("SECURITY-1336")
     @Test
-    public void blockConstructorInvocationInCheck() throws Exception {
+    void blockConstructorInvocationInCheck() {
         SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
-        assertThat(d.doCheckScript("import jenkins.model.Jenkins\n" +
-                "import hudson.model.FreeStyleProject\n" +
-                "public class DoNotRunConstructor {\n" +
-                "  public DoNotRunConstructor() {\n" +
-                "    assert Jenkins.getInstance().createProject(FreeStyleProject.class, \"should-not-exist\")\n" +
-                "  }\n" +
-                "}\n", false, null).toString(), containsString("OK"));
+        assertThat(d.doCheckScript("""
+                import jenkins.model.Jenkins
+                import hudson.model.FreeStyleProject
+                public class DoNotRunConstructor {
+                  public DoNotRunConstructor() {
+                    assert Jenkins.getInstance().createProject(FreeStyleProject.class, "should-not-exist")
+                  }
+                }
+                """, false, null).toString(), containsString("OK"));
 
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
     @Issue("SECURITY-1336")
     @Test
-    public void blockConstructorInvocationAtRuntime() throws Exception {
+    void blockConstructorInvocationAtRuntime() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
-            "class DoNotRunConstructor {\n" +
-            "  static void main(String[] args) {}\n" +
-            "  DoNotRunConstructor() {\n" +
-            "    assert jenkins.model.Jenkins.instance.createProject(hudson.model.FreeStyleProject, 'should-not-exist')\n" +
-            "  }\n" +
-            "}\n", true, null)));
+                """
+                        class DoNotRunConstructor {
+                          static void main(String[] args) {}
+                          DoNotRunConstructor() {
+                            assert jenkins.model.Jenkins.instance.createProject(hudson.model.FreeStyleProject, 'should-not-exist')
+                          }
+                        }
+                        """, true, null)));
         FreeStyleBuild b = p.scheduleBuild2(0).get();
         assertNull(r.jenkins.getItem("should-not-exist"));
         r.assertBuildStatus(Result.FAILURE, b);
@@ -1299,7 +1329,7 @@ public class SecureGroovyScriptTest {
 
     @Issue("JENKINS-56682")
     @Test
-    public void testScriptAtFieldInitializers() throws Exception {
+    void testScriptAtFieldInitializers() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "import groovy.transform.Field\n" +
@@ -1312,7 +1342,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-1465")
-    @Test public void blockLhsInMethodPointerExpression() throws Exception {
+    @Test
+    void blockLhsInMethodPointerExpression() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "({" +
@@ -1324,7 +1355,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-1465")
-    @Test public void blockRhsInMethodPointerExpression() throws Exception {
+    @Test
+    void blockRhsInMethodPointerExpression() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "1.&(System.getProperty('sandboxTransformsMethodPointerRhs'))()", true, null)));
@@ -1333,25 +1365,28 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-1465")
-    @Test public void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
+    @Test
+    void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
         // See additional info on this test case in `SandboxTransformerTest.sandboxWillNotCastNonStandardCollections()` over in groovy-sandbox.
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
-                "def i = 0\n" +
-                "(({-> if(i) {\n" +
-                "    return ['secret.txt'] as Object[]\n" +
-                "  } else {\n" +
-                "    i = 1\n" +
-                "    return null\n" +
-                "  }\n" +
-                "} as Collection) as File) as Object[]", true, null)));
+                """
+                        def i = 0
+                        (({-> if(i) {
+                            return ['secret.txt'] as Object[]
+                          } else {
+                            i = 1
+                            return null
+                          }
+                        } as Collection) as File) as Object[]""", true, null)));
         FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
         // Before the security fix, fails with FileNotFoundException, bypassing the sandbox!
         r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
     }
 
     @Issue("SECURITY-1465")
-    @Test public void blockCastingSafeUserDefinedImplementationsOfCollection() throws Exception {
+    @Test
+    void blockCastingSafeUserDefinedImplementationsOfCollection() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "({-> return ['secret.txt'] as Object[]} as Collection) as File", true, null)));
@@ -1362,7 +1397,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-1465")
-    @Test public void blockEnumConstants() throws Exception {
+    @Test
+    void blockEnumConstants() throws Exception {
         FreeStyleProject p1 = r.createFreeStyleProject();
         p1.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "jenkins.YesNoMaybe.MAYBE", true, null)));
@@ -1377,7 +1413,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-2848")
-    @Test public void blockScriptClassesWithMainMethods() throws Exception {
+    @Test
+    void blockScriptClassesWithMainMethods() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         SecureGroovyScript s = new SecureGroovyScript(
                 "class Test extends org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScriptTest$HasMainMethod { }", true, null);
@@ -1388,7 +1425,8 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("SECURITY-2824")
-    @Test public void blockCastingBindingValues() throws Exception {
+    @Test
+    void blockCastingBindingValues() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject();
         SecureGroovyScript s = new SecureGroovyScript(
                 "class Test { File list }", true, null);
@@ -1401,7 +1439,8 @@ public class SecureGroovyScriptTest {
         r.assertLogContains("new java.io.File java.lang.String", b);
     }
 
-    @Test public void testApprovalFromFormValidation() throws Exception {
+    @Test
+    void testApprovalFromFormValidation() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
         mockStrategy.grant(Jenkins.ADMINISTER).everywhere().to("admin");
@@ -1459,9 +1498,19 @@ public class SecureGroovyScriptTest {
     }
 
     @Issue("JENKINS-38908")
-    @Test public void groovyCallSiteSelectorMain() throws Exception {
+    @Test
+    void groovyCallSiteSelectorMain() throws Exception {
         Script receiver = (Script) new SecureGroovyScript("def main() {}; this", true, null).configuring(ApprovalContext.create()).evaluate(GroovyCallSiteSelectorTest.class.getClassLoader(), new Binding(), null);
         assertEquals(receiver.getClass().getMethod("main"), GroovyCallSiteSelector.method(receiver, "main", new Object[0]));
         assertEquals(receiver.getClass().getMethod("main", String[].class), GroovyCallSiteSelector.method(receiver, "main", new Object[] {"somearg"}));
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
     }
 }

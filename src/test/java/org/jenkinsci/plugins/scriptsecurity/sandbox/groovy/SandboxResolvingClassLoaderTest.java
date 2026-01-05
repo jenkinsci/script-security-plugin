@@ -25,23 +25,26 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
-import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.CLASS_NOT_FOUND;
 import static org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxResolvingClassLoader.parentClassCache;
-import static org.junit.Assert.assertThrows;
 
-public class SandboxResolvingClassLoaderTest {
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class SandboxResolvingClassLoaderTest {
 
     private final ClassLoader parentLoader = SandboxResolvingClassLoaderTest.class.getClassLoader();
     private final SandboxResolvingClassLoader loader = new SandboxResolvingClassLoader(parentLoader);
 
     @Issue("JENKINS-59587")
-    @Test public void classCacheDoesNotHoldClassValuesTooWeakly() throws Exception {
+    @Test
+    void classCacheDoesNotHoldClassValuesTooWeakly() throws Exception {
         // Load a class that does exist.
         assertThat(loader.loadClass("java.lang.String", false), equalTo(String.class));
         // Load a class that does not exist.

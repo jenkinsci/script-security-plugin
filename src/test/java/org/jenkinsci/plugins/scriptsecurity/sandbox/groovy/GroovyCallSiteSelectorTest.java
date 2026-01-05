@@ -43,20 +43,24 @@ import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.EnumeratingWhitelistTest;
-import static org.junit.Assert.*;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.jvnet.hudson.test.Issue;
 
-public class GroovyCallSiteSelectorTest {
+class GroovyCallSiteSelectorTest {
 
-    @Test public void arrays() throws Exception {
+    @Test
+    void arrays() throws Exception {
         Method m = EnumeratingWhitelistTest.C.class.getDeclaredMethod("m", Object[].class);
-        assertEquals("literal call", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new Object[] {"a", "b"}}));
-        assertNull("we assume the interceptor has dealt with varargs", GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[]{"a", "b"}));
-        assertEquals("array cast", m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new String[] {"a", "b"}}));
+        assertEquals(m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new Object[] {"a", "b"}}), "literal call");
+        assertNull(GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[]{"a", "b"}), "we assume the interceptor has dealt with varargs");
+        assertEquals(m, GroovyCallSiteSelector.method(new EnumeratingWhitelistTest.C(), "m", new Object[] {new String[] {"a", "b"}}), "array cast");
     }
 
-    @Test public void overloads() throws Exception {
+    @Test
+    void overloads() throws Exception {
         PrintWriter receiver = new PrintWriter(new OutputStream() {
             @Override
             public void write(int b) throws IOException {
@@ -69,7 +73,8 @@ public class GroovyCallSiteSelectorTest {
     }
 
     @Issue("JENKINS-29541")
-    @Test public void methodsOnGString() throws Exception {
+    @Test
+    void methodsOnGString() throws Exception {
         GStringImpl gString = new GStringImpl(new Object[0], new String[] {"x"});
         assertEquals(String.class.getMethod("substring", int.class), GroovyCallSiteSelector.method(gString, "substring", new Object[] {99}));
         assertEquals(GString.class.getMethod("getValues"), GroovyCallSiteSelector.method(gString, "getValues", new Object[0]));
@@ -77,25 +82,29 @@ public class GroovyCallSiteSelectorTest {
     }
 
     @Issue("JENKINS-31701")
-    @Test public void primitives() throws Exception {
+    @Test
+    void primitives() throws Exception {
         assertEquals(Primitives.class.getMethod("m1", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m1", new Object[] {Long.MAX_VALUE}));
         assertEquals(Primitives.class.getMethod("m1", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m1", new Object[] {99}));
         assertEquals(Primitives.class.getMethod("m2", long.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m2", new Object[] {Long.MAX_VALUE}));
         assertEquals(Primitives.class.getMethod("m2", int.class), GroovyCallSiteSelector.staticMethod(Primitives.class, "m2", new Object[] {99}));
     }
+
     public static class Primitives {
         public static void m1(long x) {}
         public static void m2(int x) {}
         public static void m2(long x) {}
     }
 
-    @Test public void staticMethodsCannotBeOverridden() throws Exception {
+    @Test
+    void staticMethodsCannotBeOverridden() throws Exception {
         assertEquals(Jenkins.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Jenkins.class, "getInstance", new Object[0]));
         assertEquals(Hudson.class.getMethod("getInstance"), GroovyCallSiteSelector.staticMethod(Hudson.class, "getInstance", new Object[0]));
     }
 
     @Issue("JENKINS-45117")
-    @Test public void constructorVarargs() throws Exception {
+    @Test
+    void constructorVarargs() throws Exception {
         assertEquals(EnvVars.class.getConstructor(), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[0]));
         assertEquals(EnvVars.class.getConstructor(String[].class), GroovyCallSiteSelector.constructor(EnvVars.class, new Object[]{"x"}));
         List<ParameterValue> params = new ArrayList<>();
@@ -115,7 +124,7 @@ public class GroovyCallSiteSelectorTest {
 
     @Issue("JENKINS-47159")
     @Test
-    public void varargsFailureCases() throws Exception {
+    void varargsFailureCases() {
         // If there's a partial match, we should get a ClassCastException
         final ClassCastException e = assertThrows(ClassCastException.class,
                 () -> assertNull(GroovyCallSiteSelector.constructor(ParametersAction.class,
@@ -128,7 +137,7 @@ public class GroovyCallSiteSelectorTest {
 
     @Issue("JENKINS-37257")
     @Test
-    public void varargsArrayElementTypeMismatch() throws Exception {
+    void varargsArrayElementTypeMismatch() throws Exception {
         List<String> l = Arrays.asList("a", "b", "c");
         assertEquals(String.class.getMethod("join", CharSequence.class, Iterable.class),
                 GroovyCallSiteSelector.staticMethod(String.class, "join", new Object[]{",", l}));
