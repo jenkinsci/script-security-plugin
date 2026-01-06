@@ -19,6 +19,9 @@ staticMethod hudson.model.User get java.lang.String boolean
 staticMethod hudson.model.User get java.lang.String boolean java.util.Map
 staticMethod hudson.model.User getAll
 
+# Ability to define global parsers that include scripts without further approval
+method io.jenkins.plugins.analysis.warnings.groovy.ParserConfiguration setParsers java.util.List
+
 # Raw file operations could be used to compromise the Jenkins controller.
 staticMethod java.io.File createTempFile java.lang.String java.lang.String
 staticMethod java.io.File createTempFile java.lang.String java.lang.String java.io.File
