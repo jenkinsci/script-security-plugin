@@ -86,6 +86,31 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         script("").use();
     }
 
+    @Test public void preapproveRemovesPendingScript() throws Exception {
+        configureSecurity();
+        ScriptApproval sa = ScriptApproval.get();
+        String testScript = "println 'test script'";
+
+        // First create a pending script by configuring it without admin approval
+        sa.configuring(testScript, GroovyLanguage.get(), ApprovalContext.create(), false);
+
+        // Verify the script is in pending list
+        assertEquals(1, sa.getPendingScripts().size());
+        ScriptApproval.PendingScript pending = sa.getPendingScripts().iterator().next();
+        assertEquals(testScript, pending.script);
+        String hash = pending.getHash();
+
+        // Now preapprove the script
+        sa.preapprove(testScript, GroovyLanguage.get());
+
+        // Verify the script hash is approved
+        assertTrue(sa.isScriptHashApproved(hash));
+
+        // Verify the script is removed from pending list (this was the bug)
+        assertEquals("Pending scripts should be empty after preapprove",
+                     0, sa.getPendingScripts().size());
+    }
+
     @Issue("JENKINS-46764")
     @Test
     @LocalData("malformedScriptApproval")
