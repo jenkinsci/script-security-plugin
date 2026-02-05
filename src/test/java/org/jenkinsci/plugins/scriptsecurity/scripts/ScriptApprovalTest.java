@@ -47,6 +47,7 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import org.junit.jupiter.api.Test;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LogRecorder;
@@ -55,11 +56,15 @@ import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import com.sun.net.httpserver.HttpServer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
@@ -132,19 +137,26 @@ class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script>
     @Issue("SECURITY-1866")
     @Test
     void classpathEntriesEscaped() throws Exception {
-        // Add pending classpath entry.
-        final UnapprovedClasspathException e = assertThrows(UnapprovedClasspathException.class, () ->
-            ScriptApproval.get().using(new ClasspathEntry("https://www.example.com/#value=Hack<img id='xss' src=x onerror=alert(123)>Hack")));
+        HttpServer mockJarServer = createAndStartMockJarHttpServer();
+        String mockJarUrl = "http:/" + mockJarServer.getAddress() + "/library.jar#value=Hack<img id='xss' src=x onerror=alert(123)>Hack";
 
-        // Check for XSS in pending approvals.
-        JenkinsRule.WebClient wc = r.createWebClient();
-        HtmlPage approvalPage = wc.goTo("scriptApproval");
-        assertThat(approvalPage.getElementById("xss"), nullValue());
-        // Approve classpath entry.
-        ScriptApproval.get().approveClasspathEntry(e.getHash());
-        // Check for XSS in approved classpath entries.
-        HtmlPage approvedPage = wc.goTo("scriptApproval");
-        assertThat(approvedPage.getElementById("xss"), nullValue());
+        try {
+            // Add pending classpath entry.
+            final UnapprovedClasspathException e = assertThrows(UnapprovedClasspathException.class, () ->
+                    ScriptApproval.get().using(new ClasspathEntry(mockJarUrl)));
+
+            // Check for XSS in pending approvals.
+            JenkinsRule.WebClient wc = r.createWebClient();
+            HtmlPage approvalPage = wc.goTo("scriptApproval");
+            assertThat(approvalPage.getElementById("xss"), nullValue());
+            // Approve classpath entry.
+            ScriptApproval.get().approveClasspathEntry(e.getHash());
+            // Check for XSS in approved classpath entries.
+            HtmlPage approvedPage = wc.goTo("scriptApproval");
+            assertThat(approvedPage.getElementById("xss"), nullValue());
+        }finally {
+            mockJarServer.stop(0);
+        }
     }
 
     @Test
@@ -214,69 +226,100 @@ class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script>
                 r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get()));
     }
 
+
     @Test
     void forceSandboxTests() throws Exception {
         setBasicSecurity();
 
-        try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
-            assertTrue(ScriptApproval.get().isForceSandbox());
-            assertTrue(ScriptApproval.get().isForceSandboxForCurrentUser());
+        HttpServer mockJarServer = createAndStartMockJarHttpServer();
+        String mockJarUrl = "http:/" + mockJarServer.getAddress() + "/library.jar";
 
-            final ApprovalContext ac = ApprovalContext.create();
+        try {
+            // Test with non-admin user
+            try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
+                assertTrue(ScriptApproval.get().isForceSandbox());
+                assertTrue(ScriptApproval.get().isForceSandboxForCurrentUser());
 
-            //Insert new PendingScript - As the user is not admin and ForceSandbox is enabled, nothing should be added
-            {
-                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
-                assertTrue(ScriptApproval.get().getPendingScripts().isEmpty());
+                final ApprovalContext ac = ApprovalContext.create();
+
+                //Insert new PendingScript - As the user is not admin and ForceSandbox is enabled, nothing should be added
+                {
+                    ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                    assertTrue(ScriptApproval.get().getPendingScripts().isEmpty());
+                }
+
+                //Insert new PendingSignature - As the user is not admin and ForceSandbox is enabled, nothing should be added
+                {
+                    ScriptApproval.get().accessRejected(
+                            new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                    assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
+                }
+
+                //Insert new Pending Classpath - As the user is not admin and ForceSandbox is enabled, nothing should be added
+                {
+                    ClasspathEntry cpe = new ClasspathEntry(mockJarUrl);
+                    ScriptApproval.get().configuring(cpe, ac);
+                    ScriptApproval.get().addPendingClasspathEntry(
+                            new ScriptApproval.PendingClasspathEntry("hash", new URL(mockJarUrl), ac));
+                    assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
+                    // As we are forcing sandbox, none of the previous operations are able to create new pending ClasspathEntries
+                    assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
+                }
             }
 
-            //Insert new PendingSignature - As the user is not admin and ForceSandbox is enabled, nothing should be added
-            {
-                ScriptApproval.get().accessRejected(
-                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
-                assertTrue(ScriptApproval.get().getPendingSignatures().isEmpty());
-            }
+            // Test with admin user
+            try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+                assertTrue(ScriptApproval.get().isForceSandbox());
+                assertFalse(ScriptApproval.get().isForceSandboxForCurrentUser());
 
-            //Insert new Pending Classpath - As the user is not admin and ForceSandbox is enabled, nothing should be added
-            {
-                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
-                ScriptApproval.get().configuring(cpe, ac);
-                ScriptApproval.get().addPendingClasspathEntry(
-                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
-                assertThrows(UnapprovedClasspathException.class, () -> ScriptApproval.get().using(cpe));
-                // As we are forcing sandbox, none of the previous operations are able to create new pending ClasspathEntries
-                assertTrue(ScriptApproval.get().getPendingClasspathEntries().isEmpty());
+                final ApprovalContext ac = ApprovalContext.create();
+
+                //Insert new PendingScript - As the user is admin, the behavior does not change
+                {
+                    ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
+                    assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+                }
+
+                //Insert new PendingSignature -  - As the user is admin, the behavior does not change
+                {
+                    ScriptApproval.get().accessRejected(
+                            new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
+                    assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
+                }
+
+                //Insert new Pending ClassPatch -  - As the user is admin, the behavior does not change
+                {
+                    ClasspathEntry cpe = new ClasspathEntry(mockJarUrl);
+                    ScriptApproval.get().configuring(cpe, ac);
+                    ScriptApproval.get().addPendingClasspathEntry(
+                            new ScriptApproval.PendingClasspathEntry("hash", new URL(mockJarUrl), ac));
+                    assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
+                }
             }
+        } finally {
+            mockJarServer.stop(0);
         }
+    }
 
-        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
-            assertTrue(ScriptApproval.get().isForceSandbox());
-            assertFalse(ScriptApproval.get().isForceSandboxForCurrentUser());
-
-            final ApprovalContext ac = ApprovalContext.create();
-
-            //Insert new PendingScript - As the user is admin, the behavior does not change
-            {
-                ScriptApproval.get().configuring("testScript", GroovyLanguage.get(), ac, true);
-                assertEquals(1, ScriptApproval.get().getPendingScripts().size());
+    /**
+     * Creates and starts a mock HTTP server that serves a dummy JAR file at the path "/library.jar".
+     * <p>
+     * The server listens on a random available port on localhost and responds with a simple string
+     * as the JAR content. This is useful for tests that require a remote JAR resource.
+     * </p>
+     */
+    private static @NonNull HttpServer createAndStartMockJarHttpServer() throws IOException {
+        HttpServer mockServer = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        mockServer.createContext("/library.jar", exchange -> {
+            byte[] responseBytes = "Mock JAR content".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, responseBytes.length);
+            try (exchange; OutputStream os = exchange.getResponseBody()) {
+                os.write(responseBytes);
             }
-
-            //Insert new PendingSignature -  - As the user is admin, the behavior does not change
-            {
-                ScriptApproval.get().accessRejected(
-                        new RejectedAccessException("testSignatureType", "testSignatureDetails"), ac);
-                assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
-            }
-
-            //Insert new Pending ClassPatch -  - As the user is admin, the behavior does not change
-            {
-                ClasspathEntry cpe = new ClasspathEntry("https://www.jenkins.io");
-                ScriptApproval.get().configuring(cpe, ac);
-                ScriptApproval.get().addPendingClasspathEntry(
-                        new ScriptApproval.PendingClasspathEntry("hash", new URL("https://www.jenkins.io"), ac));
-                assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
-            }
-        }
+        });
+        mockServer.setExecutor(null);
+        mockServer.start();
+        return mockServer;
     }
 
     @Test
