@@ -472,16 +472,20 @@ method java.time.ZonedDateTime getDayOfWeek
 method java.time.ZonedDateTime getDayOfYear
 method java.time.ZonedDateTime getHour
 method java.time.ZonedDateTime getMinute
+method java.time.ZonedDateTime getMonth
 method java.time.ZonedDateTime getMonthValue
 method java.time.ZonedDateTime getNano
 method java.time.ZonedDateTime getSecond
 method java.time.ZonedDateTime getYear
-method java.time.ZonedDateTime getZone
+method java.time.ZonedDateTime minus java.time.temporal.TemporalAmount
 method java.time.ZonedDateTime minusDays long
 method java.time.ZonedDateTime minusHours long
 method java.time.ZonedDateTime minusMinutes long
+method java.time.ZonedDateTime minusMonths long
 method java.time.ZonedDateTime minusNanos long
 method java.time.ZonedDateTime minusSeconds long
+method java.time.ZonedDateTime minusWeeks long
+method java.time.ZonedDateTime minusYears long
 staticMethod java.time.ZonedDateTime now
 staticMethod java.time.ZonedDateTime now java.time.ZoneId
 staticMethod java.time.ZonedDateTime of java.time.LocalDate java.time.LocalTime java.time.ZoneId
@@ -490,15 +494,17 @@ staticMethod java.time.ZonedDateTime ofInstant java.time.Instant java.time.ZoneI
 staticMethod java.time.ZonedDateTime ofInstant java.time.LocalDateTime java.time.ZoneOffset java.time.ZoneId
 staticMethod java.time.ZonedDateTime parse java.lang.CharSequence
 staticMethod java.time.ZonedDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
+method java.time.ZonedDateTime plus java.time.temporal.TemporalAmount
 method java.time.ZonedDateTime plusDays long
 method java.time.ZonedDateTime plusHours long
 method java.time.ZonedDateTime plusMinutes long
+method java.time.ZonedDateTime plusMonths long
 method java.time.ZonedDateTime plusNanos long
 method java.time.ZonedDateTime plusSeconds long
-method java.time.ZonedDateTime toInstant
-method java.time.ZonedDateTime toLocalDate
-method java.time.ZonedDateTime toLocalDateTime
-method java.time.ZonedDateTime toLocalTime
+method java.time.ZonedDateTime plusWeeks long
+method java.time.ZonedDateTime plusYears long
+method java.time.ZonedDateTime toOffsetDateTime
+method java.time.ZonedDateTime truncatedTo java.time.temporal.TemporalUnit
 method java.time.ZonedDateTime withDayOfMonth int
 method java.time.ZonedDateTime withDayOfYear int
 method java.time.ZonedDateTime withHour int
@@ -507,8 +513,6 @@ method java.time.ZonedDateTime withMonth int
 method java.time.ZonedDateTime withNano int
 method java.time.ZonedDateTime withSecond int
 method java.time.ZonedDateTime withYear int
-method java.time.ZonedDateTime withZoneSameInstant java.time.ZoneId
-method java.time.ZonedDateTime withZoneSameLocal java.time.ZoneId
 method java.time.chrono.ChronoLocalDate format java.time.format.DateTimeFormatter
 method java.time.chrono.ChronoLocalDate getEra
 method java.time.chrono.ChronoLocalDate isLeapYear
