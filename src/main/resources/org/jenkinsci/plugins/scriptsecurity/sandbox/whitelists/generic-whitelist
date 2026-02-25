@@ -474,7 +474,6 @@ method java.time.ZonedDateTime getHour
 method java.time.ZonedDateTime getMinute
 method java.time.ZonedDateTime getMonthValue
 method java.time.ZonedDateTime getNano
-method java.time.ZonedDateTime getOffset
 method java.time.ZonedDateTime getSecond
 method java.time.ZonedDateTime getYear
 method java.time.ZonedDateTime getZone
