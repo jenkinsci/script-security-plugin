@@ -367,6 +367,7 @@ method java.text.Format format java.lang.Object
 method java.text.Format formatToCharacterIterator java.lang.Object
 method java.text.Format parseObject java.lang.String
 new java.text.SimpleDateFormat java.lang.String
+
 staticField java.time.DayOfWeek FRIDAY
 staticField java.time.DayOfWeek MONDAY
 staticField java.time.DayOfWeek SATURDAY
@@ -514,6 +515,50 @@ method java.time.temporal.TemporalUnit isDateBased
 method java.time.temporal.TemporalUnit isDurationEstimated
 method java.time.temporal.TemporalUnit isSupportedBy java.time.temporal.Temporal
 method java.time.temporal.TemporalUnit isTimeBased
+staticMethod java.time.ZonedDateTime now
+staticMethod java.time.ZonedDateTime now java.time.ZoneId
+staticMethod java.time.ZonedDateTime parse java.lang.CharSequence
+staticMethod java.time.ZonedDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
+staticMethod java.time.ZonedDateTime of java.time.LocalDate java.time.LocalTime java.time.ZoneId
+staticMethod java.time.ZonedDateTime of java.time.LocalDateTime java.time.ZoneId
+staticMethod java.time.ZonedDateTime ofInstant java.time.Instant java.time.ZoneId
+staticMethod java.time.ZonedDateTime ofInstant java.time.LocalDateTime java.time.ZoneOffset java.time.ZoneId
+method java.time.ZonedDateTime getZone
+method java.time.ZonedDateTime getOffset
+method java.time.ZonedDateTime toInstant
+method java.time.ZonedDateTime toLocalDate
+method java.time.ZonedDateTime toLocalTime
+method java.time.ZonedDateTime toLocalDateTime
+method java.time.ZonedDateTime withZoneSameInstant java.time.ZoneId
+method java.time.ZonedDateTime withZoneSameLocal java.time.ZoneId
+method java.time.ZonedDateTime plusDays long
+method java.time.ZonedDateTime plusHours long
+method java.time.ZonedDateTime plusMinutes long
+method java.time.ZonedDateTime plusSeconds long
+method java.time.ZonedDateTime plusNanos long
+method java.time.ZonedDateTime minusDays long
+method java.time.ZonedDateTime minusHours long
+method java.time.ZonedDateTime minusMinutes long
+method java.time.ZonedDateTime minusSeconds long
+method java.time.ZonedDateTime minusNanos long
+method java.time.ZonedDateTime withYear int
+method java.time.ZonedDateTime withMonth int
+method java.time.ZonedDateTime withDayOfMonth int
+method java.time.ZonedDateTime withDayOfYear int
+method java.time.ZonedDateTime withHour int
+method java.time.ZonedDateTime withMinute int
+method java.time.ZonedDateTime withSecond int
+method java.time.ZonedDateTime withNano int
+method java.time.ZonedDateTime getYear
+method java.time.ZonedDateTime getMonthValue
+method java.time.ZonedDateTime getDayOfMonth
+method java.time.ZonedDateTime getDayOfYear
+method java.time.ZonedDateTime getDayOfWeek
+method java.time.ZonedDateTime getHour
+method java.time.ZonedDateTime getMinute
+method java.time.ZonedDateTime getSecond
+method java.time.ZonedDateTime getNano
+
 new java.util.ArrayList java.util.Collection
 staticMethod java.util.Arrays asList java.lang.Object[]
 staticMethod java.util.Arrays toString java.lang.Object[]
