@@ -477,7 +477,6 @@ method java.time.ZonedDateTime getMonthValue
 method java.time.ZonedDateTime getNano
 method java.time.ZonedDateTime getSecond
 method java.time.ZonedDateTime getYear
-method java.time.ZonedDateTime minus java.time.temporal.TemporalAmount
 method java.time.ZonedDateTime minusDays long
 method java.time.ZonedDateTime minusHours long
 method java.time.ZonedDateTime minusMinutes long
@@ -494,7 +493,6 @@ staticMethod java.time.ZonedDateTime ofInstant java.time.Instant java.time.ZoneI
 staticMethod java.time.ZonedDateTime ofInstant java.time.LocalDateTime java.time.ZoneOffset java.time.ZoneId
 staticMethod java.time.ZonedDateTime parse java.lang.CharSequence
 staticMethod java.time.ZonedDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
-method java.time.ZonedDateTime plus java.time.temporal.TemporalAmount
 method java.time.ZonedDateTime plusDays long
 method java.time.ZonedDateTime plusHours long
 method java.time.ZonedDateTime plusMinutes long
