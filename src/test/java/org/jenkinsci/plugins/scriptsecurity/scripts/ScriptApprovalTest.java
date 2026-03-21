@@ -45,12 +45,12 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
+import org.junit.jupiter.api.Test;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.junit.Rule;
-import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.LogRecorder;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.recipes.LocalData;
 import org.xml.sax.SAXException;
@@ -63,21 +63,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import com.sun.net.httpserver.HttpServer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
-    @Rule
-    public LoggerRule logging = new LoggerRule().record(ScriptApproval.class, Level.FINER).capture(100);
+class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.Script> {
+
+    private final LogRecorder logging = new LogRecorder().record(ScriptApproval.class, Level.FINER).capture(100);
 
     private static final String CLEAR_ALL_ID = "approvedScripts-clear";
 
@@ -86,7 +83,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     private static final String WHITELISTED_SIGNATURE = "method java.lang.String trim";
     private static final String DANGEROUS_SIGNATURE = "staticMethod hudson.model.User current";
 
-    @Test public void emptyScript() throws Exception {
+    @Test
+    void emptyScript() {
         configureSecurity();
         script("").use();
     }
@@ -94,18 +92,22 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Issue("JENKINS-46764")
     @Test
     @LocalData("malformedScriptApproval")
-    public void malformedScriptApproval() throws Exception {
+    void malformedScriptApproval() throws Exception {
         assertThat(Whitelist.all().permitsMethod(Jenkins.class.getMethod("get"), null, null), is(false));
-        assertThat(logging.getRecords().stream().map(r -> r.getMessage()).toArray(String[]::new),
+        assertThat(logging.getRecords().stream().map(LogRecord::getMessage).toArray(String[]::new),
             hasItemInArray("Malformed signature entry in scriptApproval.xml: ' new java.lang.Exception java.lang.String'"));
     }
 
-    @Test @LocalData("dangerousApproved") public void dangerousApprovedSignatures() {
+    @Test
+    @LocalData("dangerousApproved")
+    void dangerousApprovedSignatures() {
         String[] dangerousSignatures = ScriptApproval.get().getDangerousApprovedSignatures();
         assertEquals(1, dangerousSignatures.length);
     }
 
-    @Test @LocalData("dangerousApproved") public void dangerousApprovedWarnings() throws IOException, SAXException {
+    @Test
+    @LocalData("dangerousApproved")
+    void dangerousApprovedWarnings() throws IOException, SAXException {
         JenkinsRule.WebClient wc = r.createWebClient();
         HtmlPage managePage = wc.goTo("manage");
 
@@ -127,12 +129,14 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         assertThat(dangerousTextArea.getTextContent(), Matchers.containsString(DANGEROUS_SIGNATURE));
     }
 
-    @Test public void nothingHappening() throws Exception {
+    @Test
+    void nothingHappening() throws Exception {
         assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
     }
 
     @Issue("SECURITY-1866")
-    @Test public void classpathEntriesEscaped() throws Exception {
+    @Test
+    void classpathEntriesEscaped() throws Exception {
         HttpServer mockJarServer = createAndStartMockJarHttpServer();
         String mockJarUrl = "http:/" + mockJarServer.getAddress() + "/library.jar#value=Hack<img id='xss' src=x onerror=alert(123)>Hack";
 
@@ -155,7 +159,8 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         }
     }
 
-    @Test public void clearMethodsLifeCycle() throws Exception {
+    @Test
+    void clearMethodsLifeCycle() throws Exception {
         ScriptApproval sa = ScriptApproval.get();
         assertEquals(0, sa.getApprovedSignatures().length);
 
@@ -184,7 +189,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     @Issue({"JENKINS-57563", "JENKINS-62708"})
     @LocalData // Just a scriptApproval.xml that whitelists 'staticMethod jenkins.model.Jenkins getInstance' and a script printing all labels
     @Test
-    public void upgradeSmokes() throws Exception {
+    void upgradeSmokes() throws Exception {
         configureSecurity();
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(
@@ -200,7 +205,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
     @LocalData // Some scriptApproval.xml with existing signatures approved
     @Test
-    public void reload() throws Exception {
+    void reload() throws Exception {
         configureSecurity();
         ScriptApproval sa = ScriptApproval.get();
 
@@ -223,7 +228,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
 
 
     @Test
-    public void forceSandboxTests() throws Exception {
+    void forceSandboxTests() throws Exception {
         setBasicSecurity();
 
         HttpServer mockJarServer = createAndStartMockJarHttpServer();
@@ -318,7 +323,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test
-    public void forceSandboxScriptSignatureException() throws Exception {
+    void forceSandboxScriptSignatureException() throws Exception {
         ScriptApproval.get().setForceSandbox(true);
         FreeStyleProject p = r.createFreeStyleProject("p");
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript("jenkins.model.Jenkins.instance", true, null)));
@@ -327,7 +332,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test
-    public void forceSandboxFormValidation() throws Exception {
+    void forceSandboxFormValidation() {
         setBasicSecurity();
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
@@ -373,7 +378,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test
-    public void shouldHideSandboxTest() throws Exception {
+    void shouldHideSandboxTest() throws Exception {
         setBasicSecurity();
 
         ScriptApproval.get().setForceSandbox(true);
@@ -409,7 +414,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test
-    public void validateSandboxTest() throws Exception {
+    void validateSandboxTest() throws Exception {
         setBasicSecurity();
 
         ScriptApproval.get().setForceSandbox(true);
@@ -443,8 +448,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
      * Devel: overall Read and write without admin permission
      * admin: System administrator
      */
-    private void setBasicSecurity()
-    {
+    private void setBasicSecurity() {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
 
         ScriptApproval.get().setForceSandbox(true);
@@ -573,5 +577,4 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
             return String.format("Script[%s]", groovy);
         }
     }
-
 }

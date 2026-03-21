@@ -27,6 +27,7 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import hudson.Functions;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -34,35 +35,46 @@ import java.nio.file.Path;
 
 import jenkins.model.Jenkins;
 import org.htmlunit.html.HtmlPage;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.jvnet.hudson.test.*;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class ClasspathEntryTest {
-    @Rule public TemporaryFolder rule = new TemporaryFolder();
-    @Rule public JenkinsRule jr = new JenkinsRule();
+@WithJenkins
+class ClasspathEntryTest {
+
+    @TempDir
+    private File tmp;
+
+    private JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
 
     @Issue("SECURITY-3447")
     @Test
-    public void testDoCheckPath() throws Exception {
-        jr.jenkins.setSecurityRealm(jr.createDummySecurityRealm());
-        jr.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
+    void testDoCheckPath() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
                 grant(Jenkins.ADMINISTER).everywhere().to("admin")
                 .grant(Jenkins.READ).everywhere().to("dev"));
         Path path = Files.createTempDirectory("temp dir");
-        try(JenkinsRule.WebClient webClient = jr.createWebClient()) {
+        try(JenkinsRule.WebClient webClient = r.createWebClient()) {
             webClient.login("admin");
             final HtmlPage adminPage = webClient.goTo("descriptor/org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry/checkPath?value=" + path.toUri());
             final String adminContent = adminPage.asXml();
             assertThat(adminContent, containsString("Class directories are not allowed as classpath entries."));
         }
-        try (JenkinsRule.WebClient devWebClient = jr.createWebClient()) {
+        try (JenkinsRule.WebClient devWebClient = r.createWebClient()) {
             devWebClient.login("dev");
             final HtmlPage devPage = devWebClient.goTo("descriptor/org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry/checkPath?value=" + path.toUri());
             final String devContent = devPage.asNormalizedText();
@@ -73,7 +85,8 @@ public class ClasspathEntryTest {
     }
 
     @WithoutJenkins
-    @Test public void pathURLConversion() throws Exception {
+    @Test
+    void pathURLConversion() throws Exception {
         if (!Functions.isWindows()) {
             assertRoundTrip("/tmp/x.jar", "file:/tmp/x.jar");
         } else {
@@ -88,29 +101,46 @@ public class ClasspathEntryTest {
     }
 
     @WithoutJenkins
-    @Test public void classDirDetected() throws Exception {
-        final File tmpDir = rule.newFolder();
-        assertTrue("Existing directory must be detected", ClasspathEntry.isClassDirectoryURL(tmpDir.toURI().toURL()));
+    @Test
+    void classDirDetected() throws Exception {
+        final File tmpDir = newFolder(tmp, "junit");
+        assertTrue(ClasspathEntry.isClassDirectoryURL(tmpDir.toURI().toURL()), "Existing directory must be detected");
         tmpDir.delete();
         final File notExisting = new File(tmpDir, "missing");
         final URL missing = tmpDir.toURI().toURL();
-        assertFalse("Non-existing file is not considered class directory", ClasspathEntry.isClassDirectoryURL(missing));
+        assertFalse(ClasspathEntry.isClassDirectoryURL(missing), "Non-existing file is not considered class directory");
         final URL oneDir = new URL(missing.toExternalForm() + "/");
-        assertTrue("Non-existing file is considered class directory if ending in /", ClasspathEntry.isClassDirectoryURL(oneDir));
-        assertTrue("Generic URLs ending in / are considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/folder/")));
-        assertFalse("Generic URLs ending in / are not considered class directories", ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/file")));
+        assertTrue(ClasspathEntry.isClassDirectoryURL(oneDir), "Non-existing file is considered class directory if ending in /");
+        assertTrue(ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/folder/")), "Generic URLs ending in / are considered class directories");
+        assertFalse(ClasspathEntry.isClassDirectoryURL(new URL("http://example.com/file")), "Generic URLs ending in / are not considered class directories");
     }
 
     @WithoutJenkins
     @Issue("JENKINS-37599")
-    @Test public void pathToURL() throws Exception {
+    @Test
+    void pathToURL() throws Exception {
         ClasspathEntry ignore = new ClasspathEntry("http://nowhere.net/");
-        ignore = new ClasspathEntry(rule.newFile("x.jar").getAbsolutePath());
-        ignore = new ClasspathEntry(rule.newFolder().getAbsolutePath());
+        ignore = new ClasspathEntry(newFile(tmp, "x.jar").getAbsolutePath());
+        ignore = new ClasspathEntry(newFolder(tmp, "junit").getAbsolutePath());
 
         assertThrows(MalformedURLException.class, () -> new ClasspathEntry(""));
         assertThrows(MalformedURLException.class, () -> new ClasspathEntry(" "));
         assertThrows(MalformedURLException.class, () -> new ClasspathEntry("relative"));
+    }
+
+    private static File newFolder(File root, String... subDirs) throws IOException {
+        String subFolder = String.join("/", subDirs);
+        File result = new File(root, subFolder);
+        if (!result.mkdirs()) {
+            throw new IOException("Couldn't create folders " + root);
+        }
+        return result;
+    }
+
+    private static File newFile(File parent, String child) throws IOException {
+        File result = new File(parent, child);
+        result.createNewFile();
+        return result;
     }
 
 }
