@@ -1743,6 +1743,14 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("SECURITY-3792")
+    @Test public void forLoopImplicitCastConstructor() throws Throwable {
+        // A typed for-each over a Collection element implicitly casts it to the loop type, e.g.
+        // ['secret.key'] -> new File('secret.key'); the default whitelist must reject that constructor.
+        assertRejected(new GenericWhitelist(), "new java.io.File java.lang.String",
+                "for (File f in [['secret.key']]) { return f }");
+    }
+
     @Issue("SECURITY-3016")
     @Test public void blockUnsafeCastsPropertyAssignmentViaImplicitMapConstructor() throws Throwable {
         // Map constructors are supported when using new, but these property assignments are unsafe.
