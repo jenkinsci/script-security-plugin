@@ -1265,6 +1265,54 @@ public class SecureGroovyScriptTest {
         assertNull(r.jenkins.getItem("should-not-exist"));
     }
 
+    @Issue("SECURITY-3793")
+    @Test
+    public void blockCompileStaticExtensions() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@groovy.transform.CompileStatic(extensions=['whatever.groovy'])\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("&#039;extensions&#039; member"));
+    }
+
+    @Issue("SECURITY-3793")
+    @Test
+    public void blockTypeCheckedExtensions() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@groovy.transform.TypeChecked(extensions='whatever.groovy')\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("&#039;extensions&#039; member"));
+    }
+
+    @Issue("SECURITY-3793")
+    @Test
+    public void blockCompileStaticExtensionsImported() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.CompileStatic\n@CompileStatic(extensions=['whatever.groovy'])\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("&#039;extensions&#039; member"));
+    }
+
+    @Issue("SECURITY-3793")
+    @Test
+    public void blockTypeCheckedExtensionsImported() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("import groovy.transform.TypeChecked\n@TypeChecked(extensions=['whatever.groovy'])\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("&#039;extensions&#039; member"));
+    }
+
+    @Issue("SECURITY-3793")
+    @Test
+    public void allowCompileStaticWithoutExtensions() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@groovy.transform.CompileStatic\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("OK"));
+    }
+
+    @Issue("SECURITY-3793")
+    @Test
+    public void allowTypeCheckedWithoutExtensions() throws Exception {
+        SecureGroovyScript.DescriptorImpl d = r.jenkins.getDescriptorByType(SecureGroovyScript.DescriptorImpl.class);
+        assertThat(d.doCheckScript("@groovy.transform.TypeChecked\nclass Foo { int x = 1 }\nnew Foo().x\n", false, null).toString(),
+                containsString("OK"));
+    }
+
     @Issue("SECURITY-1336")
     @Test
     public void blockConstructorInvocationInCheck() throws Exception {

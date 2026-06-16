@@ -112,6 +112,12 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
                         throw new SecurityException("Annotation " + an.getClassNode().getName() + " cannot be used in the sandbox.");
                     }
                 }
+                // The `extensions` member of @CompileStatic/@TypeChecked (and any other transform that adopts
+                // the same convention) loads a Groovy script from the classpath and executes it at compile time,
+                // which bypasses the sandbox. See SECURITY-359 for the original discussion.
+                if (an.getMember("extensions") != null) {
+                    throw new SecurityException("Annotation " + an.getClassNode().getName() + " cannot be used in the sandbox with an 'extensions' member.");
+                }
             }
             super.visitAnnotations(node);
         }
