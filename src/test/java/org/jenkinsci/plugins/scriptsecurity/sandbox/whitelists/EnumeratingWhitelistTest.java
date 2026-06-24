@@ -31,10 +31,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import org.jvnet.hudson.test.Issue;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EnumeratingWhitelistTest {
 
@@ -44,7 +44,8 @@ public class EnumeratingWhitelistTest {
         public void m(Object[] args) {}
     }
 
-    @Test public void matches() throws Exception {
+    @Test
+    void matches() throws Exception {
         Method m = C.class.getMethod("m", Object[].class);
         assertTrue(new EnumeratingWhitelist.MethodSignature(C.class, "m", Object[].class).matches(m));
         assertTrue(new EnumeratingWhitelist.MethodSignature(C.class, "*", Object[].class).matches(m));
@@ -57,7 +58,8 @@ public class EnumeratingWhitelistTest {
         assertFalse(new EnumeratingWhitelist.FieldSignature(C.class, "other").matches(f));
     }
 
-    @Test public void getName() throws Exception {
+    @Test
+    void getName() throws Exception {
         assertEquals("java.lang.Object", EnumeratingWhitelist.getName(Object.class));
         assertEquals("java.lang.Object[]", EnumeratingWhitelist.getName(Object[].class));
         assertEquals("java.lang.Object[][]", EnumeratingWhitelist.getName(Object[][].class));
@@ -67,7 +69,8 @@ public class EnumeratingWhitelistTest {
         }
     }
 
-    @Test public void methodExists() throws Exception {
+    @Test
+    void methodExists() throws Exception {
         assertTrue(new EnumeratingWhitelist.MethodSignature(Object.class, "equals", Object.class).exists());
         assertFalse(new EnumeratingWhitelist.MethodSignature(String.class, "equals", Object.class).exists());
         assertFalse(new EnumeratingWhitelist.MethodSignature(String.class, "compareTo", Object.class).exists());
@@ -84,7 +87,7 @@ public class EnumeratingWhitelistTest {
     }
 
     @Test
-    public void isWildcard() throws Exception {
+    void isWildcard() {
         assertTrue(new EnumeratingWhitelist.MethodSignature(C.class, "*", Object[].class).isWildcard());
         assertFalse(new EnumeratingWhitelist.MethodSignature(C.class, "m", Object[].class).isWildcard());
 
@@ -106,7 +109,7 @@ public class EnumeratingWhitelistTest {
 
     /** Verifies for caching that canonical names match method signature toString, for cache keying. */
     @Test
-    public void canonicalNaming() throws Exception {
+    void canonicalNaming() throws Exception {
         Method m = Fancy.class.getMethod("m", Object[].class);
         Method staticM = Fancy.class.getMethod("staticM", Object.class);
         Constructor<Fancy> con = Fancy.class.getConstructor(null);
@@ -120,15 +123,15 @@ public class EnumeratingWhitelistTest {
         EnumeratingWhitelist.FieldSignature fSig = new EnumeratingWhitelist.FieldSignature(Fancy.class, "myF");
         EnumeratingWhitelist.FieldSignature staticFSig = new EnumeratingWhitelist.StaticFieldSignature(Fancy.class.getName(), "myStaticF");
 
-        Assert.assertEquals(mSig.toString(), EnumeratingWhitelist.canonicalMethodSig(m));
-        Assert.assertEquals(staticMSig.toString(), EnumeratingWhitelist.canonicalStaticMethodSig(staticM));
-        Assert.assertEquals(conSig.toString(), EnumeratingWhitelist.canonicalConstructorSig(con));
-        Assert.assertEquals(fSig.toString(), EnumeratingWhitelist.canonicalFieldSig(f));
-        Assert.assertEquals(staticFSig.toString(), EnumeratingWhitelist.canonicalStaticFieldSig(staticF));
+        assertEquals(mSig.toString(), EnumeratingWhitelist.canonicalMethodSig(m));
+        assertEquals(staticMSig.toString(), EnumeratingWhitelist.canonicalStaticMethodSig(staticM));
+        assertEquals(conSig.toString(), EnumeratingWhitelist.canonicalConstructorSig(con));
+        assertEquals(fSig.toString(), EnumeratingWhitelist.canonicalFieldSig(f));
+        assertEquals(staticFSig.toString(), EnumeratingWhitelist.canonicalStaticFieldSig(staticF));
     }
 
     @Test
-    public void caching() throws Exception {
+    void caching() throws Exception {
         StaticWhitelist myList = new StaticWhitelist();
 
         Method m = Fancy.class.getMethod("m", Object[].class);
@@ -156,7 +159,7 @@ public class EnumeratingWhitelistTest {
     }
 
     @Test
-    public void testCachingWithWildcards() throws Exception {
+    void testCachingWithWildcards() throws Exception {
         StaticWhitelist myList = new StaticWhitelist();
         Field f = C.class.getField("myField");
         myList.fieldSignatures.add(new EnumeratingWhitelist.FieldSignature(C.class, "*"));
@@ -166,7 +169,8 @@ public class EnumeratingWhitelistTest {
     }
 
     @Issue("JENKINS-42214")
-    @Test public void fieldExists() throws Exception {
+    @Test
+    void fieldExists() throws Exception {
         assertTrue(new EnumeratingWhitelist.FieldSignature("hudson.model.Result", "color").exists());
         assertTrue(new EnumeratingWhitelist.StaticFieldSignature("hudson.model.Result", "ABORTED").exists());
 

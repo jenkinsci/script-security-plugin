@@ -29,19 +29,23 @@ import jenkins.RestartRequiredException;
 import org.apache.commons.io.FileUtils;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
-import org.junit.AssumptionViolatedException;
-import org.junit.Rule;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.RealJenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.RealJenkinsExtension;
 
-public final class ScriptApprovalLoadingTest {
+class ScriptApprovalLoadingTest {
 
-    @Rule public final RealJenkinsRule rr = new RealJenkinsRule();
+    @RegisterExtension
+    private final RealJenkinsExtension extension = new RealJenkinsExtension();
 
-    @Test public void dynamicLoading() throws Throwable {
-        rr.then(ScriptApprovalLoadingTest::_dynamicLoading1);
-        rr.then(ScriptApprovalLoadingTest::_dynamicLoading2);
+    @Test
+    void dynamicLoading() throws Throwable {
+        extension.then(ScriptApprovalLoadingTest::_dynamicLoading1);
+        extension.then(ScriptApprovalLoadingTest::_dynamicLoading2);
     }
 
     private static void _dynamicLoading1(JenkinsRule r) throws Throwable {
@@ -56,11 +60,10 @@ public final class ScriptApprovalLoadingTest {
         try {
             r.jenkins.pluginManager.dynamicLoad(plugin);
         } catch (RestartRequiredException x) {
-            throw new AssumptionViolatedException("perhaps running in PCT, where this cannot be tested", x);
+            assumeTrue(false, "perhaps running in PCT, where this cannot be tested: " + x);
         }
         ScriptApproval sa = ScriptApproval.get();
         sa.approveSignature("method java.lang.Object wait");
         assertThat(sa.getApprovedSignatures(), arrayContaining("method java.lang.Object wait"));
     }
-
 }

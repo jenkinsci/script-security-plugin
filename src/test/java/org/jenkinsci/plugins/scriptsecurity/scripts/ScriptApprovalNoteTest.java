@@ -35,26 +35,38 @@ import jenkins.model.Jenkins;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.TestGroovyRecorder;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.Rule;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.BuildWatcherExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class ScriptApprovalNoteTest {
+@WithJenkins
+class ScriptApprovalNoteTest {
 
-    @ClassRule public static BuildWatcher buildWatcher = new BuildWatcher();
+    @SuppressWarnings("unused")
+    @RegisterExtension
+    private static final BuildWatcherExtension BUILD_WATCHER = new BuildWatcherExtension();
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
+
+    @BeforeEach
+    void beforeEach(JenkinsRule rule) {
+        r = rule;
+    }
 
     @Issue("JENKINS-34973")
-    @Test public void smokes() throws Exception {
+    @Test
+    void smokes() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
             grant(Jenkins.ADMINISTER, Jenkins.READ, Item.READ).everywhere().to("adminUser").
@@ -85,5 +97,4 @@ public class ScriptApprovalNoteTest {
         TextPage raw2 = (TextPage)wc.goTo(b.getUrl()+"consoleText","text/plain");
         assertThat(raw2.getContent(), containsString(" getInstance. " + Messages.ScriptApprovalNote_message()));
     }
-
 }

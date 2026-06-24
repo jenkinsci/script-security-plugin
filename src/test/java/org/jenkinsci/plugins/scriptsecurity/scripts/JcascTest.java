@@ -5,10 +5,11 @@ import io.jenkins.plugins.casc.ConfiguratorRegistry;
 import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 
+import io.jenkins.plugins.casc.misc.junit.jupiter.WithJenkinsConfiguredWithCode;
 import io.jenkins.plugins.casc.model.CNode;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.jvnet.hudson.test.LoggerRule;
+import org.junit.jupiter.api.Test;
+
+import org.jvnet.hudson.test.LogRecorder;
 
 import java.util.logging.Level;
 
@@ -18,29 +19,24 @@ import static io.jenkins.plugins.casc.misc.Util.toYamlString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class JcascTest {
+@WithJenkinsConfiguredWithCode
+class JcascTest {
 
-    @ClassRule(order = 1)
-    public static LoggerRule logger = new LoggerRule().record(ScriptApproval.class.getName(), Level.WARNING)
+    private final LogRecorder logger = new LogRecorder().record(ScriptApproval.class.getName(), Level.WARNING)
             .capture(100);
 
-    @ClassRule(order = 2)
-    @ConfiguredWithCode("smoke_test.yaml")
-    public static JenkinsConfiguredWithCodeRule j = new JenkinsConfiguredWithCodeRule();
-
-
-
     @Test
-    public void smokeTestEntry() throws Exception {
+    @ConfiguredWithCode("smoke_test.yaml")
+    void smokeTestEntry(JenkinsConfiguredWithCodeRule j) {
         String[] approved = ScriptApproval.get().getApprovedSignatures();
         assertEquals(1, approved.length);
-        assertEquals(approved[0], "method java.net.URI getHost");
+        assertEquals("method java.net.URI getHost", approved[0]);
         String[] approvedScriptHashes = ScriptApproval.get().getApprovedScriptHashes();
         assertEquals(1, approvedScriptHashes.length);
-        assertEquals(approvedScriptHashes[0], "fccae58c5762bdd15daca97318e9d74333203106");
+        assertEquals("fccae58c5762bdd15daca97318e9d74333203106", approvedScriptHashes[0]);
         assertThat(logger.getMessages(), containsInAnyOrder(
                 containsString("Adding deprecated script hash " +
                         "that will be converted on next use: fccae58c5762bdd15daca97318e9d74333203106")));
@@ -48,7 +44,8 @@ public class JcascTest {
     }
 
     @Test
-    public void smokeTestExport() throws Exception {
+    @ConfiguredWithCode("smoke_test.yaml")
+    void smokeTestExport(JenkinsConfiguredWithCodeRule j) throws Exception {
         ConfiguratorRegistry registry = ConfiguratorRegistry.get();
         ConfigurationContext context = new ConfigurationContext(registry);
         CNode yourAttribute = getSecurityRoot(context).get("scriptApproval");

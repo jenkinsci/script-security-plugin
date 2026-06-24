@@ -3,34 +3,38 @@ package org.jenkinsci.plugins.scriptsecurity.scripts;
 import org.hamcrest.Matcher;
 import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.JenkinsSessionRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.LogRecorder;
+import org.jvnet.hudson.test.junit.jupiter.JenkinsSessionExtension;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-public class HasherScriptApprovalTest {
-    @Rule
-    public JenkinsSessionRule session = new JenkinsSessionRule();
-    @Rule
-    public LoggerRule log = new LoggerRule();
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class HasherScriptApprovalTest {
+    
+    @RegisterExtension
+    private final JenkinsSessionExtension session = new JenkinsSessionExtension();
+    
+    private final LogRecorder log = new LogRecorder();
 
     @Test
     @Issue("SECURITY-2564")
-    public void hasherMatchesItsOwnHashes() throws Throwable {
+    void hasherMatchesItsOwnHashes() throws Throwable {
         session.then(r -> {
             for (ScriptApproval.Hasher hasher : ScriptApproval.Hasher.values()) {
                 assertTrue(hasher.pattern().matcher(hasher.hash("Hello World", "Text")).matches());
@@ -40,7 +44,7 @@ public class HasherScriptApprovalTest {
 
     @Test
     @Issue("SECURITY-2564")
-    public void warnsAndClearsDeprecatedScriptHashes() throws Throwable {
+    void warnsAndClearsDeprecatedScriptHashes() throws Throwable {
         session.then(r -> {
             final ScriptApproval approval = ScriptApproval.get();
             approval.approveScript(ScriptApproval.Hasher.SHA1.hash("Hello World", "Text"));
@@ -61,7 +65,7 @@ public class HasherScriptApprovalTest {
 
     @Test
     @Issue("SECURITY-2564")
-    public void convertsScriptApprovalsOnUse() throws Throwable {
+    void convertsScriptApprovalsOnUse() throws Throwable {
         final String script = "node { echo 'Hello World' }";
         final Matcher<Iterable<? extends String>> logMatcher = containsInRelativeOrder(
                 containsString("A script is approved with an old hash algorithm. Converting now, "));
@@ -91,7 +95,7 @@ public class HasherScriptApprovalTest {
 
     @Test
     @Issue("SECURITY-2564")
-    public void testConvertApprovedClasspathEntries() throws Throwable {
+    void testConvertApprovedClasspathEntries() throws Throwable {
         session.then(r -> {
             final ScriptApproval approval = ScriptApproval.get();
             addApprovedClasspathEntries(approval);
@@ -110,19 +114,15 @@ public class HasherScriptApprovalTest {
             assertThat(log.getMessages(), containsInRelativeOrder(
                     containsString("Scheduling conversion of 2 deprecated approved classpathentry hashes."),
                     containsString("Background conversion task scheduled.")));
-            try {
-                while (approval.isConvertingDeprecatedApprovedClasspathEntries()) {
-                    Thread.sleep(500);
-                }
-            } catch (InterruptedException ignored) {
-            }
+
+            await().until(() -> !approval.isConvertingDeprecatedApprovedClasspathEntries());
             assertEquals(0, approval.countDeprecatedApprovedClasspathHashes());
         });
     }
 
     @Test
     @Issue("SECURITY-2564")
-    public void testClasspathEntriesConvertedOnUse() throws Throwable {
+    void testClasspathEntriesConvertedOnUse() throws Throwable {
         session.then(r -> {
             final ScriptApproval approval = ScriptApproval.get();
             addApprovedClasspathEntries(approval);

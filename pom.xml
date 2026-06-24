@@ -21,6 +21,7 @@
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <hpi.strictBundledArtifacts>true</hpi.strictBundledArtifacts>
     <hpi.bundledArtifacts>groovy-sandbox</hpi.bundledArtifacts>
+    <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
   </properties>
   <licenses>
     <license>
@@ -85,6 +86,12 @@
     <dependency>
       <groupId>io.jenkins.configuration-as-code</groupId>
       <artifactId>test-harness</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>4.3.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
