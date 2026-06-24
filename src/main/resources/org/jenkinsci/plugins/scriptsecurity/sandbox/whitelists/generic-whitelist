@@ -1166,6 +1166,13 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAll java.util.M
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.Map java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods removeAll java.util.Collection groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern java.lang.CharSequence
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods retainAll java.util.Collection groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.Iterator
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods reverse java.util.List
@@ -1383,9 +1390,12 @@ staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lan
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.util.regex.Pattern groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceAll java.lang.String java.util.regex.Pattern java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.lang.CharSequence java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.CharSequence java.util.regex.Pattern java.lang.CharSequence
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.lang.String groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern groovy.lang.Closure
+staticMethod org.codehaus.groovy.runtime.StringGroovyMethods replaceFirst java.lang.String java.util.regex.Pattern java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods reverse java.lang.String
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods startsWithAny java.lang.CharSequence java.lang.CharSequence[]
 staticMethod org.codehaus.groovy.runtime.StringGroovyMethods takeWhile groovy.lang.GString groovy.lang.Closure
