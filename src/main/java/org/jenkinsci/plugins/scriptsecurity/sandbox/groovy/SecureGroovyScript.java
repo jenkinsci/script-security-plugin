@@ -249,19 +249,23 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
                 toRemove.add((Class) klazzF.get(value));
             }
         }
-        Iterator<Class<?>> it = toRemove.iterator();
-        while (it.hasNext()) {
-            Class<?> klazz = it.next();
+        boolean isLogLevelFinestLoggable = LOGGER.isLoggable(Level.FINEST);
+        if (isLogLevelFinestLoggable) {
+            LOGGER.log(Level.FINE, "The log level FINEST is loggable, cleanUpGlobalClassValue will be slow, toRemove.size()={0}", toRemove.size());
+        }
+        List<Class<?>> toRemoveReally = new ArrayList<>();
+        for (Class<?> klazz : toRemove) {
             ClassLoader encounteredLoader = klazz.getClassLoader();
             if (encounteredLoader != loader) {
-                it.remove();
-                if (LOGGER.isLoggable(Level.FINEST)) {
-                  LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[] {klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
+                if (isLogLevelFinestLoggable) {
+                    LOGGER.log(Level.FINEST, "ignoring {0} with loader {1}", new Object[]{klazz, /* do not hold from LogRecord */String.valueOf(encounteredLoader)});
                 }
+            } else {
+                toRemoveReally.add(klazz);
             }
         }
-        LOGGER.log(Level.FINE, "cleaning up {0} associated with {1}", new Object[] {toRemove.toString(), loader.toString()});
-        for (Class<?> klazz : toRemove) {
+        LOGGER.log(Level.FINE, "cleaning up {0} associated with {1}", new Object[] {toRemoveReally.toString(), loader.toString()});
+        for (Class<?> klazz : toRemoveReally) {
             removeM.invoke(map, klazz);
         }
     }
