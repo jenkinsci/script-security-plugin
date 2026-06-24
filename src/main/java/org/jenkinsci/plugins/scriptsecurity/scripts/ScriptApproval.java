@@ -879,7 +879,9 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      * @return {@code script}, for convenience
      */
     public synchronized String preapprove(@NonNull String script, @NonNull Language language) {
-        approvedScriptHashes.add(DEFAULT_HASHER.hash(script, language.getName()));
+        String hash = DEFAULT_HASHER.hash(script, language.getName());
+        approvedScriptHashes.add(hash);
+        removePendingScript(hash);
         return script;
     }
 
