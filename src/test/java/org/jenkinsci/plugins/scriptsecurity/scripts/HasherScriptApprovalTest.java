@@ -18,6 +18,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -143,6 +144,13 @@ public class HasherScriptApprovalTest {
             assertThat(log.getMessages(), not(logMatcher));
             assertEquals(1, approval.countDeprecatedApprovedClasspathHashes());
         });
+    }
+
+    @Test
+    public void hashClasspathEntry() throws Exception {
+        var url = HasherScriptApprovalTest.class.getResource("/org/jenkinsci/plugins/scriptsecurity/sandbox/groovy/somejar.jar");
+        assertThat(ScriptApproval.Hasher.SHA512.hashClasspathEntry(url), is("SHA512:8c649f770baefbbf33a2ed6bb06a4ab5cd8b1921fec4176906e068337d76aa54b28aeac6987a46d5e6c73fcbbfaab93651a4fb082bcc96f1511e6395eb3b2b5f"));
+        assertThat(ScriptApproval.Hasher.SHA1.hashClasspathEntry(url), is("049d9ec67a2a95263ee50e7db8e406b97d300bbe"));
     }
 
     private void addApprovedClasspathEntries(final ScriptApproval approval) throws IOException {

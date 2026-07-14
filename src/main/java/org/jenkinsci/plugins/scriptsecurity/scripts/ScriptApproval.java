@@ -77,6 +77,7 @@ import java.util.stream.Collectors;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.io.OutputStream;
 import jenkins.model.Jenkins;
 import net.sf.json.JSON;
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
@@ -256,10 +257,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             try {
                 MessageDigest digest = digest();
                 try (InputStream is = entry.openStream(); BufferedInputStream bis = new BufferedInputStream(is); DigestInputStream input = new DigestInputStream(bis, digest)) {
-                    byte[] buffer = new byte[1024];
-                    while (input.read(buffer) != -1) {
-                        // discard
-                    }
+                    input.transferTo(OutputStream.nullOutputStream());
                     return prefix() + Util.toHexString(digest.digest());
                 }
             } catch (NoSuchAlgorithmException x) {
