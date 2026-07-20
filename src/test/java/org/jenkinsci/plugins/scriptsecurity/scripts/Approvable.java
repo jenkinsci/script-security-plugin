@@ -24,9 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Base class for approvable entities.
@@ -56,20 +54,20 @@ abstract class Approvable<T extends Approvable<T>> {
     }
 
     final T assertPending() {
-        assertTrue(this + " should be pending", findPending());
-        assertFalse(this + " shouldn't be approved", findApproved());
+        assertTrue(findPending(), this + " should be pending");
+        assertFalse(findApproved(), this + " shouldn't be approved");
         return self();
     }
 
     final T assertApproved() {
-        assertFalse(this + " shouldn't be pending", findPending());
-        assertTrue(this + " should be approved", findApproved());
+        assertFalse(findPending(), this + " shouldn't be pending");
+        assertTrue(findApproved(), this + " should be approved");
         return self();
     }
 
     final T assertDeleted() {
-        assertFalse(this + " shouldn't be pending", findPending());
-        assertFalse(this + " shouldn't be approved", findApproved());
+        assertFalse(findPending(), this + " shouldn't be pending");
+        assertFalse(findApproved(), this + " shouldn't be approved");
         return self();
     }
 

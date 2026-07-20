@@ -25,8 +25,10 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists;
 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.Whitelist;
-import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -37,13 +39,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ProxyWhitelistTest {
+class ProxyWhitelistTest {
 
-    @Test public void reset() throws Exception {
+    @Test
+    void reset() throws Exception {
         ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("method java.lang.String length")));
         ProxyWhitelist pw2 = new ProxyWhitelist(pw1);
         assertTrue(pw2.permitsMethod(String.class.getMethod("length"), "x", new Object[0]));
@@ -56,7 +58,8 @@ public class ProxyWhitelistTest {
         assertFalse(pw2.permitsMethod(Object.class.getMethod("hashCode"), "x", new Object[0]));
     }
 
-    @Test public void resetStaticField() throws Exception {
+    @Test
+    void resetStaticField() throws Exception {
         ProxyWhitelist pw1 = new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST")));
         ProxyWhitelist pw2 = new ProxyWhitelist(pw1);
         assertTrue(pw2.permitsStaticFieldGet(Collections.class.getField("EMPTY_LIST")));
@@ -73,8 +76,9 @@ public class ProxyWhitelistTest {
      * 2 delegates. If the tasks have not completed by then, we can assume that there is a problem.
      */
     @Issue("JENKINS-41797")
-    @Test(timeout = 30000)
-    public void testConcurrent() throws InterruptedException, IOException {
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    void testConcurrent() throws InterruptedException, IOException {
         int threadPoolSize = 2;
         List<Whitelist> delegates = Arrays.asList(
             new ProxyWhitelist(new StaticWhitelist(new StringReader("staticField java.util.Collections EMPTY_LIST"))),
@@ -91,7 +95,7 @@ public class ProxyWhitelistTest {
 
         es.shutdown();
         // If interrupted after the timeout, something went wrong
-        assert es.awaitTermination(15000, TimeUnit.MILLISECONDS);
+        assertTrue(es.awaitTermination(15000, TimeUnit.MILLISECONDS));
     }
 
 }
