@@ -25,7 +25,9 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import org.htmlunit.CollectingAlertHandler;
+import org.htmlunit.html.HtmlButton;
 import org.htmlunit.html.HtmlCheckBoxInput;
+import org.htmlunit.html.HtmlElement;
 import org.htmlunit.html.HtmlInput;
 import groovy.lang.Binding;
 import groovy.lang.Script;
@@ -49,7 +51,6 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
-import hudson.util.VersionNumber;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -78,6 +79,7 @@ import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -93,7 +95,6 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.groovy.sandbox.impl.Checker;
-import static org.junit.Assert.assertEquals;
 
 public class SecureGroovyScriptTest {
 
@@ -103,14 +104,19 @@ public class SecureGroovyScriptTest {
 
     @Rule public TemporaryFolder tmpFolderRule = new TemporaryFolder();
 
-    private void addPostBuildAction(HtmlPage page) throws IOException {
+    private void addPostBuildAction(HtmlForm config) throws IOException {
         String displayName = r.jenkins.getExtensionList(BuildStepDescriptor.class).get(TestGroovyRecorder.DescriptorImpl.class).getDisplayName();
-        if (Jenkins.getVersion().isOlderThan(new VersionNumber("2.422"))) {
-            page.getAnchorByText(displayName).click();
-        } else {
-            HtmlForm config = page.getFormByName("config");
-            r.getButtonByCaption(config, displayName).click();
+        HtmlButton button = null;
+        for (HtmlElement b : config.getElementsByTagName("button")) {
+            if (b.getTextContent().trim().equals("Add post-build action")) {
+                if (b.isDisplayed()) {
+                    button = (HtmlButton) b;
+                }
+            }
         }
+        assertNotNull(button);
+        button.click();
+        r.getButtonByCaption(config, displayName).click();
 
     }
 
@@ -133,8 +139,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        addPostBuildAction(page);
+        addPostBuildAction(config);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -206,8 +211,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        addPostBuildAction(page);
+        addPostBuildAction(config);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -250,8 +254,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        addPostBuildAction(page);
+        addPostBuildAction(config);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -313,8 +316,7 @@ public class SecureGroovyScriptTest {
         wc.login("devel");
         HtmlPage page = wc.getPage(p, "configure");
         HtmlForm config = page.getFormByName("config");
-        HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-        addPostBuildAction(page);
+        addPostBuildAction(config);
         wc.waitForBackgroundJavaScript(10000);
         List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
         // Get the last one, because previous ones might be from Lockable Resources during PCT.
@@ -1466,8 +1468,7 @@ public class SecureGroovyScriptTest {
             wc.login("admin");
             HtmlPage page = wc.getPage(p, "configure");
             HtmlForm config = page.getFormByName("config");
-            HtmlFormUtil.getButtonByCaption(config, "Add post-build action").click(); // lib/hudson/project/config-publishers2.jelly
-            addPostBuildAction(page);
+            addPostBuildAction(config);
             wc.waitForBackgroundJavaScript(10000);
             List<HtmlTextArea> scripts = config.getTextAreasByName("_.script");
             // Get the last one, because previous ones might be from Lockable Resources during PCT.
