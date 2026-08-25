@@ -1000,6 +1000,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
 
     @DataBoundSetter
     public void setForceSandbox(boolean forceSandbox) {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         this.forceSandbox = forceSandbox;
         save();
     }

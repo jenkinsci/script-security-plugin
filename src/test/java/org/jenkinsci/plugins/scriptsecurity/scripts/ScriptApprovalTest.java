@@ -53,6 +53,7 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.recipes.LocalData;
+import org.springframework.security.access.AccessDeniedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -331,14 +332,19 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         setBasicSecurity();
 
         try (ACLContext ctx = ACL.as(User.getById("devel", true))) {
-            ScriptApproval.get().setForceSandbox(true);
+            // only an admin may toggle forceSandbox
+            try (ACLContext admin = ACL.as(User.getById("admin", true))) {
+                ScriptApproval.get().setForceSandbox(true);
+            }
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.WARNING, result.kind);
                 assertEquals(Messages.ScriptApproval_ForceSandBoxMessage(), result.getMessage());
             }
 
-            ScriptApproval.get().setForceSandbox(false);
+            try (ACLContext admin = ACL.as(User.getById("admin", true))) {
+                ScriptApproval.get().setForceSandbox(false);
+            }
             {
                 FormValidation result = ScriptApproval.get().checking("test", GroovyLanguage.get(), false);
                 assertEquals(FormValidation.Kind.WARNING, result.kind);
@@ -480,6 +486,29 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         // user cannot call getClasspathRenderInfo
         try (ACLContext ctx = ACL.as(User.getById("read", true))) {
             assertThrows(Exception.class, () -> ScriptApproval.get().getClasspathRenderInfo());
+        }
+    }
+
+    @Issue("SECURITY-3917")
+    @Test
+    public void setForceSandboxRequiresAdmin() {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy().
+                grant(Jenkins.ADMINISTER).everywhere().to("admin").
+                grant(Jenkins.READ).everywhere().to("read"));
+
+        // a non admin user must not be able to toggle forceSandbox
+        try (ACLContext ctx = ACL.as(User.getById("read", true))) {
+            assertThrows(AccessDeniedException.class, () -> ScriptApproval.get().setForceSandbox(false));
+            assertThrows(AccessDeniedException.class, () -> ScriptApproval.get().setForceSandbox(true));
+        }
+
+        // an admin user can toggle forceSandbox
+        try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+            ScriptApproval.get().setForceSandbox(true);
+            assertTrue(ScriptApproval.get().isForceSandbox());
+            ScriptApproval.get().setForceSandbox(false);
+            assertFalse(ScriptApproval.get().isForceSandbox());
         }
     }
 
