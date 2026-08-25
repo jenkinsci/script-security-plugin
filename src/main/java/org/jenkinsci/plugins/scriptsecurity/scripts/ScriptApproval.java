@@ -522,7 +522,6 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
         }
     }
 
-    @DataBoundConstructor
     public ScriptApproval() {
         load();
     }
