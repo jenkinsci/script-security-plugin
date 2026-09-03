@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>script-security-parent</artifactId>
+    <version>${changelist}</version>
+  </parent>
+
+  <groupId>org.kohsuke</groupId>
+  <artifactId>groovy-sandbox</artifactId>
+  <url>https://github.com/jenkinsci/script-security-plugin</url>
+
+  <name>Groovy Sandbox</name>
+  <description>Executes untrusted Groovy script safely</description>
+
+  <properties>
+    <!-- ClassRecorder is used by groovy-cps -->
+    <no-test-jar>false</no-test-jar>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>2.4.21</version> <!-- Note: Do not update past this version unless Jenkins core is updated to use a newer version of Groovy. -->
+    </dependency>
+  </dependencies>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+</project>
