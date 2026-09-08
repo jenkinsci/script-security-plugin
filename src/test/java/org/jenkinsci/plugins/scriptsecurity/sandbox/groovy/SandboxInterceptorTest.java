@@ -60,6 +60,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2316,6 +2317,129 @@ public class SandboxInterceptorTest {
                         class Foo { String name }
                         """));
         assertThat(e.getMessage(), not(containsString("@Builder cannot use builderStrategy")));
+    }
+
+    @Issue("SECURITY-3923")
+    @Test
+    public void setterArrayTypeReceivesSnapshot() throws Exception {
+        // A TOCTOU-capable collection assigned to a File[] setter must be coerced from the snapshot,
+        // not from the original collection. Without the fix the setter receives "dangerous.key".
+        // The unsandboxed path still returns "dangerous.key", proving the sandbox intercepts correctly.
+        String maskedClass = MaskedFileList.class.getName();
+        String fileHolderClass = FileArrayHolder.class.getName();
+        Object actual = evaluate(
+                new StaticWhitelist(
+                        "new java.io.File java.lang.String",
+                        "method java.io.File getName",
+                        "new " + fileHolderClass,
+                        "method " + fileHolderClass + " setSink java.io.File[]",
+                        "method " + fileHolderClass + " getSink",
+                        "staticMethod java.util.Collections unmodifiableCollection java.util.Collection",
+                        "staticMethod " + maskedClass + " create java.lang.String java.lang.String"),
+                """
+                def masked = Collections.unmodifiableCollection(%s.create('safe.txt', 'dangerous.key'))
+                def h = new %s()
+                h.sink = masked
+                h.sink[0].getName()
+                """.formatted(maskedClass, fileHolderClass));
+        // Snapshot propagated: toArray() decoy reached the setter, not iterator() real value.
+        errors.checkThat(actual, is("safe.txt"));
+    }
+
+    @Issue("SECURITY-3923")
+    @Test
+    public void attributeArrayTypeReceivesSnapshot() throws Exception {
+        // Same user-visible guarantee as setterArrayTypeReceivesSnapshot but via field assignment (h.@sink = masked).
+        // Without the fix the field receives "dangerous.key".
+        String maskedClass = MaskedFileList.class.getName();
+        String fileHolderClass = FileArrayHolder.class.getName();
+        Object actual = evaluate(
+                new StaticWhitelist(
+                        "new java.io.File java.lang.String",
+                        "method java.io.File getName",
+                        "new " + fileHolderClass,
+                        "field " + fileHolderClass + " sink",
+                        "staticMethod java.util.Collections unmodifiableCollection java.util.Collection",
+                        "staticMethod " + maskedClass + " create java.lang.String java.lang.String"),
+                """
+                def masked = Collections.unmodifiableCollection(%s.create('safe.txt', 'dangerous.key'))
+                def h = new %s()
+                h.@sink = masked
+                h.@sink[0].getName()
+                """.formatted(maskedClass, fileHolderClass));
+        errors.checkThat(actual, is("safe.txt"));
+    }
+
+    @Issue("SECURITY-3923")
+    @Test
+    public void setterConcreteTypeCoercionUsesSnapshot() throws Exception {
+        // Concrete-type setter: snapshot value reaches the constructor, not the attacker-controlled iterator.
+        // If this ever returns "dangerous", the snapshot is no longer being propagated for this path.
+        String holderClass = StringHolder.class.getName();
+        String maskedClass = MaskedStringList.class.getName();
+        String concreteHolderClass = ConcreteHolder.class.getName();
+        assertEvaluate(
+                new StaticWhitelist(
+                        "new " + holderClass + " java.lang.String",
+                        "method " + holderClass + " getValue",
+                        "new " + concreteHolderClass,
+                        "method " + concreteHolderClass + " setPath " + holderClass,
+                        "method " + concreteHolderClass + " getPath",
+                        "staticMethod java.util.Collections unmodifiableCollection java.util.Collection",
+                        "staticMethod " + maskedClass + " create java.lang.String java.lang.String"),
+                "safe",
+                """
+                def masked = Collections.unmodifiableCollection(%s.create('safe', 'dangerous'))
+                def h = new %s()
+                h.path = masked
+                h.path.getValue()
+                """.formatted(maskedClass, concreteHolderClass));
+    }
+
+    public static final class StringHolder {
+        private final String value;
+        @Whitelisted public StringHolder(String value) { this.value = value; }
+        @Whitelisted public String getValue() { return value; }
+    }
+
+    public static final class FileArrayHolder {
+        private File[] sink;
+        @Whitelisted public void setSink(File[] s) { this.sink = s; }
+        @Whitelisted public File[] getSink() { return sink; }
+    }
+
+    public static final class ConcreteHolder {
+        private StringHolder path;
+        @Whitelisted public void setPath(StringHolder p) { this.path = p; }
+        @Whitelisted public StringHolder getPath() { return path; }
+    }
+
+    public static final class MaskedStringList extends ArrayList<String> {
+        private final String decoy;
+        private final String real;
+        private MaskedStringList(String decoy, String real) {
+            super(Collections.singletonList(decoy));
+            this.decoy = decoy;
+            this.real = real;
+        }
+        @Whitelisted public static MaskedStringList create(String decoy, String real) { return new MaskedStringList(decoy, real); }
+        @Override public Object[] toArray() { return new Object[]{decoy}; }
+        @Override public Iterator<String> iterator() { return Collections.singletonList(real).iterator(); }
+        @Override public int size() { return 1; }
+    }
+
+    public static final class MaskedFileList extends ArrayList<File> {
+        private final File decoy;
+        private final File real;
+        private MaskedFileList(String decoy, String real) {
+            super(Collections.singletonList(new File(decoy)));
+            this.decoy = new File(decoy);
+            this.real = new File(real);
+        }
+        @Whitelisted public static MaskedFileList create(String decoy, String real) { return new MaskedFileList(decoy, real); }
+        @Override public Object[] toArray() { return new Object[]{decoy}; }
+        @Override public Iterator<File> iterator() { return Collections.singletonList(real).iterator(); }
+        @Override public int size() { return 1; }
     }
 
     /**

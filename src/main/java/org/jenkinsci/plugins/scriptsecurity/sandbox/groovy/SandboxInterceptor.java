@@ -268,7 +268,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (setterMethod != null) {
             if (permitsMethod(whitelist, setterMethod, receiver, valueArg)) {
                 preCheckArgumentCasts(setterMethod, valueArg);
-                return super.onSetProperty(invoker, receiver, property, value);
+                return super.onSetProperty(invoker, receiver, property, valueArg[0]);
             } else if (rejector == null) {
                 rejector = () -> rejectMethod(setterMethod);
             }
@@ -278,7 +278,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (setPropertyMethod != null && !isSyntheticMethod(receiver, setPropertyMethod)) {
             if (whitelist.permitsMethod(setPropertyMethod, receiver, propertyValueArgs)) {
                 preCheckArgumentCasts(setPropertyMethod, propertyValueArgs);
-                return super.onSetProperty(invoker, receiver, property, value);
+                return super.onSetProperty(invoker, receiver, property, propertyValueArgs[1]);
             } else if (rejector == null) {
                 rejector = () -> StaticWhitelist.rejectMethod(setPropertyMethod, receiverClass(receiver).getName() + "." + property);
             }
@@ -286,8 +286,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         final Field field = GroovyCallSiteSelector.field(receiver, property);
         if (field != null) {
             if (permitsFieldSet(whitelist, field, receiver, value)) {
-                Checker.preCheckedCast(field.getType(), value, false, false, false);
-                return super.onSetProperty(invoker, receiver, property, value);
+                Object snapshotValue = Checker.preCheckedCast(field.getType(), value, false, false, false).call();
+                return super.onSetProperty(invoker, receiver, property, snapshotValue);
             } else if (rejector == null) {
                 rejector = () -> rejectField(field);
             }
@@ -300,7 +300,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
             if (staticSetterMethod != null) {
                 if (whitelist.permitsStaticMethod(staticSetterMethod, valueArg)) {
                     preCheckArgumentCasts(staticSetterMethod, valueArg);
-                    return super.onSetProperty(invoker, receiver, property, value);
+                    return super.onSetProperty(invoker, receiver, property, valueArg[0]);
                 } else if (rejector == null) {
                     rejector = () -> StaticWhitelist.rejectStaticMethod(staticSetterMethod);
                 }
@@ -308,8 +308,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
             final Field staticField = GroovyCallSiteSelector.staticField((Class) receiver, property);
             if (staticField != null) {
                 if (whitelist.permitsStaticFieldSet(staticField, value)) {
-                    Checker.preCheckedCast(staticField.getType(), value, false, false, false);
-                    return super.onSetProperty(invoker, receiver, property, value);
+                    Object snapshotValue = Checker.preCheckedCast(staticField.getType(), value, false, false, false).call();
+                    return super.onSetProperty(invoker, receiver, property, snapshotValue);
                 } else if (rejector == null) {
                     rejector = () -> StaticWhitelist.rejectStaticField(staticField);
                 }
@@ -501,8 +501,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Field field = GroovyCallSiteSelector.field(receiver, attribute);
         if (field != null) {
             if (permitsFieldSet(whitelist, field, receiver, value)) {
-                Checker.preCheckedCast(field.getType(), value, false, false, false);
-                return super.onSetAttribute(invoker, receiver, attribute, value);
+                Object snapshotValue = Checker.preCheckedCast(field.getType(), value, false, false, false).call();
+                return super.onSetAttribute(invoker, receiver, attribute, snapshotValue);
             } else {
                 rejector = () -> rejectField(field);
             }
@@ -511,8 +511,8 @@ final class SandboxInterceptor extends GroovyInterceptor {
             Field staticField = GroovyCallSiteSelector.staticField((Class<?>)receiver, attribute);
             if (staticField != null) {
                 if (whitelist.permitsStaticFieldSet(staticField, value)) {
-                    Checker.preCheckedCast(staticField.getType(), value, false, false, false);
-                    return super.onSetAttribute(invoker, receiver, attribute, value);
+                    Object snapshotValue = Checker.preCheckedCast(staticField.getType(), value, false, false, false).call();
+                    return super.onSetAttribute(invoker, receiver, attribute, snapshotValue);
                 } else {
                     rejector = () -> StaticWhitelist.rejectStaticField(staticField);
                 }
@@ -582,12 +582,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
             if (i == parameters.length - 1 && parameter.isVarArgs()) {
                 Class<?> componentType = parameter.getType().getComponentType();
                 for (int j = i; j < args.length; j++) {
-                    Object arg = args[j];
-                    Checker.preCheckedCast(componentType, arg, false, false, false);
+                    args[j] = Checker.preCheckedCast(componentType, args[j], false, false, false).call();
                 }
             } else {
-                Object arg = args[i];
-                Checker.preCheckedCast(parameter.getType(), arg, false, false, false);
+                args[i] = Checker.preCheckedCast(parameter.getType(), args[i], false, false, false).call();
             }
         }
     }

@@ -1522,7 +1522,7 @@ public class SecureGroovyScriptTest {
         r.assertLogContains("staticMethod java.lang.System getProperty java.lang.String", b);
     }
 
-    @Issue("SECURITY-1465")
+    @Issue({"SECURITY-1465", "SECURITY-3923"})
     @Test public void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
         // The closure returns null from toArray() on the first call (the i==0 branch). The snapshot
         // approach detects this and throws rather than proceeding with a null snapshot.
@@ -1550,6 +1550,28 @@ public class SecureGroovyScriptTest {
                 "({-> return ['secret.txt'] as Object[]} as Collection) as File", true, null)));
         FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
         r.assertLogContains("new java.io.File java.lang.String", b); // sandbox rejection: new File(String) not whitelisted
+    }
+
+    @Issue("SECURITY-3923")
+    @Test
+    public void blockCastingViaToctouCollection() throws Exception {
+        // The snapshot reaches the interception layer: new File(String) is not whitelisted, so the cast is blocked.
+        // Without the snapshot fix, the attacker's iterator() would produce a different value that could bypass the check.
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "Collections.unmodifiableCollection(['secret.txt']) as File", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
+        r.assertLogContains("new java.io.File java.lang.String", b); // sandbox rejection: new File(String) not whitelisted
+    }
+
+    @Issue("SECURITY-3923")
+    @Test
+    public void allowCastingUnmodifiableCollectionToArray() throws Exception {
+        // snapshot approach: any Collection snapshotted once, safe for both pre-check and cast.
+        FreeStyleProject p = r.createFreeStyleProject();
+        p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                "(Collections.unmodifiableCollection(['a', 'b', 'c']) as Object[]).length == 3", true, null)));
+        FreeStyleBuild b = r.assertBuildStatus(Result.SUCCESS, p.scheduleBuild2(0));
     }
 
     @Issue("SECURITY-1465")
