@@ -25,13 +25,13 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
@@ -89,14 +89,24 @@ final class SandboxInterceptor extends GroovyInterceptor {
         ProcessGroovyMethods.class,
     };
 
-    /** @see NumberMathModificationInfo */
+    /**
+     * Mirrors {@link NumberMathModificationInfo}.NAMES: arithmetic operators on Number types dispatched
+     * through Groovy's compiled-in bytecode, not as Java-declared methods, so they appear as null from
+     * {@link GroovyCallSiteSelector#method}, requiring the fast-path below.
+     */
     private static final Set<String> NUMBER_MATH_NAMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned")));
 
     @Override public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
             if (receiver instanceof Number && NUMBER_MATH_NAMES.contains(method)) {
-                // Synthetic methods like Integer.plus(Integer).
+                // A ClosureMetaMethod override would reach super without a whitelist check.
+                for (MetaMethod mm : DefaultGroovyMethods.getMetaClass(receiver).respondsTo(receiver, method)) {
+                    if (mm instanceof ClosureMetaMethod) {
+                        throw new MissingMethodException(method, receiver.getClass(), args);
+                    }
+                }
+                // Synthetic methods like Integer.plus(Integer) not found by Java reflection.
                 return super.onMethodCall(invoker, receiver, method, args);
             }
 
@@ -113,6 +123,23 @@ final class SandboxInterceptor extends GroovyInterceptor {
                         return super.onMethodCall(invoker, receiver, method, args);
                     } else if (foundDgmMethod == null) {
                         foundDgmMethod = dgmMethod;
+                    }
+                }
+            }
+
+            for (SandboxMethodContributor contributor : SandboxMethodContributor.all()) {
+                for (Class<?> dgmClass : contributor.getContributedClasses()) {
+                    Method dgmMethod = GroovyCallSiteSelector.staticMethod(dgmClass, method, selfArgs);
+                    if (dgmMethod != null) {
+                        if (whitelist.permitsStaticMethod(dgmMethod, selfArgs)) {
+                            try {
+                                return dgmMethod.invoke(null, selfArgs);
+                            } catch (InvocationTargetException e) {
+                                throw e.getCause();
+                            }
+                        } else if (foundDgmMethod == null) {
+                            foundDgmMethod = dgmMethod;
+                        }
                     }
                 }
             }
@@ -148,11 +175,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 return onMethodCall(invoker, receiver, "invokeMethod", method, args);
             } catch (NoSuchMethodException e) {
                 // fall through
-            }
-
-            MetaMethod metaMethod = findMetaMethod(receiver, method, args);
-            if (metaMethod instanceof ClosureMetaMethod) {
-                return super.onMethodCall(invoker, receiver, method, args);
             }
 
             // no such method exists
@@ -331,6 +353,34 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
         }
+        for (SandboxMethodContributor contributor : SandboxMethodContributor.all()) {
+            for (Class<?> dgmClass : contributor.getContributedClasses()) {
+                final Method dgmGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, getter, selfArgs);
+                if (dgmGetterMethod != null) {
+                    if (whitelist.permitsStaticMethod(dgmGetterMethod, selfArgs)) {
+                        try {
+                            return dgmGetterMethod.invoke(null, selfArgs);
+                        } catch (InvocationTargetException e) {
+                            throw e.getCause();
+                        }
+                    } else if (rejector == null) {
+                        rejector = () -> StaticWhitelist.rejectStaticMethod(dgmGetterMethod);
+                    }
+                }
+                final Method dgmBooleanGetterMethod = GroovyCallSiteSelector.staticMethod(dgmClass, booleanGetter, selfArgs);
+                if (dgmBooleanGetterMethod != null && dgmBooleanGetterMethod.getReturnType() == boolean.class) {
+                    if (whitelist.permitsStaticMethod(dgmBooleanGetterMethod, selfArgs)) {
+                        try {
+                            return dgmBooleanGetterMethod.invoke(null, selfArgs);
+                        } catch (InvocationTargetException e) {
+                            throw e.getCause();
+                        }
+                    } else if (rejector == null) {
+                        rejector = () -> StaticWhitelist.rejectStaticMethod(dgmBooleanGetterMethod);
+                    }
+                }
+            }
+        }
         final Field field = GroovyCallSiteSelector.field(receiver, property);
         if (field != null) {
             if (permitsFieldGet(whitelist, field, receiver)) {
@@ -349,11 +399,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 rejector = () -> StaticWhitelist.rejectMethod(getPropertyMethod, receiver.getClass().getName() + "." + property);
             }
         }
-        MetaMethod metaMethod = findMetaMethod(receiver, getter, noArgs);
-        if (metaMethod instanceof ClosureMetaMethod) {
-            return super.onGetProperty(invoker, receiver, property);
-        }
-        // TODO similar metaclass handling for isXXX, static methods (if possible?), setters
         if (receiver instanceof Class) {
             final Method staticGetterMethod = GroovyCallSiteSelector.staticMethod((Class) receiver, getter, noArgs);
             if (staticGetterMethod != null) {
@@ -550,20 +595,6 @@ final class SandboxInterceptor extends GroovyInterceptor {
             b.append(EnumeratingWhitelist.getName(arg));
         }
         return b.toString();
-    }
-
-    private static @CheckForNull MetaMethod findMetaMethod(@NonNull Object receiver, @NonNull String method, @NonNull Object[] args) {
-        Class<?>[] types = new Class[args.length];
-        for (int i = 0; i < types.length; i++) {
-            Object arg = args[i];
-            types[i] = arg == null ? /* is this right? */void.class : arg.getClass();
-        }
-        try {
-            return DefaultGroovyMethods.getMetaClass(receiver).pickMethod(method, types);
-        } catch (GroovyRuntimeException x) { // ambiguous call, supposedly
-            LOGGER.log(Level.FINE, "could not find metamethod for " + receiver.getClass() + "." + method + Arrays.toString(types), x);
-            return null;
-        }
     }
 
     private static boolean permitsFieldGet(@NonNull Whitelist whitelist, @NonNull Field field, @NonNull Object receiver) {

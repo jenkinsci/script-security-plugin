@@ -33,6 +33,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -44,6 +45,8 @@ import hudson.Functions;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.lang.reflect.Field;
 
 import java.lang.reflect.Method;
@@ -500,11 +503,186 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("SECURITY-3977")
     @Test public void metaClassDelegate() throws Exception {
         new GroovyShell().evaluate("String.metaClass.getAnswer = {-> return 42}"); // privileged operation
-        assertEvaluate(new StaticWhitelist(), 42, "'existence'.getAnswer()");
-        assertEvaluate(new StaticWhitelist(), 42, "'existence'.answer");
-        assertRejected(new GenericWhitelist(), "staticMethod java.lang.System exit int", "def c = System.&exit; c(1)");
+        try {
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "'existence'.getAnswer()"));
+            assertThrows(MissingPropertyException.class, () -> evaluate(new StaticWhitelist(), "'existence'.answer"));
+            assertRejected(new GenericWhitelist(), "staticMethod java.lang.System exit int", "def c = System.&exit; c(1)");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(String.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathClosureMetaMethodRejected() throws Exception {
+        // Privileged code outside the sandbox overrides Integer.plus via ClosureMetaMethod.
+        // The closure body calls System.getenv, which is not in StaticWhitelist.
+        new GroovyShell().evaluate(
+            "Integer.metaClass.plus = { other -> System.getenv(String.valueOf(other)) }");
+        try {
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1 + 2"));
+            // (int) cast still produces an Integer receiver; same MetaClass, same guard applies.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "((int) 1.8) + 1"));
+            // Explicitly boxed Integer via valueOf (not an auto-boxed literal); same MetaClass applies.
+            // BlanketWhitelist: Integer.valueOf is not in StaticWhitelist/GenericWhitelist; the guard fires before any whitelisted method executes.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new BlanketWhitelist(), "Integer.valueOf(1) + 2"));
+            // Integer receiver with Long operand: left operand drives dispatch, override still fires.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1 + 2L"));
+            // Integer receiver with BigDecimal operand (1.0 is BigDecimal in Groovy).
+            // BlanketWhitelist: Integer.valueOf is not in GenericWhitelist; the guard fires before any whitelisted method executes.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new BlanketWhitelist(), "1 + 1.0"));
+            // Long and BigDecimal use their own MetaClasses, unaffected by the Integer override.
+            assertEvaluate(new StaticWhitelist(), 3L, "1L + 2L");
+            assertEvaluate(new StaticWhitelist(), 3L, "1L + 2");
+            assertEvaluate(new StaticWhitelist(), new BigDecimal("3.0"), "1.0 + 2.0");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(Integer.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathClosureMetaMethodRejectedForLong() throws Exception {
+        new GroovyShell().evaluate(
+            "Long.metaClass.plus = { other -> System.getenv(String.valueOf(other)) }");
+        try {
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1L + 2L"));
+            // Explicitly boxed Long via valueOf; same MetaClass applies.
+            // BlanketWhitelist: Long.valueOf is not in StaticWhitelist/GenericWhitelist; the guard fires before any whitelisted method executes.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new BlanketWhitelist(), "Long.valueOf(1L) + 2L"));
+            // Long receiver with Integer operand: left operand drives dispatch, override still fires.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1L + 2"));
+            // Groovy as-cast to Long produces the same MetaClass as a Long literal.
+            // BlanketWhitelist: Integer.valueOf is not in StaticWhitelist/GenericWhitelist; the guard fires before any whitelisted method executes.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new BlanketWhitelist(), "(1 as Long) + 2L"));
+            // Integer uses its own MetaClass, unaffected by the Long override.
+            assertEvaluate(new StaticWhitelist(), 3, "1 + 2");
+            assertEvaluate(new StaticWhitelist(), 3L, "1 + 2L");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(Long.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathAllOperatorsGuarded() throws Exception {
+        // Override all NUMBER_MATH_NAMES operators on Integer to confirm the guard applies to each, not just plus.
+        new GroovyShell().evaluate("""
+                def f = { other -> System.getenv(String.valueOf(other)) }
+                Integer.metaClass.plus = f
+                Integer.metaClass.minus = f
+                Integer.metaClass.multiply = f
+                Integer.metaClass.div = f
+                Integer.metaClass.or = f
+                Integer.metaClass.and = f
+                Integer.metaClass.xor = f
+                Integer.metaClass.intdiv = f
+                Integer.metaClass.mod = f
+                Integer.metaClass.leftShift = f
+                Integer.metaClass.rightShift = f
+                Integer.metaClass.rightShiftUnsigned = f
+                """);
+        try {
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "1 + 2"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "3 - 1"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "3 * 2"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "6 / 2"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "3 | 1"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "3 & 1"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "3 ^ 1"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "6.intdiv(2)"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "7 % 3"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "1 << 2"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "8 >> 1"));
+            assertThrows(MissingMethodException.class, () -> evaluate(new StaticWhitelist(), "8 >>> 1"));
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(Integer.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathClosureMetaMethodRejectedForBigDecimal() throws Exception {
+        // 1.0 is BigDecimal in Groovy by default; BigDecimal extends Number so it enters the fast-path.
+        new GroovyShell().evaluate(
+            "BigDecimal.metaClass.plus = { other -> System.getenv(String.valueOf(other)) }");
+        try {
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1.0 + 2.0"));
+            // BigDecimal receiver with Integer operand.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1.0 + 2"));
+            // Double (1.0d) and Integer use their own MetaClasses, unaffected.
+            assertEvaluate(new StaticWhitelist(), 3.0d, "1.0d + 2.0d");
+            assertEvaluate(new StaticWhitelist(), 3, "1 + 2");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(BigDecimal.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathClosureMetaMethodRejectedForDouble() throws Exception {
+        new GroovyShell().evaluate(
+            "Double.metaClass.plus = { other -> System.getenv(String.valueOf(other)) }");
+        try {
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1.0d + 2.0d"));
+            // (double) cast of a BigDecimal literal produces a Double receiver.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "((double) 1.0) + 2.0d"));
+            // Double receiver with Integer operand.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1.0d + 2"));
+            // BigDecimal (1.0 literal) and Integer use their own MetaClasses, unaffected.
+            assertEvaluate(new StaticWhitelist(), new BigDecimal("3.0"), "1.0 + 2.0");
+            assertEvaluate(new StaticWhitelist(), 3, "1 + 2");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(Double.class);
+        }
+    }
+
+    /**
+     * {@code **} is NOT in {@code NUMBER_MATH_NAMES}; it goes through the DGM loop. {@code GenericWhitelist}
+     * permits {@code DefaultGroovyMethods.power(Integer, Integer)}. Unlike the Number fast-path, the DGM
+     * loop invokes the DGM static method directly and does NOT dispatch through MetaClass, so a
+     * {@code ClosureMetaMethod} override installed outside the sandbox is ignored.
+     */
+    @Issue("SECURITY-3977")
+    @Test public void powerOperatorDgmPathUnaffectedByClosureMetaMethodOverride() throws Exception {
+        new GroovyShell().evaluate(
+            "Integer.metaClass.power = { other -> 'BYPASSED' }");
+        try {
+            // DGM path invokes DefaultGroovyMethods.power directly; ClosureMetaMethod override ignored.
+            assertEvaluate(new GenericWhitelist(), 8, "2 ** 3");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(Integer.class);
+        }
+    }
+
+    @Issue("SECURITY-3977")
+    @Test public void numberFastPathClosureMetaMethodRejectedForBigInteger() throws Exception {
+        // 1G is BigInteger in Groovy.
+        new GroovyShell().evaluate(
+            "BigInteger.metaClass.plus = { other -> System.getenv(String.valueOf(other)) }");
+        try {
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1G + 2G"));
+            // BigInteger receiver with Integer operand.
+            assertThrows(MissingMethodException.class,
+                () -> evaluate(new StaticWhitelist(), "1G + 2"));
+            // Integer uses its own MetaClass, unaffected.
+            assertEvaluate(new StaticWhitelist(), 3, "1 + 2");
+        } finally {
+            GroovySystem.getMetaClassRegistry().removeMetaClass(BigInteger.class);
+        }
     }
 
     @Issue("JENKINS-28277")
