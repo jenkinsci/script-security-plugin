@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -69,6 +68,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -1743,6 +1743,46 @@ public class SandboxInterceptorTest {
         }
     }
 
+    @Issue("SECURITY-3925")
+    @Test public void blockGroovyASTTransformationClass() throws Exception {
+        assertAnnotationBlocked(GroovyASTTransformationClass.class, """
+                import java.lang.annotation.*
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target([ElementType.TYPE])
+                @org.codehaus.groovy.transform.GroovyASTTransformationClass(['org.codehaus.groovy.transform.ASTTestTransformation'])
+                @interface AliasAstTest { Class value() }
+                return 'alias-defined'
+                """);
+    }
+
+    @Issue("SECURITY-3925")
+    @Test public void blockGroovyASTTransformationClassTwoStep() throws Exception {
+	final String useAlias = """
+                @AliasAstTest(value={ throw new RuntimeException('RCE') })
+                class Trigger {}
+                return 'trigger-compiled'
+                """;
+
+        GroovyShell shell = new GroovyShell(GroovySandbox.createSecureCompilerConfiguration());
+        try {
+            shell.getClassLoader().parseClass("""
+                    import java.lang.annotation.*
+                    import org.codehaus.groovy.transform.GroovyASTTransformationClass
+                    @Retention(RetentionPolicy.RUNTIME)
+                    @Target([ElementType.TYPE])
+                    @GroovyASTTransformationClass(['org.codehaus.groovy.transform.ASTTestTransformation'])
+                    @interface AliasAstTest { Class value() }
+                    """);
+        } catch (MultipleCompilationErrorsException e) {
+            assertThat(e.getMessage(), containsString("Annotation GroovyASTTransformationClass cannot be used in the sandbox."));
+            final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                    () -> shell.evaluate(useAlias));
+            assertThat(e2.getMessage(), containsString("unable to resolve class AliasAstTest"));
+            return;
+        }
+        shell.evaluate(useAlias);
+    }
+
     @Issue("SECURITY-3792")
     @Test public void forLoopImplicitCastConstructor() throws Throwable {
         // A typed for-each over a Collection element implicitly casts it to the loop type, e.g.
@@ -1779,6 +1819,9 @@ public class SandboxInterceptorTest {
      * @param script The script to check. It should use the annotation via a fully-qualified class name.
      */
     private void assertAnnotationBlocked(Class annotation, String script) {
+        if (!script.contains(annotation.getName())) {
+            throw new IllegalArgumentException("Script must use the FQN " + annotation.getName() + " so the simple-name rewrite works");
+        }
         assertAnnotationBlockedInternal(annotation, script);
         assertAnnotationBlockedInternal(annotation,
                 "import " + annotation.getCanonicalName() + "\n" +
