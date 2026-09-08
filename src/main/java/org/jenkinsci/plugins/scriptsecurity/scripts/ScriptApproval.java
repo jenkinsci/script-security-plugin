@@ -732,7 +732,8 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             PendingClasspathEntry pcp = new PendingClasspathEntry(result.newHash, url, context);
             if (!Jenkins.get().isUseSecurity() ||
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
-                            && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved() || !Objects.equals(entry.getOldPath(), entry.getPath())))) {
+                            && (ADMIN_AUTO_APPROVAL_ENABLED || entry.isShouldBeApproved()
+                                || (ALLOW_ADMIN_APPROVAL_ENABLED && !Objects.equals(entry.getOldPath(), entry.getPath()))))) {
                 LOG.log(Level.FINE, "Classpath entry {0} ({1}) is approved as configured with ADMINISTER permission.", new Object[] {url, result.newHash});
                 ApprovedClasspathEntry acp = new ApprovedClasspathEntry(result.newHash, url);
                 pendingClasspathEntries.remove(pcp);

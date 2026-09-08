@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import org.htmlunit.html.HtmlInput;
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
 
@@ -32,6 +33,7 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Result;
+import hudson.model.TopLevelItem;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
@@ -283,12 +285,12 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
                     assertEquals(1, ScriptApproval.get().getPendingSignatures().size());
                 }
 
-                //Insert new Pending ClassPatch -  - As the user is admin, the behavior does not change
+                //Insert new Pending ClassPath - As the user is admin, the behavior does not change.
+                // SECURITY-3897: with ALLOW_ADMIN_APPROVAL_ENABLED=false (default), configuring() no longer
+                // auto-approves classpath entries for admins, so the entry lands in pending.
                 {
                     ClasspathEntry cpe = new ClasspathEntry(mockJarUrl);
                     ScriptApproval.get().configuring(cpe, ac);
-                    ScriptApproval.get().addPendingClasspathEntry(
-                            new ScriptApproval.PendingClasspathEntry("hash", new URL(mockJarUrl), ac));
                     assertEquals(1, ScriptApproval.get().getPendingClasspathEntries().size());
                 }
             }
@@ -298,21 +300,21 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     /**
-     * Creates and starts a mock HTTP server that serves a dummy JAR file at the path "/library.jar".
-     * <p>
-     * The server listens on a random available port on localhost and responds with a simple string
-     * as the JAR content. This is useful for tests that require a remote JAR resource.
-     * </p>
+     * Creates and starts a mock HTTP server that serves a dummy JAR file at {@code /library.jar}
+     * and {@code /library2.jar}.
+     * The server listens on a random available port on localhost.
      */
     private static @NonNull HttpServer createAndStartMockJarHttpServer() throws IOException {
         HttpServer mockServer = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
-        mockServer.createContext("/library.jar", exchange -> {
-            byte[] responseBytes = "Mock JAR content".getBytes(StandardCharsets.UTF_8);
-            exchange.sendResponseHeaders(200, responseBytes.length);
-            try (exchange; OutputStream os = exchange.getResponseBody()) {
-                os.write(responseBytes);
-            }
-        });
+        for (String path : new String[]{"/library.jar", "/library2.jar"}) {
+            mockServer.createContext(path, exchange -> {
+                byte[] responseBytes = "Mock JAR content".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, responseBytes.length);
+                try (exchange; OutputStream os = exchange.getResponseBody()) {
+                    os.write(responseBytes);
+                }
+            });
+        }
         mockServer.setExecutor(null);
         mockServer.start();
         return mockServer;
@@ -486,6 +488,105 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         // user cannot call getClasspathRenderInfo
         try (ACLContext ctx = ACL.as(User.getById("read", true))) {
             assertThrows(Exception.class, () -> ScriptApproval.get().getClasspathRenderInfo());
+        }
+    }
+    
+    @Issue("SECURITY-3897")
+    @Test
+    public void classpathEntryNotAutoApprovedByAdminWithDefaultFlags() throws Exception {
+        HttpServer mockJarServer = createAndStartMockJarHttpServer();
+        String mockJarUrl = "http:/" + mockJarServer.getAddress() + "/library.jar";
+        String mockJarUrl2 = "http:/" + mockJarServer.getAddress() + "/library2.jar";
+
+        try {
+            r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+            r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy()
+                    .grant(Jenkins.READ, Item.READ, Item.CONFIGURE, Item.BUILD).everywhere().to("dev")
+                    .grant(Jenkins.ADMINISTER).everywhere().to("admin"));
+
+            // Admin creates a job with a classpath entry; entry goes to pending (ALLOW_ADMIN_APPROVAL_ENABLED=false).
+            FreeStyleProject project;
+            try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+                project = r.createFreeStyleProject("test-project");
+                project.getPublishersList().add(new TestGroovyRecorder(
+                        new SecureGroovyScript("1+1", true, List.of(new ClasspathEntry(mockJarUrl)))));
+                project.save();
+            }
+            String hash = ScriptApproval.DEFAULT_HASHER.hashClasspathEntry(new URL(mockJarUrl));
+            assertFalse("Entry must not be auto-approved (ALLOW_ADMIN_APPROVAL_ENABLED=false)",
+                    ScriptApproval.get().getApprovedClasspathEntries().stream()
+                            .anyMatch(a -> hash.equals(a.getHash())));
+
+            // Admin copies the job — XStream deserialization path →
+            // SecureGroovyScript.readResolve() → configuring() with admin auth.
+            // SECURITY-3897: must NOT auto-approve.
+            try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+                r.jenkins.copy((TopLevelItem) project, project.getName() + "-copy");
+            }
+            assertFalse("classpath entry must NOT be auto-approved by admin via job copy",
+                    ScriptApproval.get().getApprovedClasspathEntries().stream()
+                            .anyMatch(a -> hash.equals(a.getHash())));
+            assertTrue("classpath entry must remain in pending queue",
+                    ScriptApproval.get().getPendingClasspathEntries().stream()
+                            .anyMatch(p -> hash.equals(p.getHash())));
+
+            // Admin saves the config form with a changed classpath URL — Stapler DataBoundConstructor path,
+            // oldPath (library.jar) != path (library2.jar), ALLOW_ADMIN_APPROVAL_ENABLED=false blocks auto-approval.
+            JenkinsRule.WebClient wc = r.createWebClient().login("admin");
+            HtmlPage configPage = wc.getPage(project, "configure");
+            HtmlInput pathInput = configPage.getFirstByXPath(
+                    "//input[contains(@class,'secure-groovy-script__classpath-entry-path')]");
+            pathInput.setValueAttribute(mockJarUrl2);
+            r.submit(configPage.getFormByName("config"));
+
+            String hash2 = ScriptApproval.DEFAULT_HASHER.hashClasspathEntry(new URL(mockJarUrl2));
+            assertFalse("classpath entry must NOT be auto-approved even when admin changes path in form",
+                    ScriptApproval.get().getApprovedClasspathEntries().stream()
+                            .anyMatch(a -> hash2.equals(a.getHash())));
+        } finally {
+            mockJarServer.stop(0);
+        }
+    }
+
+    @Issue("SECURITY-3897")
+    @Test
+    public void classpathEntryAutoApprovedByAdminWhenFlagEnabled() throws Exception {
+        HttpServer mockJarServer = createAndStartMockJarHttpServer();
+        String mockJarUrl = "http:/" + mockJarServer.getAddress() + "/library.jar";
+        String mockJarUrl2 = "http:/" + mockJarServer.getAddress() + "/library2.jar";
+
+        try {
+            r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+            r.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy()
+                    .grant(Jenkins.ADMINISTER).everywhere().to("admin"));
+
+            // Create a project with a classpath entry (flag still false — entry goes to pending).
+            FreeStyleProject project;
+            try (ACLContext ctx = ACL.as(User.getById("admin", true))) {
+                project = r.createFreeStyleProject("test-project");
+                project.getPublishersList().add(new TestGroovyRecorder(
+                        new SecureGroovyScript("1+1", true, List.of(new ClasspathEntry(mockJarUrl)))));
+                project.save();
+            }
+
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = true;
+
+            // Admin changes the classpath URL via the config form — oldPath (library.jar) != path (library2.jar).
+            // With ALLOW_ADMIN_APPROVAL_ENABLED=true the new entry must be auto-approved.
+            JenkinsRule.WebClient wc = r.createWebClient().login("admin");
+            HtmlPage configPage = wc.getPage(project, "configure");
+            HtmlInput pathInput = configPage.getFirstByXPath(
+                    "//input[contains(@class,'secure-groovy-script__classpath-entry-path')]");
+            pathInput.setValueAttribute(mockJarUrl2);
+            r.submit(configPage.getFormByName("config"));
+
+            String hash2 = ScriptApproval.DEFAULT_HASHER.hashClasspathEntry(new URL(mockJarUrl2));
+            assertTrue("classpath entry must be auto-approved when ALLOW_ADMIN_APPROVAL_ENABLED=true and admin changes path",
+                    ScriptApproval.get().getApprovedClasspathEntries().stream()
+                            .anyMatch(a -> hash2.equals(a.getHash())));
+        } finally {
+            ScriptApproval.ALLOW_ADMIN_APPROVAL_ENABLED = false;
+            mockJarServer.stop(0);
         }
     }
 
