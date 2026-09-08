@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,6 +69,9 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.transform.BuilderASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1812,6 +1816,316 @@ public class SandboxInterceptorTest {
                 "class Outer { class Inner { File f }; def makeInner() { new Inner(f: ['secret.key']) } }; new Outer().makeInner().f"));
     }
 
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderCustomStrategyFqnForm() throws Exception {
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        @groovy.transform.builder.Builder(
+                                builderStrategy=org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderCustomStrategyImportForm() throws Exception {
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @Builder(builderStrategy=SideEffectingStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @Builder(builderStrategy=SideEffectingStrategy.class)
+                        class Foo { String name }
+                        """));
+        assertThat(e2.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderCustomStrategyAliasForm() throws Exception {
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder as B
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @B(builderStrategy=SideEffectingStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder as B
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @B(builderStrategy=SideEffectingStrategy.class)
+                        class Foo { String name }
+                        """));
+        assertThat(e2.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderCustomStrategyStarImportForm() throws Exception {
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.*
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @Builder(builderStrategy=SideEffectingStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+
+        // An unrelated star import before the builder one must not prevent @Builder from being recognized.
+        SideEffectingStrategy.constructorRan.set(false);
+        final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import java.net.*
+                        import groovy.transform.builder.*
+                        import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SandboxInterceptorTest.SideEffectingStrategy
+                        @Builder(builderStrategy=SideEffectingStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e2.getMessage(), containsString("@Builder cannot use builderStrategy"));
+        assertThat("SideEffectingStrategy constructor must not run", SideEffectingStrategy.constructorRan.get(), is(false));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderShortStrategyWithoutExplicitImport() throws Exception {
+        // Short name with no direct import is rejected regardless of star imports present.
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder
+                        @Builder(builderStrategy=SimpleStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+
+        final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder
+                        import groovy.transform.builder.*
+                        @Builder(builderStrategy=SimpleStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e2.getMessage(), containsString("@Builder cannot use builderStrategy"));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void allowBuilderWithoutStrategy() throws Exception {
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.Builder
+                @Builder
+                class Foo { String name }
+                """);
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void allowBuilderWithAllowedFqnStrategy() throws Exception {
+        // ExternalStrategy requires forClass= so is not included here.
+        for (String strategy : List.of(
+                "groovy.transform.builder.DefaultStrategy",
+                "groovy.transform.builder.DefaultStrategy.class",
+                "groovy.transform.builder.SimpleStrategy",
+                "groovy.transform.builder.SimpleStrategy.class",
+                "groovy.transform.builder.InitializerStrategy",
+                "groovy.transform.builder.InitializerStrategy.class")) {
+            new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                    @groovy.transform.builder.Builder(builderStrategy=%s)
+                    class Foo { String name }
+                    """.formatted(strategy));
+        }
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void allowBuilderWithAllowedImportStrategy() throws Exception {
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.Builder
+                import groovy.transform.builder.SimpleStrategy
+                @Builder(builderStrategy=SimpleStrategy)
+                class Foo { String name }
+                """);
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.Builder
+                import groovy.transform.builder.SimpleStrategy
+                @Builder(builderStrategy=SimpleStrategy.class)
+                class Foo { String name }
+                """);
+        // @Builder recognized via star import + strategy via explicit import or FQN: both must pass.
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.*
+                import groovy.transform.builder.SimpleStrategy
+                @Builder(builderStrategy=SimpleStrategy)
+                class Foo { String name }
+                """);
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.*
+                @Builder(builderStrategy=groovy.transform.builder.SimpleStrategy)
+                class Foo { String name }
+                """);
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void allowBuilderWithAllowedAliasStrategyViaStarAnnotation() throws Exception {
+        // @Builder recognized via star import + strategy via alias: must pass.
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.*
+                import groovy.transform.builder.SimpleStrategy as SS
+                @Builder(builderStrategy=SS)
+                class Foo { String name }
+                """);
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.*
+                import groovy.transform.builder.SimpleStrategy as SS
+                @Builder(builderStrategy=SS.class)
+                class Foo { String name }
+                """);
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void allowBuilderWithAllowedAliasStrategy() throws Exception {
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.Builder
+                import groovy.transform.builder.SimpleStrategy as SS
+                @Builder(builderStrategy=SS)
+                class Foo { String name }
+                """);
+        new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                import groovy.transform.builder.Builder
+                import groovy.transform.builder.SimpleStrategy as SS
+                @Builder(builderStrategy=SS.class)
+                class Foo { String name }
+                """);
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderStrategyStarImportOnly() throws Exception {
+        // Star imports are not accepted for strategy names (see resolvedNameIn). Users must use a
+        // FQN or an explicit single-class import. Both forms below are blocked even though
+        // groovy.transform.builder.* is present.
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.*
+                        @Builder(builderStrategy=SimpleStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+
+        final MultipleCompilationErrorsException e2 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.*
+                        @Builder(builderStrategy=SimpleStrategy.class)
+                        class Foo { String name }
+                        """));
+        assertThat(e2.getMessage(), containsString("@Builder cannot use builderStrategy"));
+
+        final MultipleCompilationErrorsException e3 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import java.net.*
+                        import groovy.transform.builder.*
+                        @Builder(builderStrategy=InitializerStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e3.getMessage(), containsString("@Builder cannot use builderStrategy"));
+
+        // FQN and aliased @Builder forms must also reject star-only strategy.
+        final MultipleCompilationErrorsException e4 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.*
+                        @groovy.transform.builder.Builder(builderStrategy=SimpleStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e4.getMessage(), containsString("@Builder cannot use builderStrategy"));
+
+        final MultipleCompilationErrorsException e5 = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder as B
+                        import groovy.transform.builder.*
+                        @B(builderStrategy=SimpleStrategy)
+                        class Foo { String name }
+                        """));
+        assertThat(e5.getMessage(), containsString("@Builder cannot use builderStrategy"));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void blockBuilderUnknownExpressionShape() throws Exception {
+        // String literal is a ConstantExpression, rejected fail-closed at CONVERSION phase.
+        // Groovy independently rejects it at SEMANTIC_ANALYSIS (wrong type for a Class member).
+        // The test exercises the fqnOf=null in resolvedNameIn(null) path.
+        final MultipleCompilationErrorsException e = assertThrows(MultipleCompilationErrorsException.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import groovy.transform.builder.Builder
+                        @Builder(builderStrategy="groovy.transform.builder.SimpleStrategy")
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), containsString("@Builder cannot use builderStrategy"));
+    }
+
+    @Issue("SECURITY-3925")
+    @Test
+    public void unrelatedAnnotationNamedBuilderIsNotBlocked() throws Exception {
+        Exception e = assertThrows(Exception.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        @com.example.Builder(builderStrategy=foo)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), not(containsString("@Builder cannot use builderStrategy")));
+
+        e = assertThrows(Exception.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import com.example.Builder
+                        @Builder(builderStrategy=foo)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), not(containsString("@Builder cannot use builderStrategy")));
+
+        // Alias import of an unrelated Builder must also not trigger the check.
+        e = assertThrows(Exception.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import com.example.Builder as B
+                        @B(builderStrategy=foo)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), not(containsString("@Builder cannot use builderStrategy")));
+
+        // Star import that doesn't resolve to groovy.transform.builder.Builder must not trigger the check.
+        e = assertThrows(Exception.class,
+                () -> new GroovyShell(GroovySandbox.createSecureCompilerConfiguration()).getClassLoader().parseClass("""
+                        import com.example.*
+                        @Builder(builderStrategy=foo)
+                        class Foo { String name }
+                        """));
+        assertThat(e.getMessage(), not(containsString("@Builder cannot use builderStrategy")));
+    }
+
     /**
      * Checks that the annotation is blocked from being used in the provided script whether it is imported or used via
      * fully-qualified class name.
@@ -1834,5 +2148,15 @@ public class SandboxInterceptorTest {
         assertThat(e.getMessage(), anyOf(
                 containsString("Annotation " + annotation.getName() + " cannot be used in the sandbox"),
                 containsString("Annotation " + annotation.getSimpleName() + " cannot be used in the sandbox")));
+    }
+
+    /** Gadget: proves @Builder(builderStrategy=X) instantiates X at compile time outside the sandbox. */
+    public static class SideEffectingStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
+        public static final AtomicBoolean constructorRan = new AtomicBoolean(false);
+        public SideEffectingStrategy() {
+            constructorRan.set(true);
+            new Exception("SideEffectingStrategy instantiated outside sandbox").printStackTrace(System.err);
+        }
+        @Override public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {}
     }
 }

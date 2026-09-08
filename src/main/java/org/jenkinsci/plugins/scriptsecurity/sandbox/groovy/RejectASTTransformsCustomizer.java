@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import groovy.lang.Grab;
 import groovy.lang.GrabConfig;
 import groovy.lang.GrabExclude;
@@ -37,6 +38,9 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
@@ -48,8 +52,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class RejectASTTransformsCustomizer extends CompilationCustomizer {
+    private static final Set<String> BUILDER_ANNOTATIONS = Set.of("groovy.transform.builder.Builder");
+
+    private static final Set<String> ALLOWED_BUILDER_STRATEGIES = Set.of(
+            "groovy.transform.builder.DefaultStrategy",
+            "groovy.transform.builder.SimpleStrategy",
+            "groovy.transform.builder.ExternalStrategy",
+            "groovy.transform.builder.InitializerStrategy");
+
     private static final List<String> BLOCKED_TRANSFORMS = Collections.unmodifiableList(Arrays.asList(ASTTest.class.getCanonicalName(), Grab.class.getCanonicalName(),
             GrabConfig.class.getCanonicalName(), GrabExclude.class.getCanonicalName(), GrabResolver.class.getCanonicalName(),
             Grapes.class.getCanonicalName(), AnnotationCollector.class.getCanonicalName(),
@@ -91,6 +104,52 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
             super.visitImports(node);
         }
 
+        /** Returns the dot-joined name of a name/FQN expression at CONVERSION phase, or null for unrecognised shapes. */
+        @CheckForNull
+        private static String fqnOf(Expression expr) {
+            if (expr instanceof VariableExpression ve) {
+                return ve.getName();
+            }
+            if (expr instanceof PropertyExpression pe) {
+                String prop = pe.getPropertyAsString();
+                if (prop == null) {
+                    return null;
+                }
+                String object = fqnOf(pe.getObjectExpression());
+                if (object == null) {
+                    return null;
+                }
+                if ("class".equals(prop)) {
+                    return object;
+                }
+                return object + "." + prop;
+            }
+            return null;
+        }
+
+        private static boolean resolvedNameIn(@CheckForNull String name, Set<String> allowed, ModuleNode module, boolean allowStarImports) {
+            if (name == null) {
+                return false;
+            }
+            if (name.contains(".")) {
+                return allowed.contains(name);
+            }
+            for (ImportNode imp : module.getImports()) {
+                if (name.equals(imp.getAlias())) {
+                    return allowed.contains(imp.getType().getName());
+                }
+            }
+            // At CONVERSION phase we cannot tell which class Groovy will actually load for a star-imported short name.
+            if (allowStarImports) {
+                for (ImportNode imp : module.getStarImports()) {
+                    if (imp.getPackageName() != null && allowed.contains(imp.getPackageName() + name)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         private void checkImportForBlockedAnnotation(ImportNode node) {
             if (node != null && node.getType() != null) {
                 for (String blockedAnnotation : getBlockedTransforms()) {
@@ -119,6 +178,16 @@ public class RejectASTTransformsCustomizer extends CompilationCustomizer {
                 // which bypasses the sandbox. See SECURITY-359 for the original discussion.
                 if (an.getMember("extensions") != null) {
                     throw new SecurityException("Annotation " + an.getClassNode().getName() + " cannot be used in the sandbox with an 'extensions' member.");
+                }
+                // BuilderASTTransformation instantiates the builderStrategy class before checking it is a
+                // valid BuilderStrategy, so any no-arg constructor runs outside the sandbox. See SECURITY-3925.
+                if (resolvedNameIn(an.getClassNode().getName(), BUILDER_ANNOTATIONS, source.getAST(), true)) {
+                    Expression strategyMember = an.getMember("builderStrategy");
+                    if (strategyMember != null) {
+                        if (!resolvedNameIn(fqnOf(strategyMember), ALLOWED_BUILDER_STRATEGIES, source.getAST(), false)) {
+                            throw new SecurityException("@Builder cannot use builderStrategy " + strategyMember.getText() + " in the sandbox.");
+                        }
+                    }
                 }
             }
             super.visitAnnotations(node);
