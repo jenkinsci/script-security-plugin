@@ -36,12 +36,18 @@ import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 
 import java.beans.Introspector;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -332,19 +338,25 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
         URLClassLoader urlcl = null;
         ClassLoader memoryProtectedLoader = null;
         List<ClasspathEntry> cp = getClasspath();
-        if (!cp.isEmpty()) {
-            List<URL> urlList = new ArrayList<>(cp.size());
-            
-            for (ClasspathEntry entry : cp) {
-                ScriptApproval.get().using(entry);
-                urlList.add(entry.getURL());
-            }
-            
-            loader = urlcl = new ClasspathURLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
-        }
+        List<Path> tempClasspathFiles = new ArrayList<>();
         boolean canDoCleanup = false;
 
         try {
+            if (!cp.isEmpty()) {
+                List<URL> urlList = new ArrayList<>(cp.size());
+
+                for (ClasspathEntry entry : cp) {
+                    // materialize remote entries to a local file so the approval check and the class loader cannot
+                    // observe different responses from an attacker controlled server
+                    ClasspathEntry entryToLoad = localize(entry, tempClasspathFiles);
+                    // approve/load the local bytes but keep the original URL for any pending/approved entry the user sees
+                    ScriptApproval.get().using(entry, entryToLoad.getURL());
+                    urlList.add(entryToLoad.getURL());
+                }
+
+                loader = urlcl = new ClasspathURLClassLoader(urlList.toArray(new URL[urlList.size()]), loader);
+            }
+
             loader = GroovySandbox.createSecureClassLoader(loader);
 
             Field loaderF = null;
@@ -388,6 +400,37 @@ public final class SecureGroovyScript extends AbstractDescribableImpl<SecureGroo
             if (urlcl != null) {
                 urlcl.close();
             }
+
+            for (Path tempClasspathFile : tempClasspathFiles) {
+                try {
+                    Files.deleteIfExists(tempClasspathFile);
+                } catch (IOException x) {
+                    LOGGER.log(Level.WARNING, "failed to delete temporary classpath file " + tempClasspathFile, x);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a classpath entry whose bytes are stable for the duration of {@link #evaluate}, so that the approval hash
+     * check and the {@link URLClassLoader} load the identical bytes
+     */
+    private static @NonNull ClasspathEntry localize(@NonNull ClasspathEntry entry, @NonNull List<Path> tempFiles) throws IOException {
+        URL url = entry.getURL();
+        // class directories are rejected by ScriptApproval.using, leave that check to it rather than trying to copy one
+        if ("file".equals(url.getProtocol()) || entry.isClassDirectory()) {
+            return entry;
+        }
+        Path tempFile = Files.createTempFile("script-security-classpath", ".jar");
+        tempFiles.add(tempFile);
+        try (InputStream is = url.openStream()) {
+            Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        try {
+            return new ClasspathEntry(tempFile.toUri().toURL().toExternalForm());
+        } catch (MalformedURLException x) {
+            // should not happen for a freshly created temporary file, but fail closed if it somehow does
+            throw new IOException(x);
         }
     }
 

@@ -779,13 +779,23 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
      * @throws UnapprovedClasspathException when the entry is not approved
      */
     public synchronized void using(@NonNull ClasspathEntry entry) throws IOException, UnapprovedClasspathException {
+        using(entry, entry.getURL());
+    }
+
+    /**
+     * Like {@link #using(ClasspathEntry)}, but hashes the contents of {@code contentUrl} rather than
+     * {@code entry.getURL()}. Callers that download a remote classpath entry to a controller-local file (to close the
+     * time-of-check/time-of-use gap) pass the local file as {@code contentUrl}, while {@code entry} keeps the original
+     * URL so that any pending or approved entry a user sees refers to the configured location, not the temporary file.
+     */
+    public synchronized void using(@NonNull ClasspathEntry entry, @NonNull URL contentUrl) throws IOException, UnapprovedClasspathException {
         URL url = entry.getURL();
         // Don't add it to pending if it is a class directory
         if (entry.isClassDirectory()) {
             LOG.log(Level.WARNING, "Classpath {0} is a class directory, which are not allowed.", url);
             throw new UnapprovedClasspathException("classpath entry %s is a class directory, which are not allowed.", url, "");
         }
-        ConversionCheckResult result = checkAndConvertApprovedClasspath(url);
+        ConversionCheckResult result = checkAndConvertApprovedClasspath(contentUrl);
 
         if (!result.approved) {
             // Never approve classpath here.
@@ -796,7 +806,7 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             }
             throw new UnapprovedClasspathException(url, result.newHash);
         }
-        
+
         LOG.log(Level.FINER, "{0} ({1}) had been approved", new Object[] {url, result.newHash});
     }
 

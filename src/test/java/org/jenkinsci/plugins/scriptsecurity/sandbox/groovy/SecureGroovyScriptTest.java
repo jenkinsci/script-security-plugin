@@ -51,13 +51,20 @@ import hudson.security.ACL;
 import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
+import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jenkins.model.Jenkins;
@@ -779,7 +786,140 @@ public class SecureGroovyScriptTest {
             assertEquals(testingDisplayName, b.getDisplayName());
         }
     }
-    
+
+    @Issue("SECURITY-3932")
+    @Test public void classpathBytesSwappedAfterApprovalAreRejected() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        // somejar.jar has no @Whitelisted method, this is the benign JAR an administrator approves
+        final byte[] benignJar = Files.readAllBytes(new File(SecureGroovyScriptTest.class.getResource("somejar.jar").toURI()).toPath());
+        // the test jar contains the @Whitelisted BuildUtil.setDisplayNameWhitelisted, it is never approved
+        final List<File> jars = getAllJarFiles();
+        assertEquals(1, jars.size());
+        final byte[] maliciousJar = Files.readAllBytes(jars.get(0).toPath());
+        assertFalse(Arrays.equals(benignJar, maliciousJar));
+
+        // serve benign bytes for every hash check, but once armed swap to the malicious
+        // JAR on the class loader's fetch (the request after the execution-time hash check)
+        final AtomicBoolean armed = new AtomicBoolean(false);
+        final AtomicInteger armedRequestCount = new AtomicInteger(0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/library.jar", exchange -> {
+            byte[] body;
+            if (!armed.get()) {
+                body = benignJar;
+            } else {
+                body = armedRequestCount.getAndIncrement() == 0 ? benignJar : maliciousJar;
+            }
+            exchange.sendResponseHeaders(200, body.length);
+            try (exchange; OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+        server.setExecutor(null);
+        server.start();
+        try {
+            final String jarUrl = "http://localhost:" + server.getAddress().getPort() + "/library.jar";
+            final String testingDisplayName = "PWNED-BY-SECURITY-3932";
+
+            List<ClasspathEntry> classpath = Collections.singletonList(new ClasspathEntry(jarUrl));
+
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                    String.format(
+                            "import org.jenkinsci.plugins.scriptsecurity.testjar.BuildUtil;"
+                            + "BuildUtil.setDisplayNameWhitelisted(build, \"%s\");"
+                            + "\"\"", testingDisplayName),
+                    true,
+                    classpath
+            )));
+
+            // fail as the classpath is not approved yet
+            {
+                FreeStyleBuild b = p.scheduleBuild2(0).get();
+                r.assertBuildStatus(Result.FAILURE, b);
+                assertNotEquals(testingDisplayName, b.getDisplayName());
+            }
+
+            // approve the (benign) classpath entry, exactly as an administrator would
+            {
+                List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
+                assertNotEquals(0, pcps.size());
+                for (ScriptApproval.PendingClasspathEntry pcp : pcps) {
+                    ScriptApproval.get().approveClasspathEntry(pcp.getHash());
+                }
+            }
+
+            armed.set(true);
+
+            // the class loader must load the same approved bytes that were hashed, so the malicious method never runs
+            {
+                FreeStyleBuild b = p.scheduleBuild2(0).get();
+                r.assertBuildStatus(Result.FAILURE, b);
+                assertNotEquals("malicious @Whitelisted method from an unapproved JAR was executed (TOCTOU)",
+                        testingDisplayName, b.getDisplayName());
+            }
+
+            // only the benign entry is approved, nothing about the malicious JAR was approved
+            assertEquals(1, ScriptApproval.get().getApprovedClasspathEntries().size());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Issue("SECURITY-3932")
+    @Test public void pendingRemoteClasspathShowsOriginalUrl() throws Exception {
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        MockAuthorizationStrategy mockStrategy = new MockAuthorizationStrategy();
+        mockStrategy.grant(Jenkins.READ).everywhere().to("devel");
+        for (Permission p : Item.PERMISSIONS.getPermissions()) {
+            mockStrategy.grant(p).everywhere().to("devel");
+        }
+        r.jenkins.setAuthorizationStrategy(mockStrategy);
+
+        final byte[] jar = Files.readAllBytes(getAllJarFiles().get(0).toPath());
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/library.jar", exchange -> {
+            exchange.sendResponseHeaders(200, jar.length);
+            try (exchange; OutputStream os = exchange.getResponseBody()) {
+                os.write(jar);
+            }
+        });
+        server.setExecutor(null);
+        server.start();
+        try {
+            final String jarUrl = "http://localhost:" + server.getAddress().getPort() + "/library.jar";
+            FreeStyleProject p = r.createFreeStyleProject();
+            p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
+                    "import org.jenkinsci.plugins.scriptsecurity.testjar.BuildUtil;"
+                    + "BuildUtil.setDisplayNameWhitelisted(build, \"ok\"); \"\"",
+                    true,
+                    Collections.singletonList(new ClasspathEntry(jarUrl)))));
+
+            r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+
+            List<ScriptApproval.PendingClasspathEntry> pcps = ScriptApproval.get().getPendingClasspathEntries();
+            assertEquals(1, pcps.size());
+            // the pending entry must reference the configured URL, not the temporary download
+            assertEquals(jarUrl, pcps.get(0).getURL().toExternalForm());
+
+            // Approving that entry must actually take effect on the next run
+            ScriptApproval.get().approveClasspathEntry(pcps.get(0).getHash());
+            FreeStyleBuild b = p.scheduleBuild2(0).get();
+            r.assertBuildStatusSuccess(b);
+            assertEquals("ok", b.getDisplayName());
+        } finally {
+            server.stop(0);
+        }
+    }
+
     @Test public void testClasspathApproval() throws Exception {
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         
