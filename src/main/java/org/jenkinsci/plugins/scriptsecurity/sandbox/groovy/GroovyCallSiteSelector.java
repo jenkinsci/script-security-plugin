@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
@@ -305,9 +306,9 @@ class GroovyCallSiteSelector {
         return null;
     }
 
-    private static Set<Class<?>> types(@NonNull Object o) {
+    private static Set<Class<?>> types(@CheckForNull Object o) {
         Set<Class<?>> types = new LinkedHashSet<>();
-        visitTypes(types, o.getClass());
+        visitTypes(types, o == null ? NullObject.class : o.getClass());
         return types;
     }
     private static void visitTypes(@NonNull Set<Class<?>> types, @NonNull Class<?> c) {

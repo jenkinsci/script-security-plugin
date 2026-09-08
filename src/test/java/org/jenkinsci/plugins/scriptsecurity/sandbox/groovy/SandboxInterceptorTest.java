@@ -426,20 +426,34 @@ public class SandboxInterceptorTest {
         private Unsafe() {}
     }
 
-    /** Expect errors from {@link org.codehaus.groovy.runtime.NullObject}. */
-    @Issue("kohsuke/groovy-sandbox #15")
-    @Test public void nullPointerException() throws Exception {
-        final NullPointerException e = assertThrows(NullPointerException.class,
-                () -> evaluate(new ProxyWhitelist(), "def x = null; x.member"));
-        assertEquals(Functions.printThrowable(e), "Cannot get property 'member' on null object", e.getMessage());
+    /** Calls on null receivers (represented by {@link org.codehaus.groovy.runtime.NullObject}) are intercepted by the sandbox. */
+    @Issue({"kohsuke/groovy-sandbox #15", "SECURITY-3931"})
+    @Test public void nullReceiverIsRejectedBySandbox() throws Exception {
+        // SECURITY-3931: null property access throws NPE directly rather than creating a pending approval
+        // entry for broad signatures like getProperty/setProperty, which would be misleading for a script bug.
+        NullPointerException getNpe = assertThrows(NullPointerException.class, () -> evaluate(new ProxyWhitelist(), "def x = null; x.member"));
+        assertThat(getNpe.getMessage(), containsString("Cannot get property 'member' on null object"));
 
-        final NullPointerException e2 = assertThrows(NullPointerException.class,
-                () -> evaluate(new ProxyWhitelist(), "def x = null; x.member = 42"));
-        assertEquals(Functions.printThrowable(e2), "Cannot set property 'member' on null object", e2.getMessage());
+        NullPointerException setNpe = assertThrows(NullPointerException.class, () -> evaluate(new ProxyWhitelist(), "def x = null; x.member = 42"));
+        assertThat(setNpe.getMessage(), containsString("Cannot set property 'member' on null object"));
 
-        final NullPointerException e3 = assertThrows(NullPointerException.class,
-                () -> evaluate(new ProxyWhitelist(), "def x = null; x.member()"));
-        assertEquals(Functions.printThrowable(e3), "Cannot invoke method member() on null object", e3.getMessage());
+        // SECURITY-3931: calling an unknown method on null now throws NPE (Groovy's natural behavior)
+        // rather than routing through NullObject.invokeMethod (which would trigger whitelist rejection).
+        NullPointerException npe = assertThrows(NullPointerException.class, () -> evaluate(new ProxyWhitelist(), "def x = null; x.member()"));
+        assertThat(npe.getMessage(), containsString("Cannot invoke method member() on null object"));
+
+        // null[0] dispatches through NullObject at runtime regardless of static type, so Groovy may pick any
+        // getAt overload non-deterministically. Assert rejection without pinning the specific overload.
+        assertThrows(RejectedAccessException.class, () -> evaluate(new ProxyWhitelist(), "def x = null; x[0]"));
+
+        assertRejected(new ProxyWhitelist(), "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.util.List int java.lang.Object",
+                "def x = null; x[0] = 1");
+
+        assertThrows(MissingPropertyException.class,
+                () -> evaluate(new ProxyWhitelist(), "def x = null; x.@someAttr"));
+
+        assertThrows(MissingPropertyException.class,
+                () -> evaluate(new ProxyWhitelist(), "def x = null; x.@someAttr = 1"));
     }
 
     /**
@@ -2336,5 +2350,18 @@ public class SandboxInterceptorTest {
             new Exception("SideEffectingStrategy instantiated outside sandbox").printStackTrace(System.err);
         }
         @Override public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {}
+    }
+
+    @Issue("SECURITY-3931")
+    @Test
+    public void nullReceiverUseShouldNotBypassSandbox() throws Exception {
+        assertRejected(
+                new GenericWhitelist(),
+                "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods use java.lang.Object java.lang.Class groovy.lang.Closure",
+                """
+                        null.use(org.codehaus.groovy.runtime.ProcessGroovyMethods) {
+                          ['echo', 'pwned'].execute()
+                        }
+                        """);
     }
 }

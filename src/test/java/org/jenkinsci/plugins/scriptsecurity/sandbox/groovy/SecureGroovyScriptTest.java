@@ -1524,7 +1524,8 @@ public class SecureGroovyScriptTest {
 
     @Issue("SECURITY-1465")
     @Test public void blockCastingUnsafeUserDefinedImplementationsOfCollection() throws Exception {
-        // See additional info on this test case in `SandboxTransformerTest.sandboxWillNotCastNonStandardCollections()` over in groovy-sandbox.
+        // The closure returns null from toArray() on the first call (the i==0 branch). The snapshot
+        // approach detects this and throws rather than proceeding with a null snapshot.
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "def i = 0\n" +
@@ -1537,18 +1538,18 @@ public class SecureGroovyScriptTest {
                 "} as Collection) as File) as Object[]", true, null)));
         FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
         // Before the security fix, fails with FileNotFoundException, bypassing the sandbox!
-        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+        r.assertLogContains("toArray() must not return null", b);
     }
 
-    @Issue("SECURITY-1465")
+    @Issue({"SECURITY-1465", "SECURITY-3923"})
     @Test public void blockCastingSafeUserDefinedImplementationsOfCollection() throws Exception {
+        // The closure returns a consistent list from toArray(). The snapshot is safe to use,
+        // but new File(String) is not whitelisted, so the cast is rejected.
         FreeStyleProject p = r.createFreeStyleProject();
         p.getPublishersList().add(new TestGroovyRecorder(new SecureGroovyScript(
                 "({-> return ['secret.txt'] as Object[]} as Collection) as File", true, null)));
         FreeStyleBuild b = r.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0));
-        // Before the security fix, fails because `new File(String)` is not whitelisted, so not a problem, but we have
-        // no good way to distinguish this case from the one in blockCastingUnsafeUserDefinedImplementationsOfCollection.
-        r.assertLogContains("Casting non-standard Collections to a type via constructor is not supported", b);
+        r.assertLogContains("new java.io.File java.lang.String", b); // sandbox rejection: new File(String) not whitelisted
     }
 
     @Issue("SECURITY-1465")

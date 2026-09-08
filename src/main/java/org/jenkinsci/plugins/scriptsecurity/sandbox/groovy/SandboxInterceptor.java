@@ -25,6 +25,7 @@
 package org.jenkinsci.plugins.scriptsecurity.sandbox.groovy;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
@@ -50,6 +51,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ProcessGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -169,25 +171,38 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 }
             }
 
+            // SECURITY-3931: null receivers are substituted with NullObject in Checker.checkedCall.
+            // If no method was found on NullObject, throw NPE as Groovy normally would rather than
+            // routing through invokeMethod, which would trigger whitelist rejection or category dispatch.
+            if (receiver instanceof NullObject) {
+                throw new NullPointerException("Cannot invoke method " + method + "() on null object");
+            }
+
             // if no matching method, look for catchAll "invokeMethod"
             try {
-                receiver.getClass().getMethod("invokeMethod", String.class, Object.class);
+                receiverClass(receiver).getMethod("invokeMethod", String.class, Object.class);
                 return onMethodCall(invoker, receiver, "invokeMethod", method, args);
             } catch (NoSuchMethodException e) {
                 // fall through
             }
 
             // no such method exists
-            throw new MissingMethodException(method, receiver.getClass(), args);
+            throw new MissingMethodException(method, receiverClass(receiver), args);
         } else if (StaticWhitelist.isPermanentlyBlacklistedMethod(m)) {
             throw StaticWhitelist.rejectMethod(m);
         } else if (permitsMethod(whitelist, m, receiver, args)) {
             return super.onMethodCall(invoker, receiver, method, args);
         } else if (method.equals("invokeMethod") && args.length == 2 && args[0] instanceof String && args[1] instanceof Object[]) {
-            throw StaticWhitelist.rejectMethod(m, EnumeratingWhitelist.getName(receiver.getClass()) + " " + args[0] + printArgumentTypes((Object[]) args[1]));
+            throw StaticWhitelist.rejectMethod(m, EnumeratingWhitelist.getName(receiverClass(receiver)) + " " + args[0] + printArgumentTypes((Object[]) args[1]));
         } else {
             throw rejectMethod(m);
         }
+    }
+
+    // SECURITY-3931: groovy-sandbox now routes null receivers through the interceptor chain.
+    // Use NullObject.class wherever receiver.getClass() was called, to avoid NPE.
+    private static Class<?> receiverClass(Object receiver) {
+        return receiver == null ? NullObject.class : receiver.getClass();
     }
 
     @Override public Object onNewInstance(GroovyInterceptor.Invoker invoker, Class receiver, Object... args) throws Throwable {
@@ -239,6 +254,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
         if (receiver instanceof Script && !property.equals("binding") && !property.equals("metaClass")) {
             return super.onSetProperty(invoker, receiver, property, value);
         }
+        if (receiver == null) {
+            throw new NullPointerException("Cannot set property '" + property + "' on null object");
+        }
         Rejector rejector = null; // avoid creating exception objects unless and until thrown
         // https://github.com/kohsuke/groovy-sandbox/issues/7 need to explicitly check for getters and setters:
         Object[] valueArg = new Object[] {value};
@@ -262,7 +280,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 preCheckArgumentCasts(setPropertyMethod, propertyValueArgs);
                 return super.onSetProperty(invoker, receiver, property, value);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectMethod(setPropertyMethod, receiver.getClass().getName() + "." + property);
+                rejector = () -> StaticWhitelist.rejectMethod(setPropertyMethod, receiverClass(receiver).getName() + "." + property);
             }
         }
         final Field field = GroovyCallSiteSelector.field(receiver, property);
@@ -310,7 +328,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
                 mpe = x; // throw only if we are not whitelisted
             }
         }
-        if (property.equals("length") && receiver.getClass().isArray()) {
+        if (receiver == null) {
+            throw new NullPointerException("Cannot get property '" + property + "' on null object");
+        }
+        if (property.equals("length") && receiverClass(receiver).isArray()) {
             return super.onGetProperty(invoker, receiver, property);
         }
         Rejector rejector = null;
@@ -396,7 +417,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
             if (whitelist.permitsMethod(getPropertyMethod, receiver, propertyArg)) {
                 return super.onGetProperty(invoker, receiver, property);
             } else if (rejector == null) {
-                rejector = () -> StaticWhitelist.rejectMethod(getPropertyMethod, receiver.getClass().getName() + "." + property);
+                rejector = () -> StaticWhitelist.rejectMethod(getPropertyMethod, receiverClass(receiver).getName() + "." + property);
             }
         }
         if (receiver instanceof Class) {
@@ -435,7 +456,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     public Object onSuperCall(Invoker invoker, Class senderType, Object receiver, String method, Object... args) throws Throwable {
         Method m = GroovyCallSiteSelector.method(receiver, method, args);
         if (m == null) {
-            throw new RejectedAccessException("No such method found: super.method " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + method + printArgumentTypes(args));
+            throw new RejectedAccessException("No such method found: super.method " + EnumeratingWhitelist.getName(receiverClass(receiver)) + " " + method + printArgumentTypes(args));
         } else if (whitelist.permitsMethod(m, receiver, args)) {
             return super.onSuperCall(invoker, senderType, receiver, method, args);
         } else {
@@ -444,7 +465,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     private static MissingPropertyException unclassifiedField(Object receiver, String property) {
-        return new MissingPropertyException("No such field found: field " + EnumeratingWhitelist.getName(receiver.getClass()) + " " + property);
+        return new MissingPropertyException("No such field found: field " + EnumeratingWhitelist.getName(receiverClass(receiver)) + " " + property);
     }
 
     // TODO Java 8: @FunctionalInterface
@@ -501,7 +522,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onGetArray(Invoker invoker, Object receiver, Object index) throws Throwable {
-        if (receiver.getClass().isArray() && index instanceof Integer) {
+        if (receiverClass(receiver).isArray() && index instanceof Integer) {
             return super.onGetArray(invoker, receiver, index);
         }
         Object[] args = new Object[] {index};
@@ -528,7 +549,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
     }
 
     @Override public Object onSetArray(Invoker invoker, Object receiver, Object index, Object value) throws Throwable {
-        if (receiver.getClass().isArray() && index instanceof Integer) {
+        if (receiverClass(receiver).isArray() && index instanceof Integer) {
             return super.onSetArray(invoker, receiver, index, value);
         }
         Object[] args = new Object[] {index, value};
@@ -581,7 +602,7 @@ final class SandboxInterceptor extends GroovyInterceptor {
      */
     private static boolean isSyntheticMethod(Object receiver, Method method) {
         try {
-            return receiver.getClass().getDeclaredMethod(method.getName(), String.class, Object.class).isSynthetic();
+            return receiverClass(receiver).getDeclaredMethod(method.getName(), String.class, Object.class).isSynthetic();
         } catch (NoSuchMethodException e) {
             // Some unusual case, e.g. the method is defined in a superclass, so we return false and intercept the call just in case.
         }
@@ -597,25 +618,40 @@ final class SandboxInterceptor extends GroovyInterceptor {
         return b.toString();
     }
 
-    private static boolean permitsFieldGet(@NonNull Whitelist whitelist, @NonNull Field field, @NonNull Object receiver) {
+    private static @CheckForNull MetaMethod findMetaMethod(@CheckForNull Object receiver, @NonNull String method, @NonNull Object[] args) {
+        if (receiver == null) return null;
+        Class<?>[] types = new Class[args.length];
+        for (int i = 0; i < types.length; i++) {
+            Object arg = args[i];
+            types[i] = arg == null ? /* is this right? */void.class : arg.getClass();
+        }
+        try {
+            return DefaultGroovyMethods.getMetaClass(receiver).pickMethod(method, types);
+        } catch (GroovyRuntimeException x) { // ambiguous call, supposedly
+            LOGGER.log(Level.FINE, "could not find metamethod for " + receiverClass(receiver) + "." + method + Arrays.toString(types), x);
+            return null;
+        }
+    }
+
+    private static boolean permitsFieldGet(@NonNull Whitelist whitelist, @NonNull Field field, @CheckForNull Object receiver) {
         if (Modifier.isStatic(field.getModifiers())) {
             return whitelist.permitsStaticFieldGet(field);
         }
-        return whitelist.permitsFieldGet(field, receiver);
+        return whitelist.permitsFieldGet(field, receiver == null ? NullObject.getNullObject() : receiver);
     }
 
-    private static boolean permitsFieldSet(@NonNull Whitelist whitelist, @NonNull Field field, @NonNull Object receiver, @CheckForNull Object value) {
+    private static boolean permitsFieldSet(@NonNull Whitelist whitelist, @NonNull Field field, @CheckForNull Object receiver, @CheckForNull Object value) {
         if (Modifier.isStatic(field.getModifiers())) {
             return whitelist.permitsStaticFieldSet(field, value);
         }
-        return whitelist.permitsFieldSet(field, receiver, value);
+        return whitelist.permitsFieldSet(field, receiver == null ? NullObject.getNullObject() : receiver, value);
     }
 
-    private static boolean permitsMethod(@NonNull Whitelist whitelist, @NonNull Method method, @NonNull Object receiver, @NonNull Object[] args) {
+    private static boolean permitsMethod(@NonNull Whitelist whitelist, @NonNull Method method, @CheckForNull Object receiver, @NonNull Object[] args) {
         if (Modifier.isStatic(method.getModifiers())) {
             return whitelist.permitsStaticMethod(method, args);
         }
-        return whitelist.permitsMethod(method, receiver, args);
+        return whitelist.permitsMethod(method, receiver == null ? NullObject.getNullObject() : receiver, args);
     }
 
     public static RejectedAccessException rejectMethod(@NonNull Method m) {
