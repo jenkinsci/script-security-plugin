@@ -458,6 +458,38 @@ public class SandboxInterceptorTest {
     }
 
     /**
+     * Groovy dispatches a call on a null receiver as a call on
+     * {@link org.codehaus.groovy.runtime.NullObject}. When NullObject has no such method, such as
+     * {@code null.trim()}, the call throws NPE exactly as it always did. But NullObject does declare
+     * a handful of real methods, and since SECURITY-3931 those resolve and are then checked against
+     * the whitelist like any other call. {@code generic-whitelist} had no NullObject entries, so
+     * these long-standing idioms started being rejected.
+     *
+     * <p>
+     * This test covers every NullObject entry added to {@code generic-whitelist}, asserting each one
+     * behaves as it did before SECURITY-3931.
+     */
+    @Issue("SECURITY-3931")
+    @Test public void nullReceiverMethodsPermittedByGenericWhitelist() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "nullbar", "def foo = null; foo += 'bar'; foo");
+        assertEvaluate(new GenericWhitelist(), "nullfound 3 items",
+                "def n = 3; def summary = null; summary += \"found ${n} items\"; summary");
+        assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.asBoolean()");
+        assertEvaluate(new GenericWhitelist(), null, "def foo = null; foo.asType(String)");
+        assertEvaluate(new GenericWhitelist(), true, "def foo = null; foo.is(null)");
+        assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.is('x')");
+        assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.iterator().hasNext()");
+
+        // NullObject.plus(Object) is hardcoded to throw NullPointerException, so unlike plus(String)
+        // it never worked in the first place. It is whitelisted regardless: without an entry the
+        // failure surfaces as a RejectedAccessException, which invites an administrator to approve a
+        // signature that still cannot succeed. Whitelisting it lets Groovy's own diagnostic through.
+        NullPointerException npe = assertThrows(NullPointerException.class,
+                () -> evaluate(new GenericWhitelist(), "def counts = [:]; counts['a'] += 1"));
+        assertThat(npe.getMessage(), containsString("Cannot execute null+1"));
+    }
+
+    /**
      * Tests the method invocation / property access through closures.
      *
      * <p>
