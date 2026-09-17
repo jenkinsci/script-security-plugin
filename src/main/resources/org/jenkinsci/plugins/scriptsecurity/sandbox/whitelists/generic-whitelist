@@ -1302,6 +1302,7 @@ method org.codehaus.groovy.runtime.NullObject is java.lang.Object
 method org.codehaus.groovy.runtime.NullObject iterator
 method org.codehaus.groovy.runtime.NullObject plus java.lang.Object
 method org.codehaus.groovy.runtime.NullObject plus java.lang.String
+method org.codehaus.groovy.runtime.NullObject with groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object

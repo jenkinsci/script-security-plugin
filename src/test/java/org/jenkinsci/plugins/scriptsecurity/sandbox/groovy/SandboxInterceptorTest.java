@@ -471,32 +471,16 @@ public class SandboxInterceptorTest {
      */
     @Issue("SECURITY-3931")
     @Test public void nullReceiverMethodsPermittedByGenericWhitelist() throws Exception {
-        // NullObject.plus(String): `foo += "bar"` where foo happens to be null.
         assertEvaluate(new GenericWhitelist(), "nullbar", "def foo = null; foo += 'bar'; foo");
-
-        // A GString argument selects plus(String) too, so it needs no entry of its own:
-        // GroovyCallSiteSelector.method treats a GString as matching a String parameter.
         assertEvaluate(new GenericWhitelist(), "nullfound 3 items",
                 "def n = 3; def summary = null; summary += \"found ${n} items\"; summary");
-
-        // NullObject.asBoolean() returns false. Permitted for non-null receivers via
-        // DefaultGroovyMethods, so rejecting it for null made null stricter than every other type.
         assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.asBoolean()");
-
-        // NullObject.asType(Class) returns null. The `foo as String` operator form was unaffected.
         assertEvaluate(new GenericWhitelist(), null, "def foo = null; foo.asType(String)");
-
-        // NullObject.is(Object) delegates to equals(), so it is true only for another null.
         assertEvaluate(new GenericWhitelist(), true, "def foo = null; foo.is(null)");
         assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.is('x')");
-
-        // NullObject.iterator() returns an empty iterator, which is why iterating null is a no-op.
-        // Permitted for non-null receivers via `method java.lang.Iterable iterator`.
         assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.iterator().hasNext()");
-
-        // NullObject.getNullObject() is static but reachable on a null receiver, and returns the
-        // singleton that every null is represented by. Its toString() is "null" via java.lang.Object.
         assertEvaluate(new GenericWhitelist(), "null", "def foo = null; foo.getNullObject().toString()");
+        assertEvaluate(new GenericWhitelist(), 42, "def foo = null; foo.with { 42 }");
 
         // NullObject.plus(Object) is hardcoded to throw NullPointerException, so unlike plus(String)
         // it never worked in the first place. It is whitelisted regardless: without an entry the
