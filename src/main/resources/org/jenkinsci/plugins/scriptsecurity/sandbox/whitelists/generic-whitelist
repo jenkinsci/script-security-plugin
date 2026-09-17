@@ -1297,12 +1297,10 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport createSimil
 staticMethod org.codehaus.groovy.runtime.InvokerHelper asIterator java.lang.Object
 method org.codehaus.groovy.runtime.NullObject asBoolean
 method org.codehaus.groovy.runtime.NullObject asType java.lang.Class
-staticMethod org.codehaus.groovy.runtime.NullObject getNullObject
 method org.codehaus.groovy.runtime.NullObject is java.lang.Object
 method org.codehaus.groovy.runtime.NullObject iterator
 method org.codehaus.groovy.runtime.NullObject plus java.lang.Object
 method org.codehaus.groovy.runtime.NullObject plus java.lang.String
-method org.codehaus.groovy.runtime.NullObject with groovy.lang.Closure
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareEqual java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThan java.lang.Object java.lang.Object
 staticMethod org.codehaus.groovy.runtime.ScriptBytecodeAdapter compareGreaterThanEqual java.lang.Object java.lang.Object

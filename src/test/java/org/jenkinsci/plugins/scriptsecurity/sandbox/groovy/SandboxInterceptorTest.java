@@ -479,8 +479,6 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), true, "def foo = null; foo.is(null)");
         assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.is('x')");
         assertEvaluate(new GenericWhitelist(), false, "def foo = null; foo.iterator().hasNext()");
-        assertEvaluate(new GenericWhitelist(), "null", "def foo = null; foo.getNullObject().toString()");
-        assertEvaluate(new GenericWhitelist(), 42, "def foo = null; foo.with { 42 }");
 
         // NullObject.plus(Object) is hardcoded to throw NullPointerException, so unlike plus(String)
         // it never worked in the first place. It is whitelisted regardless: without an entry the
