@@ -15,6 +15,53 @@ staticMethod groovy.json.JsonOutput toJson java.util.UUID
 new groovy.json.JsonSlurper
 method groovy.json.JsonSlurper parseText java.lang.String
 
+# Groovy XML:
+# https://docs.groovy-lang.org/latest/html/api/groovy/xml/XmlSlurper.html
+new groovy.xml.XmlSlurper
+method groovy.xml.XmlSlurper parseText java.lang.String
+
+# https://docs.groovy-lang.org/latest/html/api/groovy/xml/slurpersupport/GPathResult.html
+# GPath traversal
+method groovy.xml.slurpersupport.GPathResult breadthFirst
+method groovy.xml.slurpersupport.GPathResult depthFirst
+method groovy.xml.slurpersupport.GPathResult childNodes
+method groovy.xml.slurpersupport.GPathResult children
+method groovy.xml.slurpersupport.GPathResult getAt int
+method groovy.xml.slurpersupport.GPathResult getAt groovy.lang.IntRange
+method groovy.xml.slurpersupport.GPathResult getProperty java.lang.String
+method groovy.xml.slurpersupport.GPathResult isEmpty
+method groovy.xml.slurpersupport.GPathResult iterator
+method groovy.xml.slurpersupport.GPathResult list
+method groovy.xml.slurpersupport.GPathResult name
+method groovy.xml.slurpersupport.GPathResult parent
+method groovy.xml.slurpersupport.GPathResult parents
+method groovy.xml.slurpersupport.GPathResult size
+method groovy.xml.slurpersupport.GPathResult text
+method groovy.xml.slurpersupport.GPathResult toBigDecimal
+method groovy.xml.slurpersupport.GPathResult toBigInteger
+method groovy.xml.slurpersupport.GPathResult toBoolean
+method groovy.xml.slurpersupport.GPathResult toDouble
+method groovy.xml.slurpersupport.GPathResult toFloat
+method groovy.xml.slurpersupport.GPathResult toInteger
+method groovy.xml.slurpersupport.GPathResult toLong
+method groovy.xml.slurpersupport.GPathResult toString
+
+# Namespace helpers commonly needed when parsing XML with namespaces
+method groovy.xml.slurpersupport.GPathResult declareNamespace java.util.Map
+method groovy.xml.slurpersupport.GPathResult lookupNamespace java.lang.String
+
+# Convenience for attributes as a map-like object or single attribute
+method groovy.xml.slurpersupport.GPathResult attributes
+method groovy.xml.slurpersupport.GPathResult attribute java.lang.String
+
+# Output/serialization without needing XmlUtil
+method groovy.xml.slurpersupport.GPathResult writeTo java.io.Writer
+method groovy.xml.slurpersupport.GPathResult leftShift java.lang.Object
+
+# URL/URI conversion helpers (conversion only; opening streams is still blocked by blacklist)
+method groovy.xml.slurpersupport.GPathResult toURI
+method groovy.xml.slurpersupport.GPathResult toURL
+
 method groovy.lang.Binding hasVariable java.lang.String
 staticField groovy.lang.Closure DELEGATE_FIRST
 staticField groovy.lang.Closure DELEGATE_ONLY
@@ -383,6 +430,29 @@ staticMethod java.time.Instant parse java.lang.CharSequence
 method java.time.Instant plusMillis long
 method java.time.Instant plusNanos long
 method java.time.Instant plusSeconds long
+staticField java.time.Instant EPOCH
+staticField java.time.Instant MAX
+staticField java.time.Instant MIN
+staticMethod java.time.Instant now
+staticMethod java.time.Instant ofEpochMilli long
+staticMethod java.time.Instant ofEpochSecond long
+staticMethod java.time.Instant ofEpochSecond long long
+staticMethod java.time.Duration ofMillis long
+staticMethod java.time.Duration ofSeconds long
+staticMethod java.time.Duration ofMinutes long
+staticMethod java.time.Duration ofHours long
+staticMethod java.time.Duration ofDays long
+method java.time.Duration toMillis
+method java.time.Duration toSeconds
+method java.time.Duration toMinutes
+method java.time.Duration toHours
+method java.time.Duration toDays
+method java.time.Duration plus java.time.Duration
+method java.time.Duration minus java.time.Duration
+staticMethod java.time.ZoneOffset of java.lang.String
+staticMethod java.time.ZoneOffset ofHours int
+staticMethod java.time.ZoneOffset ofHoursMinutes int int
+staticMethod java.time.ZoneOffset ofTotalSeconds int
 method java.time.LocalDate getDayOfMonth
 method java.time.LocalDate getDayOfWeek
 method java.time.LocalDate getDayOfYear
@@ -424,8 +494,13 @@ method java.time.LocalDateTime minusWeeks long
 method java.time.LocalDateTime minusYears long
 staticMethod java.time.LocalDateTime now
 staticMethod java.time.LocalDateTime of java.time.LocalDate java.time.LocalTime
+staticMethod java.time.LocalDateTime ofInstant java.time.Instant java.time.ZoneId
 staticMethod java.time.LocalDateTime parse java.lang.CharSequence
 staticMethod java.time.LocalDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
+staticMethod java.time.ZoneId of java.lang.String
+staticField java.time.ZoneOffset MAX
+staticField java.time.ZoneOffset MIN
+staticField java.time.ZoneOffset UTC
 method java.time.LocalDateTime plusDays long
 method java.time.LocalDateTime plusHours long
 method java.time.LocalDateTime plusMinutes long
@@ -472,6 +547,10 @@ method java.time.chrono.ChronoLocalDate isLeapYear
 method java.time.chrono.ChronoLocalDate lengthOfMonth
 method java.time.chrono.ChronoLocalDate lengthOfYear
 method java.time.chrono.ChronoLocalDate toEpochDay
+method java.time.chrono.ChronoLocalDateTime toEpochSecond java.time.ZoneOffset
+method java.time.chrono.ChronoLocalDateTime toInstant java.time.ZoneOffset
+method java.time.chrono.ChronoLocalDateTime toLocalDate
+method java.time.chrono.ChronoLocalDateTime toLocalTime
 method java.time.chrono.ChronoLocalDateTime format java.time.format.DateTimeFormatter
 staticField java.time.format.DateTimeFormatter BASIC_ISO_DATE
 staticField java.time.format.DateTimeFormatter ISO_DATE
