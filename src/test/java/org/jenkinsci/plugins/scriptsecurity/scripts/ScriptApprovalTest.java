@@ -24,6 +24,7 @@
 
 package org.jenkinsci.plugins.scriptsecurity.scripts;
 
+import org.htmlunit.html.HtmlAnchor;
 import org.htmlunit.html.HtmlInput;
 import org.htmlunit.html.HtmlPage;
 import org.htmlunit.html.HtmlTextArea;
@@ -38,7 +39,6 @@ import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.Permission;
-import hudson.util.VersionNumber;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.hamcrest.Matchers;
@@ -112,17 +112,13 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
         JenkinsRule.WebClient wc = r.createWebClient();
         HtmlPage managePage = wc.goTo("manage");
 
-        List<?> scriptApprovalLinks = managePage.getByXPath("//a[@href='scriptApproval']");
-        int expectedLinkCount = 2;
-        if (Jenkins.getVersion().isNewerThan(new VersionNumber("2.102"))) {
-            expectedLinkCount = 1; // https://github.com/jenkinsci/jenkins/pull/2857 made major changes to management page
-        }
-        assertEquals(expectedLinkCount, scriptApprovalLinks.size()); // the icon link and the textual link
+        List<HtmlAnchor> scriptApprovalLinks = managePage.getByXPath("//a[contains(@href, 'scriptApproval')]");
+        assertEquals(1, scriptApprovalLinks.size());
 
-        String managePageBodyText = managePage.getBody().getTextContent();
-        assertThat(managePageBodyText, Matchers.containsString("1 dangerous signatures previously approved which ought not have been."));
+        List<?> dangerousBadges = managePage.getByXPath("//a[contains(@href, 'scriptApproval')]//span[@tooltip='1 approved dangerous signatures']");
+        assertEquals(1, dangerousBadges.size());
 
-        HtmlPage scriptApprovalPage = managePage.getAnchorByHref("scriptApproval").click();
+        HtmlPage scriptApprovalPage = scriptApprovalLinks.get(0).click();
         HtmlTextArea approvedTextArea = scriptApprovalPage.getHtmlElementById("approvedSignatures");
         HtmlTextArea dangerousTextArea = scriptApprovalPage.getHtmlElementById("dangerousApprovedSignatures");
 
@@ -131,7 +127,7 @@ public class ScriptApprovalTest extends AbstractApprovalTest<ScriptApprovalTest.
     }
 
     @Test public void nothingHappening() throws Exception {
-        assertThat(r.createWebClient().goTo("manage").getByXPath("//a[@href='scriptApproval']"), Matchers.empty());
+        assertThat(r.createWebClient().goTo("manage").getByXPath("//a[contains(@href, 'scriptApproval')]"), Matchers.empty());
     }
 
     @Issue("SECURITY-1866")
