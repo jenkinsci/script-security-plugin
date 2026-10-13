@@ -28,9 +28,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BallColor;
 import hudson.model.Descriptor;
 import hudson.model.PageDecorator;
-import hudson.security.ACLContext;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.GlobalConfigurationCategory;
+import jenkins.util.Listeners;
 import jenkins.util.SystemProperties;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -644,23 +644,27 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     public synchronized String configuring(@NonNull String script, @NonNull Language language, @NonNull ApprovalContext context, boolean approveIfAdmin) {
         final ConversionCheckResult result = checkAndConvertApprovedScript(script, language);
         if (!result.approved) {
-            if (!Jenkins.get().isUseSecurity() || 
+            boolean changed;
+            if (!Jenkins.get().isUseSecurity() ||
                     (ALLOW_ADMIN_APPROVAL_ENABLED &&
                     ((Jenkins.getAuthentication2() != ACL.SYSTEM2 && Jenkins.get().hasPermission(Jenkins.ADMINISTER))
                             && (ADMIN_AUTO_APPROVAL_ENABLED || approveIfAdmin)))) {
-                approvedScriptHashes.add(result.newHash);
+                changed = approvedScriptHashes.add(result.newHash);
                 //Pending scripts are not stored with a precalculated hash, so no need to remove any old hashes
-                removePendingScript(result.newHash);
+                changed |= removePendingScript(result.newHash);
             } else {
+                changed = false;
                 String key = context.getKey();
                 if (key != null) {
-                    pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
+                    changed = pendingScripts.removeIf(pendingScript -> key.equals(pendingScript.getContext().getKey()));
                 }
                 if (!isForceSandboxForCurrentUser()) {
-                    pendingScripts.add(new PendingScript(script, language, context));
+                    changed |= pendingScripts.add(new PendingScript(script, language, context));
                 }
             }
-            save();
+            if (changed) {
+                save();
+            }
         }
         return script;
     }
@@ -1080,35 +1084,39 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public void approveScript(String hash) throws IOException {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        boolean changed;
         synchronized (this) {
-            approvedScriptHashes.add(hash);
-            removePendingScript(hash);
-            save();
+            changed = approvedScriptHashes.add(hash);
+            changed |= removePendingScript(hash);
+            if (changed) {
+                save();
+            }
         }
 
-        try (ACLContext ctx = ACL.as2(ACL.SYSTEM2)) {
-            for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
-                listener.onApproved(hash);
-            }
+        if (changed) {
+            Listeners.notify(ApprovalListener.class, true, l -> l.onApproved(hash));
         }
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
     @JavaScriptMethod public synchronized void denyScript(String hash) throws IOException {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-        approvedScriptHashes.remove(hash);
-        removePendingScript(hash);
-        save();
+        boolean changed = approvedScriptHashes.remove(hash);
+        changed |= removePendingScript(hash);
+        if (changed) {
+            save();
+        }
     }
 
-    synchronized void removePendingScript(String hash) {
+    synchronized boolean removePendingScript(String hash) {
         Iterator<PendingScript> it = pendingScripts.iterator();
         while (it.hasNext()) {
             if (it.next().getHash().equals(hash)) {
                 it.remove();
-                break;
+                return true;
             }
         }
+        return false;
     }
 
     @Restricted(NoExternalUse.class) // for use from AJAX
@@ -1309,11 +1317,8 @@ public final class ScriptApproval extends GlobalConfiguration implements RootAct
             }
         }
         if (url != null) {
-            try (ACLContext ctx = ACL.as2(ACL.SYSTEM2)) {
-                for (ApprovalListener listener : ExtensionList.lookup(ApprovalListener.class)) {
-                    listener.onApprovedClasspathEntry(hash, url);
-                }
-            }
+            final URL finalUrl = url;
+            Listeners.notify(ApprovalListener.class, true, l -> l.onApprovedClasspathEntry(hash, finalUrl));
         }
         return getClasspathRenderInfo();
     }
