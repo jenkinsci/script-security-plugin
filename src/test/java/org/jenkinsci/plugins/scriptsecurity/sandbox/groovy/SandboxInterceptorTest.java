@@ -2378,6 +2378,75 @@ public class SandboxInterceptorTest {
         errors.checkThat(actual, is("safe.txt"));
     }
 
+    @Issue("jenkinsci/script-security-plugin #933")
+    @Test
+    public void arrayAssignedToArrayTypedProperty() throws Exception {
+        // Groovy compiles the setter of an array-typed property as varargs (setItems(String...)), so the single
+        // assigned value must be coerced to the declared array type, not cast to the component type
+        // (which used to turn a String[] into its toString() and then into an array of characters).
+        String holder = "class Holder { String[] items }; def h = new Holder(); ";
+        assertEvaluate(new GenericWhitelist(), "a,b", holder + "h.items = 'a,b'.split(','); h.items.join(',')");
+        assertEvaluate(new GenericWhitelist(), "a,b", holder + "h.items = ['a', 'b']; h.items.join(',')");
+        assertEvaluate(new GenericWhitelist(), "a,b", holder + "Object[] o = new Object[2]; o[0] = 'a'; o[1] = 'b'; h.items = o; h.items.join(',')");
+        assertEvaluate(new GenericWhitelist(), 2, holder + "h.items = 'a,b'.split(','); h.items.length");
+        assertEvaluate(new GenericWhitelist(), null, holder + "h.items = null; h.items");
+    }
+
+    @Issue("jenkinsci/script-security-plugin #933")
+    @Test
+    public void arrayAssignedToStaticArrayTypedProperty() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b",
+                "class Holder { static String[] items }; Holder.items = 'a,b'.split(','); Holder.items.join(',')");
+    }
+
+    @Issue("jenkinsci/script-security-plugin #933")
+    @Test
+    public void arrayAssignedToJavaVarargsSetter() throws Exception {
+        String holderClass = VarargsStringArrayHolder.class.getName();
+        assertEvaluate(
+                new StaticWhitelist(
+                        "new " + holderClass,
+                        "method " + holderClass + " setItems java.lang.String[]",
+                        "method " + holderClass + " getItems",
+                        "method java.lang.String split java.lang.String",
+                        "staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods join java.lang.Object[] java.lang.String"),
+                "a,b",
+                "def h = new " + holderClass + "(); h.items = 'a,b'.split(','); h.items.join(',')");
+    }
+
+    @Issue("jenkinsci/script-security-plugin #933")
+    @Test
+    public void arrayAssignedToObjectArrayTypedProperty() throws Exception {
+        // Control: Object[] was never affected, since Object is assignable from any array.
+        assertEvaluate(new GenericWhitelist(), "a,b",
+                "class Holder { Object[] items }; def h = new Holder(); h.items = 'a,b'.split(','); h.items.join(',')");
+    }
+
+    @Issue({"SECURITY-3923", "jenkinsci/script-security-plugin #933"})
+    @Test
+    public void varargsSetterArrayTypeReceivesSnapshot() throws Exception {
+        // Same guarantee as setterArrayTypeReceivesSnapshot for a varargs setter (the shape Groovy generates for
+        // array-typed properties): the TOCTOU-capable collection must still be coerced from its snapshot.
+        String maskedClass = MaskedFileList.class.getName();
+        String fileHolderClass = VarargsFileArrayHolder.class.getName();
+        Object actual = evaluate(
+                new StaticWhitelist(
+                        "new java.io.File java.lang.String",
+                        "method java.io.File getName",
+                        "new " + fileHolderClass,
+                        "method " + fileHolderClass + " setSink java.io.File[]",
+                        "method " + fileHolderClass + " getSink",
+                        "staticMethod java.util.Collections unmodifiableCollection java.util.Collection",
+                        "staticMethod " + maskedClass + " create java.lang.String java.lang.String"),
+                """
+                def masked = Collections.unmodifiableCollection(%s.create('safe.txt', 'dangerous.key'))
+                def h = new %s()
+                h.sink = masked
+                h.sink[0].getName()
+                """.formatted(maskedClass, fileHolderClass));
+        errors.checkThat(actual, is("safe.txt"));
+    }
+
     @Issue("SECURITY-3923")
     @Test
     public void attributeArrayTypeReceivesSnapshot() throws Exception {
@@ -2437,6 +2506,18 @@ public class SandboxInterceptorTest {
     public static final class FileArrayHolder {
         private File[] sink;
         @Whitelisted public void setSink(File[] s) { this.sink = s; }
+        @Whitelisted public File[] getSink() { return sink; }
+    }
+
+    public static final class VarargsStringArrayHolder {
+        private String[] items;
+        @Whitelisted public void setItems(String... items) { this.items = items; }
+        @Whitelisted public String[] getItems() { return items; }
+    }
+
+    public static final class VarargsFileArrayHolder {
+        private File[] sink;
+        @Whitelisted public void setSink(File... s) { this.sink = s; }
         @Whitelisted public File[] getSink() { return sink; }
     }
 

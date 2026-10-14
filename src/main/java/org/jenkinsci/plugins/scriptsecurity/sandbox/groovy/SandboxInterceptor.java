@@ -579,7 +579,10 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            if (i == parameters.length - 1 && parameter.isVarArgs()) {
+            // Only spread across the component type when the caller actually passed the varargs spread out.
+            // A single value for the varargs slot is coerced to the declared array type, which is what Groovy does
+            // for property setters (and Groovy compiles the setter of any array-typed property as varargs).
+            if (i == parameters.length - 1 && parameter.isVarArgs() && args.length != parameters.length) {
                 Class<?> componentType = parameter.getType().getComponentType();
                 for (int j = i; j < args.length; j++) {
                     args[j] = Checker.preCheckedCast(componentType, args[j], false, false, false).call();
