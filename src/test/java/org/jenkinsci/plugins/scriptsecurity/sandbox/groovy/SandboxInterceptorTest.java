@@ -1419,6 +1419,35 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), "2007-12-03T07:15:30", "java.time.LocalDateTime.parse('2007-12-03T10:15:30').minusHours(3).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)");
     }
 
+    @Test
+    public void dateTimeConversions() throws Exception {
+        // LocalDateTime -> Instant / epoch seconds
+        assertEvaluate(new GenericWhitelist(), "2019-10-25T12:15:30Z", "java.time.LocalDateTime.parse('2019-10-25T12:15:30').toInstant(java.time.ZoneOffset.UTC).toString()");
+        assertEvaluate(new GenericWhitelist(), 1572005730L, "java.time.LocalDateTime.parse('2019-10-25T12:15:30').toEpochSecond(java.time.ZoneOffset.UTC)");
+        assertEvaluate(new GenericWhitelist(), "2019-10-25T10:15:30Z", "java.time.LocalDateTime.parse('2019-10-25T12:15:30').atZone(java.time.ZoneId.of('Europe/Berlin')).toInstant().toString()");
+        assertEvaluate(new GenericWhitelist(), "2019-10-25T12:15:30", "def ldt = java.time.LocalDateTime.parse('2019-10-25T12:15:30'); java.time.LocalDateTime.ofInstant(ldt.atZone(java.time.ZoneId.systemDefault()).toInstant(), java.time.ZoneId.systemDefault()).toString()");
+        assertEvaluate(new GenericWhitelist(), "2019-10-25", "java.time.LocalDateTime.parse('2019-10-25T12:15:30').toLocalDate().toString()");
+        assertEvaluate(new GenericWhitelist(), "12:15:30", "java.time.LocalDateTime.parse('2019-10-25T12:15:30').toLocalTime().toString()");
+        // Instant -> LocalDateTime
+        assertEvaluate(new GenericWhitelist(), "2019-08-29T20:10:22", "java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(1567109422L), java.time.ZoneOffset.UTC).toString()");
+        assertEvaluate(new GenericWhitelist(), "2019-08-29T20:10:22.000000123", "java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(1567109422L, 123L), java.time.ZoneOffset.UTC).toString()");
+        assertEvaluate(new GenericWhitelist(), "2019-08-29T20:10:22.123", "java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(1567109422123L), java.time.ZoneId.of('UTC')).toString()");
+        assertEvaluate(new GenericWhitelist(), "1970-01-01T00:00:00Z", "java.time.Instant.EPOCH.toString()");
+        assertEvaluate(new GenericWhitelist(), true, "java.time.Instant.MIN.getEpochSecond() < java.time.Instant.now().getEpochSecond() && java.time.Instant.now().getEpochSecond() < java.time.Instant.MAX.getEpochSecond()");
+        // ZoneOffset
+        assertEvaluate(new GenericWhitelist(), "+02:00", "java.time.ZoneOffset.of('+02:00').toString()");
+        assertEvaluate(new GenericWhitelist(), "-03:00", "java.time.ZoneOffset.ofHours(-3).toString()");
+        assertEvaluate(new GenericWhitelist(), "+05:30", "java.time.ZoneOffset.ofHoursMinutes(5, 30).toString()");
+        assertEvaluate(new GenericWhitelist(), "+01:00", "java.time.ZoneOffset.ofTotalSeconds(3600).toString()");
+        assertEvaluate(new GenericWhitelist(), "+18:00 -18:00", "java.time.ZoneOffset.MAX.toString() + ' ' + java.time.ZoneOffset.MIN.toString()");
+        // Duration
+        assertEvaluate(new GenericWhitelist(), 89L, "java.time.Duration.ofHours(1).plus(java.time.Duration.ofMinutes(30)).minus(java.time.Duration.ofSeconds(60)).toMinutes()");
+        assertEvaluate(new GenericWhitelist(), 1500L, "java.time.Duration.ofMillis(1500).toMillis()");
+        assertEvaluate(new GenericWhitelist(), 7200L, "java.time.Duration.ofHours(2).toSeconds()");
+        assertEvaluate(new GenericWhitelist(), 48L, "java.time.Duration.ofDays(2).toHours()");
+        assertEvaluate(new GenericWhitelist(), 2L, "java.time.Duration.ofHours(48).toDays()");
+    }
+
     @Issue("SECURITY-1186")
     @Test
     public void finalizer() throws Exception {
