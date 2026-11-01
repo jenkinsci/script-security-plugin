@@ -1256,6 +1256,16 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), expected, script);
     }
 
+    @Issue("SECURITY-3923")
+    @Test
+    public void arrayPropertyWithVarargsSetter() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "one,two",
+                "class Holder { String[] items }\n"
+                        + "def holder = new Holder()\n"
+                        + "holder.items = 'one,two'.split(',')\n"
+                        + "holder.items[0] + ',' + holder.items[1]");
+    }
+
     @Issue("JENKINS-44557")
     @Test
     public void varArgsWithGString() throws Exception {
