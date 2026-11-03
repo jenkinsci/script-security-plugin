@@ -374,11 +374,30 @@ staticField java.time.DayOfWeek SUNDAY
 staticField java.time.DayOfWeek THURSDAY
 staticField java.time.DayOfWeek TUESDAY
 staticField java.time.DayOfWeek WEDNESDAY
+method java.time.Duration minus java.time.Duration
+staticMethod java.time.Duration ofDays long
+staticMethod java.time.Duration ofHours long
+staticMethod java.time.Duration ofMillis long
+staticMethod java.time.Duration ofMinutes long
+staticMethod java.time.Duration ofSeconds long
+method java.time.Duration plus java.time.Duration
+method java.time.Duration toDays
+method java.time.Duration toHours
+method java.time.Duration toMillis
+method java.time.Duration toMinutes
+method java.time.Duration toSeconds
+staticField java.time.Instant EPOCH
+staticField java.time.Instant MAX
+staticField java.time.Instant MIN
 method java.time.Instant getEpochSecond
 method java.time.Instant getNano
 method java.time.Instant minusMillis long
 method java.time.Instant minusNanos long
 method java.time.Instant minusSeconds long
+staticMethod java.time.Instant now
+staticMethod java.time.Instant ofEpochMilli long
+staticMethod java.time.Instant ofEpochSecond long
+staticMethod java.time.Instant ofEpochSecond long long
 staticMethod java.time.Instant parse java.lang.CharSequence
 method java.time.Instant plusMillis long
 method java.time.Instant plusNanos long
@@ -424,6 +443,7 @@ method java.time.LocalDateTime minusWeeks long
 method java.time.LocalDateTime minusYears long
 staticMethod java.time.LocalDateTime now
 staticMethod java.time.LocalDateTime of java.time.LocalDate java.time.LocalTime
+staticMethod java.time.LocalDateTime ofInstant java.time.Instant java.time.ZoneId
 staticMethod java.time.LocalDateTime parse java.lang.CharSequence
 staticMethod java.time.LocalDateTime parse java.lang.CharSequence java.time.format.DateTimeFormatter
 method java.time.LocalDateTime plusDays long
@@ -466,13 +486,28 @@ method java.time.LocalTime withHour int
 method java.time.LocalTime withMinute int
 method java.time.LocalTime withNano int
 method java.time.LocalTime withSecond int
+staticMethod java.time.ZoneId of java.lang.String
+staticMethod java.time.ZoneId systemDefault
+staticField java.time.ZoneOffset MAX
+staticField java.time.ZoneOffset MIN
+staticField java.time.ZoneOffset UTC
+staticMethod java.time.ZoneOffset of java.lang.String
+staticMethod java.time.ZoneOffset ofHours int
+staticMethod java.time.ZoneOffset ofHoursMinutes int int
+staticMethod java.time.ZoneOffset ofTotalSeconds int
 method java.time.chrono.ChronoLocalDate format java.time.format.DateTimeFormatter
 method java.time.chrono.ChronoLocalDate getEra
 method java.time.chrono.ChronoLocalDate isLeapYear
 method java.time.chrono.ChronoLocalDate lengthOfMonth
 method java.time.chrono.ChronoLocalDate lengthOfYear
 method java.time.chrono.ChronoLocalDate toEpochDay
+method java.time.chrono.ChronoLocalDateTime atZone java.time.ZoneId
 method java.time.chrono.ChronoLocalDateTime format java.time.format.DateTimeFormatter
+method java.time.chrono.ChronoLocalDateTime toEpochSecond java.time.ZoneOffset
+method java.time.chrono.ChronoLocalDateTime toInstant java.time.ZoneOffset
+method java.time.chrono.ChronoLocalDateTime toLocalDate
+method java.time.chrono.ChronoLocalDateTime toLocalTime
+method java.time.chrono.ChronoZonedDateTime toInstant
 staticField java.time.format.DateTimeFormatter BASIC_ISO_DATE
 staticField java.time.format.DateTimeFormatter ISO_DATE
 staticField java.time.format.DateTimeFormatter ISO_DATE_TIME
