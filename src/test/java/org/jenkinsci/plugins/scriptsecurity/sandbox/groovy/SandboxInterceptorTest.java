@@ -1323,6 +1323,67 @@ public class SandboxInterceptorTest {
                 """);
     }
 
+    /**
+     * Real Groovy splits a bare scalar into one array element per character too, see
+     * {@code DefaultTypeTransformation.asCollection}:
+     * https://github.com/apache/groovy/blob/41b990d0a20e442f29247f0e04cbed900f3dcad4/src/main/org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.java#L466-L467
+     */
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void bareScalarAssignedToArrayPropertyMatchesUnsandboxedGroovy() throws Exception {
+        assertEvaluate(new GenericWhitelist(), 2, """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = 'ab'
+                holder.items.length
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void objectArrayPropertyAssignedFromListUnaffectedControl() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b", """
+                class Holder { Object[] items }
+                def holder = new Holder()
+                holder.items = ['a', 'b']
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertySetterStillRejectedWhenNotWhitelisted() throws Exception {
+        assertThrows(RejectedAccessException.class, () -> evaluate(new ProxyWhitelist(), """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = ['a', 'b']
+                holder.items.join(',')
+                """));
+    }
+
+    /**
+     * Real Groovy coerces a {@code List} of {@link Closure}s into an array typed with a single-abstract-method
+     * interface by proxying each closure. This pre-check instead vets whether calling the interface's methods
+     * directly on the raw pre-proxy value would be permitted, which a bare {@code Closure} never supports (see
+     * the {@code Closure -> SAM} note on {@link #testNumbers}). Before this fix the same list was checked as a
+     * whole against the interface, which has no {@code greet} method either and throws
+     * {@link groovy.lang.MissingMethodException}; after this fix each closure is checked individually, and a
+     * {@code Closure} does expose a real (but unwhitelisted) {@code invokeMethod}, so
+     * {@link RejectedAccessException} is thrown instead. Both fail closed, neither silently permits anything,
+     * but the fix does change which exception surfaces, confirmed by running this against both versions.
+     */
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayOfInterfaceTypePropertyFromClosureListFailsClosedRegardlessOfWhitelist() throws Exception {
+        assertThrows(RejectedAccessException.class, () -> evaluate(new ProxyWhitelist(new GenericWhitelist(), new AnnotatedWhitelist()), """
+                interface Greeter { String greet() }
+                class Holder { Greeter[] items }
+                def holder = new Holder()
+                holder.items = [{-> 'hi'}, {-> 'bye'}]
+                holder.items[0].greet() + ',' + holder.items[1].greet()
+                """));
+    }
+
     @Issue("JENKINS-44557")
     @Test
     public void varArgsWithGString() throws Exception {
