@@ -1032,7 +1032,6 @@ staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Li
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.List int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.List java.util.Collection
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.Map java.lang.Object
-staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.util.regex.Matcher int
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getChars java.lang.String
 staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods groupBy java.lang.Iterable groovy.lang.Closure
