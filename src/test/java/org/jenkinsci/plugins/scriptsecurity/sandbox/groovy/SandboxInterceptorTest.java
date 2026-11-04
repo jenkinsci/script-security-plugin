@@ -1256,6 +1256,73 @@ public class SandboxInterceptorTest {
         assertEvaluate(new GenericWhitelist(), expected, script);
     }
 
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertyAssignedFromSplitIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b", """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = 'a,b'.split(',')
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertyAssignedFromListIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b", """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = ['a', 'b']
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertyAssignedFromCrossTypeListIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "1,2", """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = [1, 2]
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertyAssignedFromMixedTypeListIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "1,two,true,null", """
+                class Holder { String[] items }
+                def holder = new Holder()
+                holder.items = [1, 'two', true, null]
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void arrayPropertyAssignedFromListOfGStringsIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b", """
+                class Holder { String[] items }
+                def holder = new Holder()
+                def a = 'a'
+                def b = 'b'
+                holder.items = ["${a}", "${b}"]
+                holder.items.join(',')
+                """);
+    }
+
+    @Issue("jenkinsci/script-security-plugin#933")
+    @Test
+    public void staticArrayPropertyAssignedFromListIsNotMangled() throws Exception {
+        assertEvaluate(new GenericWhitelist(), "a,b", """
+                class Holder { static String[] items }
+                Holder.items = ['a', 'b']
+                Holder.items.join(',')
+                """);
+    }
+
     @Issue("JENKINS-44557")
     @Test
     public void varArgsWithGString() throws Exception {
