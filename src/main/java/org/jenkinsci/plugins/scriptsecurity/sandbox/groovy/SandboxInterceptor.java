@@ -579,7 +579,9 @@ final class SandboxInterceptor extends GroovyInterceptor {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            if (i == parameters.length - 1 && parameter.isVarArgs()) {
+            // Only true varargs expansion gets the per-component check; a single trailing argument is the
+            // array itself and must be checked against the array type. jenkinsci/script-security-plugin#933
+            if (i == parameters.length - 1 && parameter.isVarArgs() && args.length != parameters.length) {
                 Class<?> componentType = parameter.getType().getComponentType();
                 for (int j = i; j < args.length; j++) {
                     args[j] = Checker.preCheckedCast(componentType, args[j], false, false, false).call();
